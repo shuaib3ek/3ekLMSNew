@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment
+.env
+*.env
+
+# Flask / SQLite
+*.db
+*.sqlite
+instance/
+
+# Migrations (keep structure, ignore cache)
+migrations/versions/__pycache__/
+
+# Storage (user uploads — never commit)
+storage/
+
+# Logs
+*.log
+logs/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp

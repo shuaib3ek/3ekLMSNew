@@ -1,0 +1,628 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container">
+
+    <!-- Header -->
+    <div class="page-header"
+        style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem;">
+                <a href="{{ url_for('workshops.list_workshops') }}"
+                    style="color: var(--text-secondary); font-size: 0.85rem;">
+                    <i class="ph ph-arrow-left"></i> Workshops
+                </a>
+            </div>
+            <h1 class="page-title" style="margin-bottom: 0.25rem;">{{ workshop.title }}</h1>
+            {% if workshop.subtitle %}
+            <p style="color: var(--text-secondary); margin: 0;">{{ workshop.subtitle }}</p>
+            {% endif %}
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap;">
+                <span
+                    class="badge {% if workshop.status == 'published' %}badge-success{% elif workshop.status == 'draft' %}badge-warning{% elif workshop.status == 'completed' %}badge-info{% else %}badge-danger{% endif %}">
+                    {{ workshop.status|title }}
+                </span>
+                <span style="font-size: 0.8rem; color: var(--text-secondary);">{{ workshop.category }}</span>
+                {% if workshop.is_public %}
+                <span style="font-size: 0.8rem; color: var(--success-color);"><i class="ph ph-globe-simple"></i> Live on
+                    3ek.in</span>
+                {% endif %}
+            </div>
+        </div>
+        {% if current_user.role in ['admin', 'super_admin'] %}
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <a href="{{ url_for('workshops.edit_workshop', workshop_id=workshop.id) }}" class="btn btn-outline btn-sm">
+                <i class="ph ph-pencil"></i> Edit
+            </a>
+            {% if workshop.status == 'draft' %}
+            <form method="POST" action="{{ url_for('workshops.change_status', workshop_id=workshop.id) }}"
+                style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="published">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="ph ph-globe-simple"></i> Publish</button>
+            </form>
+            {% elif workshop.status == 'published' %}
+            <a href="{{ url_for('workshops.send_invite', workshop_id=workshop.id) }}" class="btn btn-outline btn-sm">
+                <i class="ph ph-envelope"></i> Send Invitation
+            </a>
+            <form method="POST" action="{{ url_for('workshops.send_joining_details', workshop_id=workshop.id) }}"
+                style="display: inline;"
+                onsubmit="return confirm('Send joining link and credentials to all paid participants?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="ph ph-paper-plane"></i> Send Joining Details
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('workshops.change_status', workshop_id=workshop.id) }}"
+                style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="completed">
+                <button type="submit" class="btn btn-outline btn-sm text-success">Mark Complete</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 340px; gap: 1.5rem; align-items: start;">
+
+        <!-- Left Column: Main Content -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+            <!-- Key Details Card -->
+            <div class="card" style="padding: 1.5rem;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.25rem;">
+                    <div>
+                        <div
+                            style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.3rem;">
+                            Date</div>
+                        <div style="font-weight: 600;">{{ workshop.start_date.strftime('%d %b %Y') }}{% if
+                            workshop.end_date != workshop.start_date %} – {{ workshop.end_date.strftime('%d %b') }}{%
+                            endif %}</div>
+                    </div>
+                    <div>
+                        <div
+                            style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.3rem;">
+                            Time</div>
+                        <div style="font-weight: 600;">{{ workshop.start_time }} – {{ workshop.end_time }}</div>
+                    </div>
+                    <div>
+                        <div
+                            style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.3rem;">
+                            Mode</div>
+                        <div style="font-weight: 600;">{{ workshop.mode|replace('_',' ')|title }}</div>
+                        {% if workshop.venue %}<div style="font-size: 0.8rem; color: var(--text-secondary);">{{
+                            workshop.venue }}</div>{% endif %}
+                    </div>
+                    <div>
+                        <div
+                            style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.3rem;">
+                            Fee</div>
+                        <div style="font-weight: 600;">{% if workshop.is_free %}Free{% else %}₹{{
+                            '{:,.0f}'.format(workshop.fee_per_person) }}{% endif %}</div>
+                    </div>
+                    <div>
+                        <div
+                            style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.3rem;">
+                            Registration Deadline</div>
+                        <div style="font-weight: 600;">{{ workshop.registration_deadline.strftime('%d %b %Y') if
+                            workshop.registration_deadline else '—' }}</div>
+                    </div>
+                    {% if workshop.duration_display %}
+                    <div>
+                        <div
+                            style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.3rem;">
+                            Duration</div>
+                        <div style="font-weight: 600;">{{ workshop.duration_display }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if workshop.status == 'published' %}
+                <div
+                    style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light); display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">Public Registration Link:</div>
+                    <code
+                        style="font-size: 0.82rem; background: var(--bg-surface-hover); padding: 0.25rem 0.5rem; border-radius: 4px; word-break: break-all;">{{ workshop.registration_url }}</code>
+                    <button onclick="navigator.clipboard.writeText('{{ workshop.registration_url }}')"
+                        class="btn btn-sm btn-outline" title="Copy link">
+                        <i class="ph ph-copy"></i>
+                    </button>
+                    <a href="{{ workshop.registration_url }}" target="_blank" class="btn btn-sm btn-outline">
+                        <i class="ph ph-arrow-square-out"></i> Preview
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Trainers -->
+            <div class="card" style="padding: 1.5rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                    <h3 style="margin: 0; font-size: 1rem;">Trainers / Facilitators</h3>
+                </div>
+
+                {% if workshop.trainers %}
+                <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem;">
+                    {% for wt in workshop.trainers %}
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: var(--bg-surface-hover); border-radius: var(--radius-md);">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            {% if wt.trainer.photo_url %}
+                            <img src="{{ wt.trainer.photo_url }}"
+                                style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                            {% else %}
+                            <div
+                                style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary-color); display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1rem;">
+                                {{ wt.trainer.name[0] }}</div>
+                            {% endif %}
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.9rem;">{{ wt.trainer.name }}</div>
+                                <div style="font-size: 0.78rem; color: var(--text-secondary);">
+                                    <span style="text-transform: capitalize;">{{ wt.role|replace('_',' ') }}</span>
+                                    {% if wt.trainer_fee %} · ₹{{ '{:,.0f}'.format(wt.trainer_fee) }}{% endif %}
+                                    {% if wt.confirmed %} · <span style="color: var(--success-color);">✓
+                                        Confirmed</span>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% if current_user.role in ['admin', 'super_admin'] %}
+                        <div style="display: flex; gap: 0.5rem;">
+                            <form method="POST"
+                                action="{{ url_for('workshops.confirm_trainer', workshop_id=workshop.id, wt_id=wt.id) }}"
+                                style="display:inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-outline"
+                                    title="{{ 'Unconfirm' if wt.confirmed else 'Confirm' }}">
+                                    <i class="ph ph-{% if wt.confirmed %}x{% else %}check{% endif %}"></i>
+                                </button>
+                            </form>
+                            <form method="POST"
+                                action="{{ url_for('workshops.remove_trainer', workshop_id=workshop.id, wt_id=wt.id) }}"
+                                style="display:inline;" onsubmit="return confirm('Remove this trainer?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-outline" style="color: var(--danger-color);"><i
+                                        class="ph ph-trash"></i></button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">No trainers assigned
+                    yet.</p>
+                {% endif %}
+
+                {% if current_user.role in ['admin', 'super_admin'] %}
+                <form method="POST" action="{{ url_for('workshops.add_trainer', workshop_id=workshop.id) }}"
+                    style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <select name="trainer_id" class="form-control" style="flex: 2; min-width: 160px;" required>
+                        <option value="">Select Trainer...</option>
+                        {% for t in all_trainers %}
+                        {% if t.id not in assigned_trainer_ids %}
+                        <option value="{{ t.id }}">{{ t.name }}</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                    <select name="role" class="form-control" style="flex: 1; min-width: 120px;">
+                        <option value="lead">Lead</option>
+                        <option value="co_facilitator">Co-Facilitator</option>
+                        <option value="guest">Guest</option>
+                    </select>
+                    <input type="number" name="trainer_fee" class="form-control" style="flex: 1; min-width: 100px;"
+                        placeholder="Fee (₹)">
+                    <button type="submit" class="btn btn-outline btn-sm"><i class="ph ph-plus"></i> Add</button>
+                </form>
+                {% endif %}
+            </div>
+
+            <!-- Documents (LMS Materials) -->
+            <div class="card" style="padding: 1.5rem;">
+                <h3
+                    style="margin: 0 0 1rem; font-size: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                    <span>LMS Materials & Documents</span>
+                    <span class="badge badge-info">{{ workshop.documents|length }} attached</span>
+                </h3>
+
+                {% if workshop.documents %}
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem;">
+                    {% for doc in workshop.documents %}
+                    <div
+                        style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.75rem; background: var(--bg-surface-hover); border-radius: var(--radius-md);">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div
+                                style="width: 32px; height: 32px; border-radius: 4px; background: rgba(99, 102, 241, 0.1); color: var(--primary-color); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                {% if doc.filename.endswith('.pdf') %}
+                                <i class="ph ph-file-pdf"></i>
+                                {% elif doc.filename.endswith('.zip') %}
+                                <i class="ph ph-file-zip"></i>
+                                {% else %}
+                                <i class="ph ph-file-text"></i>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <a href="{{ doc.file_url }}" target="_blank"
+                                    style="font-weight: 500; font-size: 0.88rem; color: var(--text-primary); text-decoration: none;">
+                                    {{ doc.filename }}
+                                </a>
+                                <div
+                                    style="font-size: 0.78rem; color: var(--text-secondary); display: flex; gap: 0.5rem; align-items: center;">
+                                    <span class="badge badge-secondary" style="font-size: 0.65rem; padding: 1px 4px;">{{
+                                        doc.document_type }}</span>
+                                    <span>·</span>
+                                    <span>Uploaded {{ doc.uploaded_at.strftime('%d %b %Y') }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if current_user.role in ['admin', 'super_admin'] %}
+                        <form method="POST"
+                            action="{{ url_for('workshops.delete_document', workshop_id=workshop.id, document_id=doc.id) }}"
+                            style="display:inline;"
+                            onsubmit="return confirm('Delete this document? It will be removed from the LMS for all participants.')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline"
+                                style="color: var(--danger-color); padding: 0.25rem 0.5rem;" title="Delete Document">
+                                <i class="ph ph-trash"></i>
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">No materials uploaded
+                    yet. Participants will see an empty materials section.</p>
+                {% endif %}
+
+                {% if current_user.role in ['admin', 'super_admin'] %}
+                <form method="POST" action="{{ url_for('workshops.upload_document', workshop_id=workshop.id) }}"
+                    enctype="multipart/form-data"
+                    style="display: flex; gap: 0.5rem; align-items: flex-end; background: var(--bg-surface); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div style="flex: 2;">
+                        <label
+                            style="font-size: 0.8rem; font-weight: 500; margin-bottom: 0.25rem; display: block;">Select
+                            File</label>
+                        <input type="file" name="document" class="form-control" style="font-size: 0.85rem;" required>
+                    </div>
+
+                    <div style="flex: 1; min-width: 130px;">
+                        <label style="font-size: 0.8rem; font-weight: 500; margin-bottom: 0.25rem; display: block;">File
+                            Type</label>
+                        <select name="document_type" class="form-control" style="font-size: 0.85rem;">
+                            <option value="Handout">Handout (PDF)</option>
+                            <option value="Presentation">Presentation (PPT/PDF)</option>
+                            <option value="Spreadsheet">Spreadsheet (Excel)</option>
+                            <option value="Reference">Reference Material</option>
+                            <option value="Pre-read">Pre-read Document</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-sm" style="margin-bottom: 1px;"><i
+                            class="ph ph-upload-simple"></i> Upload</button>
+                </form>
+                {% endif %}
+            </div>
+
+            <!-- Sessions -->
+            {% if workshop.sessions %}
+            <div class="card" style="padding: 1.5rem;">
+                <h3 style="margin: 0 0 1rem; font-size: 1rem;">Session Schedule</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    {% for s in workshop.sessions %}
+                    <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: var(--bg-surface-hover); border-radius: var(--radius-md); border: 1px solid transparent; transition: all 0.2s ease;"
+                        onmouseover="this.style.borderColor='var(--primary-light)'; this.style.transform='translateX(4px)';"
+                        onmouseout="this.style.borderColor='transparent'; this.style.transform='translateX(0)';">
+
+                        <div style="display: flex; flex-direction: column; min-width: 80px;">
+                            <span
+                                style="font-size: 0.7rem; text-transform: uppercase; color: var(--text-tertiary); font-weight: 700;">Day
+                                {{ s.session_number }}</span>
+                            <span style="font-weight: 600; font-size: 0.9rem;">{{ s.session_date.strftime('%d %b')
+                                }}</span>
+                        </div>
+
+                        <div style="flex: 1;">
+                            <div style="font-weight: 500; font-size: 0.95rem; color: var(--text-primary);">{{ s.topic or
+                                'Session ' ~ s.session_number }}</div>
+                            <div
+                                style="font-size: 0.78rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="ph ph-clock" style="font-size: 0.85rem;"></i>
+                                {{ s.start_time or workshop.start_time }} – {{ s.end_time or workshop.end_time }}
+                            </div>
+                        </div>
+
+                        {% if s.ai_summary %}
+                        <div
+                            style="flex: 2; border-left: 1px solid var(--border-light); padding-left: 1rem; margin-left: 1rem;">
+                            <div
+                                style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                <i class="ph ph-sparkle" style="color: var(--primary-color);"></i> {{ s.ai_summary }}
+                            </div>
+                            {% if s.ai_points %}
+                            <div style="margin-top: 0.4rem; display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                                {% for point in s.ai_points[:3] %}
+                                <span style="font-size: 0.7rem; color: var(--text-tertiary);">• {{ point }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            {% if s.recording_status == 'ready' %}
+                            <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                                <span class="badge badge-success" style="font-size: 0.65rem; padding: 2px 6px;"><i
+                                        class="ph ph-check-circle"></i> Recording Ready</span>
+                                <a href="{{ url_for('workshops.view_recording', session_id=s.id) }}"
+                                    class="btn btn-sm btn-outline"
+                                    style="margin-top: 5px; height: 28px; padding: 0 10px; font-size: 0.75rem; border-color: var(--primary-color); color: var(--primary-color);">
+                                    <i class="ph ph-play-circle"></i> Watch MP4
+                                </a>
+                                {% if current_user.role in ['admin', 'super_admin'] %}
+                                <a href="{{ url_for('workshops.session_compliance', session_id=s.id) }}"
+                                    class="btn btn-sm btn-outline"
+                                    style="margin-top: 5px; height: 28px; padding: 0 10px; font-size: 0.75rem; color: var(--text-tertiary);">
+                                    <i class="ph ph-shield-check"></i> Audit
+                                </a>
+                                {% endif %}
+                            </div>
+                            {% elif s.recording_status == 'encoding' %}
+                            <span class="badge badge-warning" style="font-size: 0.65rem;"><i
+                                    class="ph ph-hourglass-simple"></i> Microsoft Encoding...</span>
+                            {% elif s.teams_meeting_id %}
+                            <span class="badge badge-secondary" style="font-size: 0.65rem;"><i
+                                    class="ph ph-microsoft-teams-logo"></i> Teams Linked</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Registrations -->
+            <div class="card" style="padding: 1.5rem;">
+                <div
+                    style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <h3 style="margin: 0; font-size: 1rem;">Registrations ({{ workshop.seats_booked }} / {{
+                        workshop.total_seats }})</h3>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <a href="{{ url_for('workshops.export_registrations', workshop_id=workshop.id) }}"
+                            class="btn btn-sm btn-outline">
+                            <i class="ph ph-download-simple"></i> CSV
+                        </a>
+                    </div>
+                </div>
+
+                {% if workshop.registrations %}
+                <div style="overflow-x: auto;">
+                    <table class="data-table" style="min-width: 600px;">
+                        <thead>
+                            <tr>
+                                <th>Participant / Company</th>
+                                <th>Status</th>
+                                <th>Payment</th>
+                                <th>Info</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in workshop.registrations %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 500;">{{ r.name }}</div>
+                                    <div style="font-size: 0.78rem; color: var(--text-secondary);">{{ r.company or
+                                        'Individual' }}</div>
+                                    <div style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 1px;">{{
+                                        r.email }}</div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-{{ r.status_badge }}">{{ r.status|title }}</span>
+                                </td>
+                                <td>
+                                    <span
+                                        class="badge {% if r.payment_status == 'paid' %}badge-success{% elif r.payment_status == 'pending' %}badge-warning{% else %}badge-info{% endif %}">
+                                        {{ r.payment_status|title }}
+                                    </span>
+                                    {% if r.razorpay_payment_id or r.payment_reference %}
+                                    <div
+                                        style="font-size: 0.72rem; color: var(--text-tertiary); margin-top: 4px; font-family: monospace;">
+                                        ID: {{ r.razorpay_payment_id or r.payment_reference }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.2;">
+                                        <div>{{ r.source|title }}</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-tertiary);">{{
+                                            r.registered_at.strftime('%d %b %y') if r.registered_at else '—' }}</div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% if current_user.role in ['admin', 'super_admin'] %}
+                            <tr>
+                                <td colspan="4" style="padding-top: 0; border-bottom: 2px solid var(--border-light);">
+                                    <div
+                                        style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; padding: 0.25rem 0 0.75rem;">
+                                        <form method="POST"
+                                            action="{{ url_for('workshops.invite_lms', workshop_id=workshop.id, reg_id=r.id) }}"
+                                            style="display: inline;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-outline" title="Invite to LMS"
+                                                style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; color: var(--primary-color);">
+                                                <i class="ph ph-graduation-cap" style="font-size: 1.2rem;"></i>
+                                            </button>
+                                        </form>
+
+                                        {% if r.payment_status == 'pending' and r.confirmation_token %}
+                                        <form method="POST"
+                                            action="{{ url_for('workshops.send_payment_link_email', workshop_id=workshop.id, reg_id=r.id) }}"
+                                            style="display: inline;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-outline" title="Email payment link"
+                                                style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
+                                                <i class="ph ph-envelope" style="font-size: 1.2rem;"></i>
+                                            </button>
+                                        </form>
+                                        {% if r.phone %}
+                                        <a href="https://wa.me/{{ r.phone|replace('+','')|replace(' ','') }}?text=Hi%20{{ r.name|urlencode }},%20please%20complete%20your%20payment%20here:%20{{ url_for('workshops.payment_checkout', token=r.confirmation_token, _external=True)|urlencode }}"
+                                            target="_blank" class="btn btn-outline" title="WhatsApp payment link"
+                                            style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; color: #25d366; border-color: #25d366; text-decoration: none;">
+                                            <i class="ph ph-whatsapp-logo" style="font-size: 1.2rem;"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% endif %}
+                                        <form method="POST"
+                                            action="{{ url_for('workshops.update_registration_status', workshop_id=workshop.id, reg_id=r.id) }}"
+                                            style="display: flex; gap: 0.5rem; align-items: center; margin-left: auto;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <span
+                                                style="font-size: 0.82rem; color: var(--text-secondary); font-weight: 500; white-space: nowrap;">Change
+                                                status to</span>
+                                            <select name="status" class="form-control"
+                                                style="font-size: 0.85rem; padding: 0.3rem 0.6rem; height: 34px; min-width: 120px; border-radius: 8px; border: 1px solid var(--border-light);">
+                                                {% for s in ['pending', 'confirmed', 'attended', 'cancelled'] %}
+                                                <option value="{{ s }}" {% if r.status==s %}selected{% endif %}>{{
+                                                    s|title }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <button class="btn btn-primary btn-sm"
+                                                style="height: 34px; padding: 0 1rem; border-radius: 8px; font-size: 0.82rem; font-weight: 600;">
+                                                Save
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p style="color: var(--text-secondary); font-size: 0.85rem;">No registrations yet.</p>
+                {% endif %}
+
+                <!-- Manual Add Form -->
+                {% if current_user.role in ['admin', 'super_admin'] %}
+                <details style="margin-top: 1.25rem;">
+                    <summary
+                        style="cursor: pointer; font-size: 0.85rem; color: var(--text-secondary); user-select: none;">+
+                        Add registration manually</summary>
+                    <form method="POST" action="{{ url_for('workshops.add_registration', workshop_id=workshop.id) }}"
+                        style="margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="text" name="name" class="form-control" placeholder="Full Name" required>
+                        <input type="email" name="email" class="form-control" placeholder="Email" required>
+                        <input type="text" name="phone" class="form-control" placeholder="Phone">
+                        <input type="text" name="company" class="form-control" placeholder="Company">
+                        <input type="text" name="job_title" class="form-control" placeholder="Job Title">
+                        <select name="payment_status" class="form-control">
+                            <option value="free">Free</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                        <div style="grid-column: 1 / -1;">
+                            <button type="submit" class="btn btn-primary btn-sm">Add Registrant</button>
+                        </div>
+                    </form>
+                </details>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+
+            <!-- Stats -->
+            <div class="card" style="padding: 1.25rem;">
+                <h4
+                    style="margin: 0 0 1rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">
+                    At a Glance</h4>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    {% set stat_items = [
+                    ('Seats Booked', workshop.seats_booked, ''),
+                    ('Seats Available', workshop.seats_available, ''),
+                    ('Fill Rate', workshop.fill_percentage|string + '%', ''),
+                    ('Total Revenue', '₹' + '{:,.0f}'.format(workshop.total_revenue), '')
+                    ] %}
+                    {% for label, value, _ in stat_items %}
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; font-size: 0.88rem;">
+                        <span style="color: var(--text-secondary);">{{ label }}</span>
+                        <strong>{{ value }}</strong>
+                    </div>
+                    {% endfor %}
+
+                    <div style="margin-top: 0.5rem;">
+                        <div
+                            style="height: 6px; background: var(--border-light); border-radius: 99px; overflow: hidden;">
+                            <div
+                                style="height: 100%; width: {{ workshop.fill_percentage }}%; background: {% if workshop.fill_percentage > 80 %}var(--danger-color){% elif workshop.fill_percentage > 50 %}var(--warning-color){% else %}var(--primary-color){% endif %}; border-radius: 99px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Log -->
+            {% if workshop.email_logs %}
+            <div class="card" style="padding: 1.25rem;">
+                <h4
+                    style="margin: 0 0 0.75rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">
+                    Email History</h4>
+                {% for log in workshop.email_logs|sort(attribute='sent_at', reverse=True) %}
+                <div style="padding: 0.6rem 0; border-bottom: 1px solid var(--border-light); font-size: 0.82rem;">
+                    <div style="font-weight: 500; text-transform: capitalize;">{{ log.email_type|replace('_',' ') }}
+                    </div>
+                    <div style="color: var(--text-secondary);">{{ log.recipient_count }} recipients · {{
+                        log.sent_at.strftime('%d %b %Y') }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Actions -->
+            {% if current_user.role in ['admin', 'super_admin'] %}
+            <div class="card" style="padding: 1.25rem;">
+                <h4
+                    style="margin: 0 0 0.75rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">
+                    Actions</h4>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    {% if workshop.status == 'published' %}
+                    <a href="{{ url_for('workshops.send_invite', workshop_id=workshop.id) }}"
+                        class="btn btn-primary btn-sm" style="width: 100%; justify-content: center;">
+                        <i class="ph ph-envelope"></i> Send Invitation
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('workshops.export_registrations', workshop_id=workshop.id) }}"
+                        class="btn btn-outline btn-sm" style="width: 100%; justify-content: center;">
+                        <i class="ph ph-download-simple"></i> Export CSV
+                    </a>
+                    {% if workshop.status not in ['completed', 'cancelled'] %}
+                    <form method="POST" action="{{ url_for('workshops.change_status', workshop_id=workshop.id) }}"
+                        onsubmit="return confirm('Cancel this workshop?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="status" value="cancelled">
+                        <button type="submit" class="btn btn-outline btn-sm"
+                            style="width: 100%; justify-content: center; color: var(--danger-color);">
+                            <i class="ph ph-x-circle"></i> Cancel Workshop
+                        </button>
+                    </form>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('workshops.delete_workshop', workshop_id=workshop.id) }}"
+                        onsubmit="return confirm('Permanently delete this workshop and all its data?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-outline btn-sm"
+                            style="width: 100%; justify-content: center; color: var(--danger-color);">
+                            <i class="ph ph-trash"></i> Delete Workshop
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

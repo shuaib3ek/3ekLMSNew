@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Confirmed — {{ workshop.title }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(160deg, #0f172a 0%, #1e3a5f 50%, #0369a1 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            color: #0f172a;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 48px 40px;
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .success-icon {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, #dcfce7, #a7f3d0);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 32px;
+        }
+
+        h1 {
+            font-size: 26px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: #64748b;
+            margin-bottom: 28px;
+            line-height: 1.5;
+        }
+
+        .info-block {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 28px;
+            text-align: left;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 6px 0;
+            font-size: 14px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #94a3b8;
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: #0f172a;
+            text-align: right;
+        }
+
+        .note {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .brand {
+            color: #94a3b8;
+            font-size: 12px;
+            margin-top: 16px;
+        }
+
+        .brand a {
+            color: #3b82f6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="success-icon">✅</div>
+        <h1>You're Registered!</h1>
+        <p class="subtitle">You've successfully secured your spot at<br><strong>{{ workshop.title }}</strong></p>
+
+        <div class="info-block">
+            <div class="info-row">
+                <span class="info-label">Name</span>
+                <span class="info-value">{{ registration.name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Email</span>
+                <span class="info-value">{{ registration.email }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Date</span>
+                <span class="info-value">{{ workshop.start_date.strftime('%d %B %Y') }}{% if workshop.end_date !=
+                    workshop.start_date %} – {{ workshop.end_date.strftime('%d %b') }}{% endif %}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Mode</span>
+                <span class="info-value">{{ workshop.mode|replace('_',' ')|title }}</span>
+            </div>
+            {% if workshop.venue %}
+            <div class="info-row">
+                <span class="info-label">Venue</span>
+                <span class="info-value">{{ workshop.venue }}</span>
+            </div>
+            {% endif %}
+            <div class="info-row">
+                <span class="info-label">Status</span>
+                <span class="info-value" style="color: #15803d;">✓ Confirmed</span>
+            </div>
+        </div>
+
+        <p class="note">
+            A confirmation email has been sent to <strong>{{ registration.email }}</strong>.<br>
+            {% if not workshop.is_free %}Please complete your payment to finalise your registration.{% endif %}
+        </p>
+
+        <p class="brand">Organised by <a href="https://www.3ek.in">3EK — Three Essential Keys</a></p>
+    </div>
+</body>
+
+</html>

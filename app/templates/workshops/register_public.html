@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register — {{ workshop.title }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f1f5f9;
+            color: #0f172a;
+            min-height: 100vh;
+        }
+
+        .page {
+            display: grid;
+            grid-template-columns: 1fr;
+            min-height: 100vh;
+        }
+
+        @media (min-width: 900px) {
+            .page {
+                grid-template-columns: 1fr 460px;
+            }
+        }
+
+        .hero {
+            background: linear-gradient(160deg, #0f172a 0%, #1e3a5f 55%, #0369a1 100%);
+            padding: 48px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -80px;
+            right: -80px;
+            width: 320px;
+            height: 320px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -60px;
+            left: -60px;
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 40px;
+        }
+
+        .brand-name {
+            color: #fff;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+        }
+
+        .brand-dot {
+            width: 6px;
+            height: 6px;
+            background: #38bdf8;
+            border-radius: 50%;
+        }
+
+        .event-category {
+            display: inline-block;
+            background: rgba(56, 189, 248, 0.15);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #7dd3fc;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            padding: 4px 12px;
+            border-radius: 99px;
+            margin-bottom: 16px;
+        }
+
+        .event-title {
+            color: #fff;
+            font-size: clamp(22px, 4vw, 34px);
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 12px;
+        }
+
+        .event-subtitle {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .meta-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .meta-icon {
+            width: 34px;
+            height: 34px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+
+        .meta-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+        }
+
+        .meta-value {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        .outcomes {
+            margin-bottom: 32px;
+        }
+
+        .outcomes h4 {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 12px;
+        }
+
+        .outcome-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .outcome-check {
+            width: 18px;
+            height: 18px;
+            background: rgba(56, 189, 248, 0.25);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .outcome-check::before {
+            content: '✓';
+            font-size: 10px;
+            color: #38bdf8;
+            font-weight: 700;
+        }
+
+        .outcome-text {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .trainer-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .trainer-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .trainer-avatar-fallback {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e40af, #38bdf8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .trainer-name {
+            color: #fff;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .trainer-meta {
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .form-panel {
+            background: #fff;
+            padding: 40px 36px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-header {
+            margin-bottom: 28px;
+        }
+
+        .form-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 6px;
+        }
+
+        .form-header p {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .fee-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            color: #065f46;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 99px;
+            margin-bottom: 20px;
+        }
+
+        .seats-warning {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            color: #991b1b;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
+        .required {
+            color: #dc2626;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #0f172a;
+            background: #f8fafc;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            background: #fff;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #1e40af, #0369a1);
+            color: #fff;
+            border: none;
+            padding: 14px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            margin-top: 8px;
+            font-family: inherit;
+        }
+
+        .submit-btn:hover {
+            opacity: 0.92;
+        }
+
+        .submit-btn:active {
+            transform: scale(0.99);
+        }
+
+        .privacy-note {
+            font-size: 12px;
+            color: #94a3b8;
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        .error-box {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #991b1b;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .full-badge {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 16px;
+            color: #991b1b;
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page">
+        <!-- Hero / Workshop Info -->
+        <div class="hero">
+            <div style="max-width: 560px; position: relative; z-index: 1;">
+                <div class="brand">
+                    <span class="brand-name">3EK</span>
+                    <span class="brand-dot"></span>
+                    <span style="color: rgba(255,255,255,0.45); font-size: 13px;">Three Essential Keys</span>
+                </div>
+
+                <div class="event-category">{{ workshop.category }} Workshop</div>
+                <h1 class="event-title">{{ workshop.title }}</h1>
+                {% if workshop.subtitle %}
+                <p class="event-subtitle">{{ workshop.subtitle }}</p>
+                {% endif %}
+
+                <div class="meta-grid">
+                    <div class="meta-item">
+                        <div class="meta-icon">📅</div>
+                        <div>
+                            <div class="meta-label">Date</div>
+                            <div class="meta-value">{{ workshop.start_date.strftime('%d %B %Y') }}{% if
+                                workshop.end_date != workshop.start_date %} – {{ workshop.end_date.strftime('%d %B %Y')
+                                }}{% endif %}</div>
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-icon">🕐</div>
+                        <div>
+                            <div class="meta-label">Time</div>
+                            <div class="meta-value">{{ workshop.start_time }} – {{ workshop.end_time }}</div>
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-icon">{% if workshop.mode == 'online' %}💻{% elif workshop.mode == 'in_person'
+                            %}📍{% else %}🌐{% endif %}</div>
+                        <div>
+                            <div class="meta-label">Mode</div>
+                            <div class="meta-value">{{ workshop.mode|replace('_',' ')|title }}{% if workshop.venue %} —
+                                {{ workshop.venue }}{% endif %}</div>
+                        </div>
+                    </div>
+                    {% if workshop.duration_display %}
+                    <div class="meta-item">
+                        <div class="meta-icon">⏱</div>
+                        <div>
+                            <div class="meta-label">Duration</div>
+                            <div class="meta-value">{{ workshop.duration_display }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% set outcomes = workshop.outcomes_list %}
+                {% if outcomes %}
+                <div class="outcomes">
+                    <h4>What You'll Learn</h4>
+                    {% for outcome in outcomes[:5] %}
+                    <div class="outcome-item">
+                        <div class="outcome-check"></div>
+                        <span class="outcome-text">{{ outcome }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% for wt in workshop.trainers %}
+                <div class="trainer-card" style="{{ 'margin-bottom: 10px;' if not loop.last else '' }}">
+                    {% if wt.trainer.photo_url %}
+                    <img src="{{ wt.trainer.photo_url }}" alt="{{ wt.trainer.name }}" class="trainer-avatar">
+                    {% else %}
+                    <div class="trainer-avatar-fallback">{{ wt.trainer.name[0] }}</div>
+                    {% endif %}
+                    <div>
+                        <div class="trainer-name">{{ wt.trainer.name }}</div>
+                        <div class="trainer-meta">
+                            {{ wt.role|replace('_',' ')|title }}{% if wt.trainer.years_experience %} · {{
+                            wt.trainer.years_experience }}+ years exp{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Registration Form -->
+        <div class="form-panel">
+            <div class="form-header">
+                <h2>Reserve Your Seat</h2>
+                <p>Complete the form below to register for this workshop.</p>
+            </div>
+
+            <!-- Fee -->
+            {% if workshop.is_free %}
+            <div class="fee-badge">✓ Free Event — No payment required</div>
+            {% else %}
+            <div class="fee-badge" style="background: #eff6ff; border-color: #bfdbfe; color: #1e40af;">
+                💳 ₹{{ '{:,.0f}'.format(workshop.effective_fee) }} per person
+                {% if workshop.early_bird_fee and not workshop.is_free %}
+                <span style="font-size: 11px; color: #3b82f6; margin-left: 4px;">(Early Bird)</span>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Seats Warning -->
+            {% if workshop.seats_available and workshop.seats_available <= 5 and not workshop.is_full %} <div
+                class="seats-warning">⚡ Only {{ workshop.seats_available }} seats remaining — register now!
+        </div>
+        {% endif %}
+
+        {% if workshop.is_full %}
+        <div class="full-badge">
+            <strong>😔 This workshop is fully booked.</strong><br>
+            Please check back for our upcoming events at <a href="https://www.3ek.in">www.3ek.in</a>
+        </div>
+        {% else %}
+
+        {% if error is defined and error %}
+        <div class="error-box">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="form-group">
+                <label class="form-label">Full Name <span class="required">*</span></label>
+                <input type="text" name="name" class="form-input" placeholder="Your full name" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Work Email <span class="required">*</span></label>
+                <input type="email" name="email" class="form-input" placeholder="name@company.com" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Phone</label>
+                    <input type="tel" name="phone" class="form-input" placeholder="+91 98765 43210">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Job Title</label>
+                    <input type="text" name="job_title" class="form-input" placeholder="e.g. L&D Manager">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Company / Organisation</label>
+                <input type="text" name="company" class="form-input" placeholder="Your organisation name">
+            </div>
+
+            <button type="submit" class="submit-btn">
+                Register Now — Secure My Seat →
+            </button>
+        </form>
+
+        <p class="privacy-note">
+            We respect your privacy. Your information is only used for event communication.
+        </p>
+        {% endif %}
+
+        <div
+            style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 12px; color: #94a3b8;">
+            Organised by <a href="https://www.3ek.in" style="color: #3b82f6;">3EK — Three Essential Keys</a>
+        </div>
+    </div>
+    </div>
+
+</body>
+
+</html>

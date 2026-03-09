@@ -1,0 +1,183 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container form-card">
+    <div class="page-header" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+            <a href="{{ url_for('workshops.detail_workshop', workshop_id=workshop.id) }}"
+                style="color: var(--text-secondary); font-size: 0.85rem;">
+                <i class="ph ph-arrow-left"></i> Back to Workshop
+            </a>
+        </div>
+        <h1 class="page-title">Send Invitation Email</h1>
+        <p style="color: var(--text-secondary); margin: 0;">
+            Send a premium branded invitation to your CRM contacts for <strong>{{ workshop.title }}</strong>
+        </p>
+    </div>
+
+    <!-- Email Preview Card -->
+    <div class="card"
+        style="padding: 1.25rem; margin-bottom: 1.5rem; background: var(--bg-surface-hover); border: 1px solid var(--border-light);">
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+                <div
+                    style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.25rem;">
+                    Subject Line</div>
+                <div style="font-weight: 500; font-size: 0.9rem;">Invitation: {{ workshop.title }} — {{
+                    workshop.start_date.strftime('%d %B %Y') }}</div>
+            </div>
+            <a href="{{ url_for('workshops.detail_workshop', workshop_id=workshop.id) }}?preview_email=1"
+                target="_blank" class="btn btn-sm btn-outline">
+                <i class="ph ph-eye"></i> Preview Email
+            </a>
+        </div>
+    </div>
+
+    <form method="POST" id="invite_form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="form-section-title" style="margin-top: 0;">1. Invitation Type</div>
+
+        <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+            <label
+                style="flex: 1; padding: 1rem; border: 2px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer; transition: border-color 0.2s;"
+                id="type_individual_card">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <input type="radio" name="email_type" value="individual" checked>
+                    <span style="font-weight: 600;">Individual Invitation</span>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-left: 1.5rem;">
+                    Directly addresses the recipient ("You are invited to attend...")
+                </div>
+            </label>
+            <label
+                style="flex: 1; padding: 1rem; border: 2px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer; transition: border-color 0.2s;"
+                id="type_corporate_card">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <input type="radio" name="email_type" value="corporate">
+                    <span style="font-weight: 600;">Corporate / Team Share</span>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-left: 1.5rem;">
+                    Addressed to a manager to forward to their team ("Please share this opportunity with your team...")
+                </div>
+            </label>
+        </div>
+
+        <div class="form-section-title">2. Select Recipients</div>
+
+        <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+            <!-- All Contacts -->
+            <label
+                style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; border: 2px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer; transition: border-color 0.2s;"
+                id="filter_all_card">
+                <input type="radio" name="filter_type" value="all_active" checked style="margin-top: 3px;"
+                    onchange="updateFilter(this.value)">
+                <div>
+                    <div style="font-weight: 600; margin-bottom: 0.2rem;">All Active CRM Contacts</div>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary);">Send to all active contacts with
+                        valid email addresses</div>
+                </div>
+            </label>
+
+            <!-- Contacts Filter -->
+            <label
+                style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; border: 2px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer; transition: border-color 0.2s;"
+                id="filter_contacts_card">
+                <input type="radio" name="filter_type" value="contacts" style="margin-top: 3px;"
+                    onchange="updateFilter(this.value)">
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; margin-bottom: 0.2rem;">Select Specific Contacts</div>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Hold Ctrl/Cmd
+                        to select multiple contacts</div>
+
+                    <div id="contacts_filter_container" style="display: none; margin-top: 0.5rem;"
+                        onclick="event.stopPropagation()">
+                        <select name="contact_ids" id="contacts_filter" class="form-control" multiple
+                            style="width: 100%; max-width: 500px;">
+                            {% for contact in contacts %}
+                            <option value="{{ contact.id }}">{{ contact.full_name }} {% if contact.client %}({{
+                                contact.client.company_name }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </label>
+
+            <!-- Custom Email List -->
+            <label
+                style="display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; border: 2px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer; transition: border-color 0.2s;"
+                id="filter_custom_card">
+                <input type="radio" name="filter_type" value="custom" style="margin-top: 3px;"
+                    onchange="updateFilter(this.value)">
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; margin-bottom: 0.2rem;">Custom Email List</div>
+                    <div style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.5rem;">One email per
+                        line, optionally with name: <code>email@company.com, Full Name</code></div>
+                    <textarea name="custom_emails" id="custom_emails" class="form-control" rows="5"
+                        style="display: none;" placeholder="john@acme.com, John Smith&#10;jane@beta.com&#10;..."
+                        onclick="event.stopPropagation()"></textarea>
+                </div>
+            </label>
+        </div>
+
+        <div class="form-section-title">3. Preview &amp; Send</div>
+
+        <!-- Count Preview -->
+        <div id="count_preview"
+            style="background: var(--bg-surface-hover); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem; font-size: 0.88rem; color: var(--text-secondary);">
+            Click <strong>Preview Recipients</strong> to see how many contacts will receive this email.
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-outline" onclick="previewRecipients()">
+                <i class="ph ph-users"></i> Preview Recipients
+            </button>
+            <button type="submit" class="btn btn-primary" id="send_btn"
+                onclick="return confirm('This will send emails to all selected recipients. Continue?')">
+                <i class="ph ph-paper-plane-tilt"></i> Send Invitation
+            </button>
+            <a href="{{ url_for('workshops.detail_workshop', workshop_id=workshop.id) }}"
+                class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    function updateFilter(val) {
+        document.getElementById('contacts_filter_container').style.display = val === 'contacts' ? 'block' : 'none';
+        document.getElementById('custom_emails').style.display = val === 'custom' ? 'block' : 'none';
+    }
+
+    // Initialize Tom Select when the page loads
+    document.addEventListener("DOMContentLoaded", function () {
+        if (document.getElementById('contacts_filter')) {
+            new TomSelect('#contacts_filter', {
+                plugins: ['remove_button'],
+                placeholder: 'Search and select contacts...',
+                maxItems: null,
+                searchField: ['text'] // Searches whatever text is in the option tags
+            });
+        }
+    });
+
+    async function previewRecipients() {
+        const form = document.getElementById('invite_form');
+        const data = new FormData(form);
+        data.append('preview_only', 'true');
+
+        const preview = document.getElementById('count_preview');
+        preview.innerHTML = '<i class="ph ph-spinner"></i> Loading...';
+
+        try {
+            const response = await fetch(window.location.href, { method: 'POST', body: data });
+            const result = await response.json();
+            preview.innerHTML = `
+            <strong style="font-size: 1rem; color: var(--text-primary);">${result.count} recipients</strong> match your filter.<br>
+            <span style="font-size: 0.8rem;">Sample: ${result.sample.map(r => `${r.name} &lt;${r.email}&gt;`).join(', ')}</span>
+        `;
+        } catch (e) {
+            preview.innerHTML = 'Could not fetch recipient preview.';
+        }
+    }
+</script>
+{% endblock %}

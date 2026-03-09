@@ -1,0 +1,56 @@
+{% extends "layouts/base_email.html" %}
+
+{% block content %}
+<div
+    style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333; line-height: 1.6;">
+    <div style="text-align: center; margin-bottom: 30px;">
+        <div
+            style="background-color: #dcfce7; color: #166534; display: inline-block; padding: 10px 20px; border-radius: 50px; font-weight: 600; font-size: 0.9rem; margin-bottom: 15px;">
+            Payment Successful
+        </div>
+        <h1 style="color: #1e293b; margin-bottom: 10px;">Thank You for Your Payment</h1>
+        <p style="font-size: 1.1rem; color: #64748b;">{{ workshop.title }}</p>
+    </div>
+
+    <p>Dear {{ registration.name }},</p>
+
+    <p>Your payment for the workshop has been successfully received. Your registration is now
+        <strong>Confirmed</strong>.</p>
+
+    <div
+        style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; margin: 25px 0;">
+        <h3
+            style="margin-top: 0; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
+            Payment Summary</h3>
+
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="padding: 8px 0; font-weight: 600; width: 140px; color: #64748b;">Transaction ID:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-family: monospace;">{{ registration.razorpay_payment_id
+                    }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px 0; font-weight: 600; color: #64748b;">Amount Paid:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-weight: 700;">{{ workshop.currency }} {{
+                    "{:,.2f}".format(workshop.effective_fee) }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px 0; font-weight: 600; color: #64748b;">Date:</td>
+                <td style="padding: 8px 0; color: #1e293b;">{{ registration.payment_date.strftime('%d %B %Y') if
+                    registration.payment_date else 'Today' }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <p
+        style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 15px; color: #1d4ed8; font-size: 0.95rem;">
+        <strong>Wait for Joining Instructions:</strong> We will send a separate email with the meeting link, login
+        credentials, and session details at least 24 hours before the workshop begins.
+    </p>
+
+    <p style="margin-top: 30px;">If you have any questions, please reply to this email or contact us at <a
+            href="mailto:support@3ek.in">support@3ek.in</a>.</p>
+
+    <p>Best Regards,<br><strong>3EK Team</strong></p>
+</div>
+{% endblock %}

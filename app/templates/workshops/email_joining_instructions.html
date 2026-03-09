@@ -1,0 +1,72 @@
+{% extends "layouts/base_email.html" %}
+
+{% block content %}
+<div
+    style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333; line-height: 1.6;">
+    <div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #2563eb; margin-bottom: 10px;">Joining Instructions</h1>
+        <p style="font-size: 1.1rem; color: #64748b;">{{ workshop.title }}</p>
+    </div>
+
+    <p>Dear {{ recipient.name }},</p>
+
+    <p>Thank you for completing your registration for <strong>{{ workshop.title }}</strong>. We are excited to have you
+        join us!</p>
+
+    <div
+        style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 25px; margin: 25px 0;">
+        <h3
+            style="margin-top: 0; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
+            Session Details</h3>
+
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="padding: 8px 0; font-weight: 600; width: 120px; vertical-align: top;">Date:</td>
+                <td style="padding: 8px 0; color: #334155;">{{ workshop.start_date.strftime('%d %B %Y') }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px 0; font-weight: 600; vertical-align: top;">Time:</td>
+                <td style="padding: 8px 0; color: #334155;">{{ workshop.start_time }} ({{ workshop.timezone }})</td>
+            </tr>
+            {% if workshop.mode == 'online' %}
+            <tr>
+                <td style="padding: 15px 0 8px; font-weight: 600; vertical-align: top;">Meeting Link:</td>
+                <td style="padding: 15px 0 8px;">
+                    <a href="{{ workshop.meeting_link }}"
+                        style="display: inline-block; background-color: #2563eb; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 0.9rem;">
+                        Join Workshop Now
+                    </a>
+                </td>
+            </tr>
+            {% if workshop.meeting_credentials %}
+            <tr>
+                <td style="padding: 8px 0; font-weight: 600; vertical-align: top;">Credentials:</td>
+                <td
+                    style="padding: 8px 0; color: #334155; font-family: monospace; background: #f1f5f9; padding: 10px; border-radius: 4px;">
+                    {{ workshop.meeting_credentials }}</td>
+            </tr>
+            {% endif %}
+            {% else %}
+            <tr>
+                <td style="padding: 8px 0; font-weight: 600; vertical-align: top;">Venue:</td>
+                <td style="padding: 8px 0; color: #334155;">{{ workshop.venue }}</td>
+            </tr>
+            {% endif %}
+        </table>
+    </div>
+
+    <div style="margin-top: 25px;">
+        <h4 style="color: #1e293b; margin-bottom: 10px;">Important Notes:</h4>
+        <ul style="padding-left: 20px; color: #475569;">
+            <li>Please join at least 10 minutes before the start time.</li>
+            <li>Ensure you have a stable internet connection for the best experience.</li>
+            <li>Keep any prerequisites or materials mentioned in the brochure ready.</li>
+        </ul>
+    </div>
+
+    <p style="margin-top: 30px;">If you have any questions or face technical issues while joining, please contact us at
+        <a href="mailto:support@3ek.in">support@3ek.in</a>.</p>
+
+    <p>Best Regards,<br><strong>3EK Team</strong></p>
+</div>
+{% endblock %}

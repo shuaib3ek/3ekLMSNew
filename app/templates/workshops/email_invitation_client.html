@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{{ workshop.title }} — Invitation from 3EK</title>
+    <!--[if mso]>
+<noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+<![endif]-->
+</head>
+
+<body>
+    <div class="email-wrapper"
+        style="max-width: 680px; margin: 0 auto; padding: 24px 16px; background-color: #f1f5f9; font-family: 'Helvetica Neue', Arial, sans-serif;">
+        <div class="email-card"
+            style="background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);">
+
+            <!-- ==================== HEADER LOGO ==================== -->
+            <div style="background-color: #ffffff; padding: 24px 40px; border-bottom: 1px solid #e2e8f0;">
+                <div class="logo-row" style="display: flex; align-items: center;">
+                    <img src="https://app1.3ek.in/static/images/logo.png" alt="3EK" height="24"
+                        style="display: block; max-height: 24px; max-width: 140px; width: auto;">
+                    <span style="color: #cbd5e1; margin: 0 12px; font-size: 18px;">|</span>
+                    <span style="color: #0f172a; font-size: 15px; font-weight: 700; letter-spacing: 0.03em;">3 essential
+                        keys</span>
+                </div>
+            </div>
+
+            <!-- ==================== HEADER CONTENT ==================== -->
+            <div class="header"
+                style="background-color: #0f172a; padding: 40px 40px 32px; position: relative; overflow: hidden;">
+
+                <div class="event-label"
+                    style="display: inline-block; background-color: #0c4a6e; color: #7dd3fc; font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; padding: 4px 10px; border-radius: 99px; margin-bottom: 14px; border: 1px solid #0284c7;">
+                    {{ workshop.category }} Workshop</div>
+                <h1 class="event-title"
+                    style="color: #ffffff; font-size: 28px; font-weight: 800; line-height: 1.2; margin-bottom: 10px; margin-top: 0;">
+                    {{ workshop.title }}</h1>
+                {% if workshop.subtitle %}
+                <p class="event-subtitle" style="color: #cbd5e1; font-size: 15px; line-height: 1.5; margin-top: 0;">{{
+                    workshop.subtitle }}</p>
+                {% endif %}
+
+                <div class="meta-row" style="margin-top: 28px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                        <tr>
+                            <td style="padding-bottom: 8px;">
+                                <span class="meta-pill"
+                                    style="display: inline-block; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 7px 12px; margin-right: 8px; margin-bottom: 8px; color: #f8fafc; font-size: 13px;">
+                                    <img src="https://img.icons8.com/fluency-systems-regular/24/ffffff/calendar.png"
+                                        width="14" height="14" style="vertical-align: -2px; margin-right: 4px;"
+                                        alt="Date" />{{ workshop.start_date.strftime('%d %B %Y') }}{% if
+                                    workshop.end_date !=
+                                    workshop.start_date %} – {{ workshop.end_date.strftime('%d %b') }}{% endif %}
+                                </span>
+                                <span class="meta-pill"
+                                    style="display: inline-block; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 7px 12px; margin-right: 8px; margin-bottom: 8px; color: #f8fafc; font-size: 13px;">
+                                    <img src="https://img.icons8.com/fluency-systems-regular/24/ffffff/time.png"
+                                        width="14" height="14" style="vertical-align: -2px; margin-right: 4px;"
+                                        alt="Time" />{{ workshop.start_time }} – {{ workshop.end_time }}
+                                </span>
+                                <span class="meta-pill"
+                                    style="display: inline-block; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 7px 12px; margin-right: 8px; margin-bottom: 8px; color: #f8fafc; font-size: 13px;">
+                                    {% if workshop.mode == 'online' %}<img
+                                        src="https://img.icons8.com/fluency-systems-regular/24/ffffff/video-call.png"
+                                        width="14" height="14" style="vertical-align: -2px; margin-right: 4px;"
+                                        alt="Online" />{% elif workshop.mode == 'in_person' %}<img
+                                        src="https://img.icons8.com/fluency-systems-regular/24/ffffff/marker.png"
+                                        width="14" height="14" style="vertical-align: -2px; margin-right: 4px;"
+                                        alt="In Person" />{% else %}<img
+                                        src="https://img.icons8.com/fluency-systems-regular/24/ffffff/globe.png"
+                                        width="14" height="14" style="vertical-align: -2px; margin-right: 4px;"
+                                        alt="Hybrid" />{% endif %}{{ workshop.mode|replace('_',' ')|title }}
+                                </span>
+                                {% if workshop.duration_display %}
+                                <span class="meta-pill"
+                                    style="display: inline-block; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 7px 12px; margin-bottom: 8px; color: #f8fafc; font-size: 13px;">
+                                    <img src="https://img.icons8.com/fluency-systems-regular/24/ffffff/stopwatch.png"
+                                        width="14" height="14" style="vertical-align: -2px; margin-right: 4px;"
+                                        alt="Duration" />{{ workshop.duration_display }}
+                                </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ==================== BODY ==================== -->
+            <div class="body-section" style="padding: 36px 40px; background-color: #ffffff;">
+
+                <!-- Greeting -->
+                <p class="greeting"
+                    style="font-size: 16px; color: #334155; line-height: 1.6; margin-bottom: 24px; margin-top: 0;">
+                    Dear <strong>{{ recipient.get('first_name', 'Learning Professional') }}</strong>,
+                    <br><br>
+                    We are organizing an upcoming workshop and would love for you to share this opportunity with your
+                    team. This hands-on, highly interactive experience is designed specifically to elevate professional
+                    impact and team performance.
+                    <br><br>
+                    Please feel free to forward this invitation directly to your colleagues who might benefit from
+                    attending. They can use the registration link below to secure their seats.
+                </p>
+
+                {% if workshop.description %}
+                <div style="margin: 0 0 24px 0; line-height: 1.6; color: #334155; font-size: 15px;">
+                    {{ workshop.description | replace('\\n', '<br>') | replace('\n', '<br>') | safe }}
+                </div>
+                {% endif %}
+
+                <!-- What You'll Learn -->
+                {% set outcomes = workshop.outcomes_list %}
+                {% if outcomes %}
+                <div class="section-title"
+                    style="font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; margin-bottom: 14px;">
+                    What You'll Learn</div>
+                <ul class="outcomes-list"
+                    style="margin: 0 0 30px 0; padding-left: 20px; line-height: 1.6; color: #334155; font-size: 14px;">
+                    {% for outcome in outcomes %}
+                    {% set sub_outcomes = outcome.replace('\\n', '\n').split('\n') %}
+                    {% for sub in sub_outcomes %}
+                    {% if sub.strip() %}
+                    <li style="margin-bottom: 8px; padding-left: 4px;">{{ sub.strip() }}</li>
+                    {% endif %}
+                    {% endfor %}
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                <!-- Info Grid: Date / Mode / Duration / Fee -->
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 30px;">
+                    <tr>
+                        <td width="48%" valign="top"
+                            style="padding: 14px 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                            <div
+                                style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 4px;">
+                                Date</div>
+                            <div style="font-size: 15px; font-weight: 600; color: #0f172a;">{{
+                                workshop.start_date.strftime('%d %b %Y') }}{% if workshop.end_date !=
+                                workshop.start_date %} – {{ workshop.end_date.strftime('%d %b') }}{% endif %}</div>
+                        </td>
+                        <td width="4%"></td>
+                        <td width="48%" valign="top"
+                            style="padding: 14px 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                            <div
+                                style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 4px;">
+                                Mode</div>
+                            <div style="font-size: 15px; font-weight: 600; color: #0f172a;">{{
+                                workshop.mode|replace('_',' ')|title }}</div>
+                            {% if workshop.venue %}<div style="font-size: 12px; color: #64748b; margin-top: 2px;">{{
+                                workshop.venue }}</div>{% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" height="14"></td>
+                    </tr>
+                    <tr>
+                        <td width="48%" valign="top"
+                            style="padding: 14px 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                            <div
+                                style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 4px;">
+                                Investment</div>
+                            <div style="font-size: 15px; font-weight: 600; color: #0f172a;">
+                                {% if workshop.is_free %}
+                                <span style="color: #15803d;">Free</span>
+                                {% else %}
+                                ₹{{ '{:,.0f}'.format(workshop.fee_per_person) }} / person
+                                {% if workshop.early_bird_fee and workshop.early_bird_deadline %}
+                                <br><span style="font-size: 12px; color: #64748b; font-weight: 400;">Early Bird: ₹{{
+                                    '{:,.0f}'.format(workshop.early_bird_fee) }} (till {{
+                                    workshop.early_bird_deadline.strftime('%d %b') }})</span>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td width="4%"></td>
+                        <td width="48%" valign="top"
+                            style="padding: 14px 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
+                            {% if workshop.total_seats %}
+                            <div
+                                style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 4px;">
+                                Seats Available</div>
+                            {% if workshop.seats_available < 5 %} <div
+                                style="font-size: 15px; font-weight: 600; color: #dc2626;">
+                                {% else %}
+                                <div style="font-size: 15px; font-weight: 600; color: #0f172a;">
+                                    {% endif %}
+                                    {% if workshop.is_full %}<span style="color: #dc2626;">Fully Booked</span>{% else
+                                    %}{{
+                                    workshop.seats_available }} of {{ workshop.total_seats }}{% endif %}
+                                </div>
+                                {% else %}
+                                &nbsp;
+                                {% endif %}
+                        </td>
+                    </tr>
+                </table>
+
+                <!-- Who Should Attend -->
+                {% if workshop.target_audience %}
+                <div class="section-title"
+                    style="font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; margin-bottom: 14px; margin-top: 24px;">
+                    Who Should Attend</div>
+                <div class="audience-section"
+                    style="background-color: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 16px 20px; margin-bottom: 28px;">
+                    <p style="font-size: 14px; color: #9a3412; line-height: 1.5; margin: 0;">{{ workshop.target_audience
+                        }}</p>
+                </div>
+                {% endif %}
+
+                <!-- CTA Button -->
+                <div class="cta-section" style="text-align: center; margin: 24px 0 30px;">
+                    <a href="{{ workshop.registration_url }}"
+                        style="display: inline-block; background-color: #0369a1; color: #ffffff; font-size: 16px; font-weight: bold; padding: 16px 48px; border-radius: 10px; text-decoration: none; text-align: center;">Team
+                        Registration Link →</a>
+                    <p class="cta-note" style="font-size: 12px; color: #64748b; margin-top: 16px;">
+                        Forward this link to your team to register:<br>
+                        <a href="{{ workshop.registration_url }}" style="color: #0369a1; word-break: break-all;">{{
+                            workshop.registration_url }}</a>
+                    </p>
+                    {% if workshop.seats_available and workshop.seats_available < 10 and not workshop.is_full %} <p
+                        style="font-size: 12px; color: #dc2626; margin-top: 8px; font-weight: 600;">⚡ Only {{
+                        workshop.seats_available }} seats remaining — secure yours today!</p>
+                        {% endif %}
+                </div>
+
+                <!-- Brochure Link -->
+                {% if workshop.brochure_url %}
+                <p style="text-align: center; font-size: 13px; color: #64748b; margin-top: 10px; margin-bottom: 28px;">
+                    <a href="{{ workshop.brochure_url }}" style="color: #0369a1; text-decoration: none;">📄 Download
+                        Full Brochure</a>
+                </p>
+                {% endif %}
+            </div>
+
+            <!-- ==================== FOOTER ==================== -->
+            <div class="divider" style="height: 1px; background-color: #e2e8f0; margin: 0 40px;"></div>
+            <div class="footer" style="padding: 28px 40px; text-align: center; background-color: #ffffff;">
+                <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                    <img src="https://app1.3ek.in/static/images/logo.png" alt="3EK" height="18"
+                        style="display: block; max-height: 18px; max-width: 120px; width: auto; filter: brightness(0.2);">
+                    <span style="color: #cbd5e1; margin: 0 8px;">—</span>
+                    <span style="color: #0f172a; font-size: 13px; font-weight: 600; letter-spacing: 0.02em;">3 essential
+                        keys</span>
+                </div>
+                <p style="margin-top: 0; margin-bottom: 0; font-size: 12px; color: #64748b; line-height: 1.6;">
+                    Corporate Learning &amp; Workforce Transformation<br>
+                    <a href="https://www.3ek.in" style="color: #0284c7; text-decoration: none;">www.3ek.in</a>
+                    &nbsp;|&nbsp; <a href="mailto:info@3ek.in"
+                        style="color: #0284c7; text-decoration: none;">info@3ek.in</a>
+                </p>
+                <p style="margin-top: 14px; margin-bottom: 0; font-size: 11px; color: #cbd5e1;">
+                    You are receiving this invitation because you are part of our professional network.<br>
+                    If you do not wish to receive future invitations, please reply with "Unsubscribe" in the subject.
+                </p>
+            </div>
+
+        </div>
+    </div>
+</body>
+
+</html>

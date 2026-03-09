@@ -1,0 +1,546 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container form-card">
+    <div class="page-header"
+        style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+            <h1 class="page-title">{{ 'Edit Workshop' if workshop else 'New Workshop' }}</h1>
+            <p style="color: var(--text-secondary); margin: 0;">
+                {{ 'Update workshop details.' if workshop else 'Create a new open-enrolment training event.' }}
+            </p>
+        </div>
+        {% if not workshop %}
+        <button type="button" class="btn btn-outline" onclick="openAiModal()"
+            style="border-color: var(--primary); color: var(--primary); display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path
+                    d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+            </svg>
+            Generate with AI
+        </button>
+        {% endif %}
+    </div>
+
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- SECTION 1: Identity -->
+        <div class="form-section-title" style="margin-top: 0;">1. Event Identity</div>
+        <div class="form-group">
+            <label class="form-label">Workshop Title *</label>
+            <input type="text" name="title" class="form-control" required placeholder="e.g. Design Thinking Masterclass"
+                value="{{ workshop.title if workshop else '' }}">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Tagline / Subtitle</label>
+                <input type="text" name="subtitle" class="form-control" placeholder="Brief one-liner"
+                    value="{{ workshop.subtitle or '' if workshop else '' }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Category</label>
+                <select name="category" class="form-control">
+                    {% for cat in ['Leadership', 'Technical', 'Soft Skills', 'AI & Technology', 'Finance & Strategy',
+                    'HR & L&D', 'Sales', 'Communication', 'General'] %}
+                    <option value="{{ cat }}" {% if workshop and workshop.category==cat %}selected{% endif %}>{{ cat }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- SECTION 2: Content -->
+        <div class="form-section-title">2. Content & Learning</div>
+        <div class="form-group">
+            <label class="form-label">Workshop Description</label>
+            <textarea name="description" class="form-control" rows="5"
+                placeholder="Detailed overview of the workshop...">{{ workshop.description or '' if workshop else '' }}</textarea>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Key Learning Outcomes</label>
+            <textarea name="outcomes" class="form-control" rows="5"
+                placeholder="One outcome per line, e.g.:&#10;Master the Design Thinking framework&#10;Build a working prototype in under 2 hours">{{ '\\n'.join(workshop.outcomes_list) if workshop and workshop.outcomes_list else '' }}</textarea>
+            <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.3rem;">One outcome per line —
+                displayed as bullet points in the email and website.</p>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Target Audience</label>
+                <textarea name="target_audience" class="form-control" rows="3"
+                    placeholder="Who should attend this workshop?">{{ workshop.target_audience or '' if workshop else '' }}</textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Agenda / Schedule Overview</label>
+                <textarea name="agenda" class="form-control" rows="3"
+                    placeholder="Brief day-by-day or topic breakdown...">{{ workshop.agenda or '' if workshop else '' }}</textarea>
+            </div>
+        </div>
+
+        <!-- SECTION 3: Schedule -->
+        <div class="form-section-title">3. Schedule</div>
+        <div class="form-row three-col">
+            <div class="form-group">
+                <label class="form-label">Start Date *</label>
+                <input type="date" name="start_date" class="form-control" required id="start_date"
+                    value="{{ workshop.start_date.strftime('%Y-%m-%d') if workshop and workshop.start_date else '' }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">End Date *</label>
+                <input type="date" name="end_date" class="form-control" required id="end_date"
+                    value="{{ workshop.end_date.strftime('%Y-%m-%d') if workshop and workshop.end_date else '' }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Duration Display</label>
+                <input type="text" name="duration_display" class="form-control" placeholder="e.g. 2 Days / 16 Hours"
+                    value="{{ workshop.duration_display or '' if workshop else '' }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Start Time</label>
+                <input type="text" name="start_time" class="form-control" placeholder="09:00 AM IST"
+                    value="{{ workshop.start_time or '09:00 AM IST' if workshop else '09:00 AM IST' }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">End Time</label>
+                <input type="text" name="end_time" class="form-control" placeholder="05:00 PM IST"
+                    value="{{ workshop.end_time or '05:00 PM IST' if workshop else '05:00 PM IST' }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Registration Deadline</label>
+                <input type="date" name="registration_deadline" class="form-control"
+                    value="{{ workshop.registration_deadline.strftime('%Y-%m-%d') if workshop and workshop.registration_deadline else '' }}">
+            </div>
+        </div>
+
+        <!-- SECTION 4: Logistics -->
+        <div class="form-section-title">4. Mode & Logistics</div>
+        <div class="form-row three-col">
+            <div class="form-group">
+                <label class="form-label">Delivery Mode</label>
+                <select name="mode" class="form-control" id="mode_select">
+                    {% for m in [('online','Online / Virtual'), ('in_person','In-Person'), ('hybrid','Hybrid')] %}
+                    <option value="{{ m[0] }}" {% if workshop and workshop.mode==m[0] %}selected{% endif %}>{{ m[1] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Venue / Location</label>
+                <input type="text" name="venue" class="form-control" id="venue_input"
+                    placeholder="e.g. Bengaluru + Online — Zoom" value="{{ workshop.venue or '' if workshop else '' }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Meeting Link (Online)</label>
+                <input type="url" name="meeting_link" class="form-control" placeholder="https://zoom.us/j/..."
+                    value="{{ workshop.meeting_link or '' if workshop else '' }}">
+            </div>
+        </div>
+
+        <!-- SECTION 5: Capacity & Pricing -->
+        <div class="form-section-title">5. Capacity & Pricing</div>
+        <div class="form-row three-col">
+            <div class="form-group">
+                <label class="form-label">Total Seats</label>
+                <input type="number" name="total_seats" class="form-control" min="1" placeholder="30"
+                    value="{{ workshop.total_seats or 30 if workshop else 30 }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Fee per Person (₹)</label>
+                <input type="number" name="fee_per_person" class="form-control" min="0" step="500"
+                    placeholder="0 for Free" value="{{ workshop.fee_per_person or 0 if workshop else 0 }}">
+                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">Set 0 for a free
+                    event.</p>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Early Bird Fee (₹)</label>
+                <input type="number" name="early_bird_fee" class="form-control" min="0" step="500"
+                    value="{{ workshop.early_bird_fee or '' if workshop else '' }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Early Bird Deadline</label>
+                <input type="date" name="early_bird_deadline" class="form-control"
+                    value="{{ workshop.early_bird_deadline.strftime('%Y-%m-%d') if workshop and workshop.early_bird_deadline else '' }}">
+            </div>
+        </div>
+
+        <!-- SECTION 6: Media -->
+        <div class="form-section-title">6. Media & Visibility</div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Banner Image URL</label>
+                <input type="url" name="banner_image_url" class="form-control" placeholder="https://..."
+                    value="{{ workshop.banner_image_url or '' if workshop else '' }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Brochure PDF URL</label>
+                <input type="url" name="brochure_url" class="form-control" placeholder="https://..."
+                    value="{{ workshop.brochure_url or '' if workshop else '' }}">
+            </div>
+        </div>
+        {% if workshop %}
+        <div class="form-row">
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.75rem;">
+                <input type="checkbox" name="is_public" id="is_public" value="1" style="width: 18px; height: 18px;" {%
+                    if workshop.is_public %}checked{% endif %}>
+                <label for="is_public" style="margin: 0; cursor: pointer;">
+                    <strong>Visible on 3ek.in</strong> — Publish to public website
+                </label>
+            </div>
+            <div class="form-group" style="display: flex; align-items: center; gap: 0.75rem;">
+                <input type="checkbox" name="featured" id="featured" value="1" style="width: 18px; height: 18px;" {% if
+                    workshop.featured %}checked{% endif %}>
+                <label for="featured" style="margin: 0; cursor: pointer;">
+                    <strong>Featured</strong> — Highlight on website homepage
+                </label>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="form-actions">
+            <a href="{{ url_for('workshops.list_workshops') }}" class="btn btn-outline">Cancel</a>
+            <button type="submit" class="btn btn-primary">
+                {{ 'Save Changes' if workshop else 'Create Workshop' }}
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    @media (min-width: 768px) {
+        .form-row.three-col {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+    }
+
+    /* AI Modal Styles */
+    .ai-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.02);
+        z-index: 10000;
+        display: none;
+    }
+
+    .ai-modal {
+        position: absolute;
+        z-index: 10001;
+        left: 50%;
+        top: 10vh;
+        transform: translateX(-50%);
+        background: white;
+        border-radius: 12px;
+        width: 95%;
+        max-width: 550px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+    }
+
+    .ai-modal-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #f8fafc;
+        cursor: move;
+        user-select: none;
+    }
+
+    .ai-modal-header h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .ai-modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--text-secondary);
+    }
+
+    .ai-modal-body {
+        padding: 1.5rem;
+    }
+
+    .ai-tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 1.5rem;
+    }
+
+    .ai-tab {
+        padding: 0.5rem 1rem;
+        border: none;
+        background: transparent;
+        font-weight: 500;
+        color: var(--text-secondary);
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+    }
+
+    .ai-tab.active {
+        color: var(--primary);
+        border-bottom-color: var(--primary);
+    }
+
+    .ai-tab-content {
+        display: none;
+    }
+
+    .ai-tab-content.active {
+        display: block;
+    }
+
+    .generating-overlay {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.9);
+        z-index: 10;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+<!-- AI Generation Modal -->
+<div class="ai-modal-overlay" id="aiModal">
+    <div class="ai-modal">
+        <!-- Loading Overlay -->
+        <div class="generating-overlay" id="aiLoading">
+            <div class="spinner"></div>
+            <h4 style="margin:0;">AI is crafting your workshop...</h4>
+            <p style="color:var(--text-secondary); font-size:0.9rem; margin-top:0.5rem;">This may take 10-20 seconds.
+            </p>
+        </div>
+
+        <div class="ai-modal-header" id="aiModalHeader">
+            <h3>✨ Generate Workshop Content</h3>
+            <button type="button" class="ai-modal-close" onclick="closeAiModal()">&times;</button>
+        </div>
+        <div class="ai-modal-body">
+            <div class="ai-tabs">
+                <button type="button" class="ai-tab active" onclick="switchAiTab(event, 'topic')">From Topic</button>
+                <button type="button" class="ai-tab" onclick="switchAiTab(event, 'document')">From Document</button>
+            </div>
+
+            <!-- Scenario 1: Topic -->
+            <div id="tab-topic" class="ai-tab-content active">
+                <div class="form-group">
+                    <label class="form-label">Technology / Topic</label>
+                    <input type="text" id="ai_topic" class="form-control"
+                        placeholder="e.g. Next.js App Router Masterclass">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Duration Guidance</label>
+                    <input type="text" id="ai_duration_1" class="form-control"
+                        placeholder="e.g. 2 Days, 16 Hours, 1 Week">
+                </div>
+                <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;"
+                    onclick="generateFromTopic()">Generate Content</button>
+            </div>
+
+            <!-- Scenario 2: Document -->
+            <div id="tab-document" class="ai-tab-content">
+                <div class="form-group">
+                    <label class="form-label">Trainer's Document (PDF/DOCX)</label>
+                    <input type="file" id="ai_file" class="form-control" accept=".pdf,.docx">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Duration Guidance</label>
+                    <input type="text" id="ai_duration_2" class="form-control" placeholder="e.g. 2 Days">
+                </div>
+                <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;"
+                    onclick="generateFromDocument()">Parse & Generate</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const startDate = document.getElementById('start_date');
+        const endDate = document.getElementById('end_date');
+
+        startDate.addEventListener('change', function () {
+            if (!endDate.value || endDate.value < startDate.value) {
+                endDate.value = startDate.value;
+            }
+            endDate.min = startDate.value;
+        });
+
+        if (startDate.value) endDate.min = startDate.value;
+    });
+
+    // --- AI Modal Logic ---
+    function openAiModal() {
+        const modal = document.getElementById('aiModal');
+        const modalContent = modal.querySelector('.ai-modal');
+        modal.style.display = 'block';
+        // Center it
+        modalContent.style.left = '50%';
+        modalContent.style.top = '10vh';
+        modalContent.style.transform = 'translateX(-50%)';
+    }
+
+    function closeAiModal() {
+        document.getElementById('aiModal').style.display = 'none';
+        document.getElementById('aiLoading').style.display = 'none';
+    }
+
+    function switchAiTab(e, tab) {
+        document.querySelectorAll('.ai-tab').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.ai-tab-content').forEach(c => c.classList.remove('active'));
+
+        e.currentTarget.classList.add('active');
+        document.getElementById('tab-' + tab).classList.add('active');
+    }
+
+    // --- Drag and Drop Logic ---
+    const dragElement = document.querySelector('.ai-modal');
+    const dragHandle = document.getElementById('aiModalHeader');
+    let isDragging = false;
+    let startX, startY, initialLeft, initialTop;
+
+    if (dragHandle) {
+        dragHandle.onmousedown = function (e) {
+            if (e.target !== dragHandle && e.target.tagName !== 'H3') return;
+
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+
+            const rect = dragElement.getBoundingClientRect();
+            initialLeft = rect.left;
+            initialTop = rect.top;
+
+            // Lock to pixels and remove centering transform
+            dragElement.style.transform = 'none';
+            dragElement.style.margin = '0';
+            dragElement.style.left = initialLeft + 'px';
+            dragElement.style.top = initialTop + 'px';
+
+            document.onmousemove = function (e) {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                dragElement.style.left = (initialLeft + dx) + 'px';
+                dragElement.style.top = (initialTop + dy) + 'px';
+            };
+
+            document.onmouseup = function () {
+                isDragging = false;
+                document.onmousemove = null;
+                document.onmouseup = null;
+            };
+        };
+    }
+
+
+    async function handleAiResponse(response) {
+        document.getElementById('aiLoading').style.display = 'none';
+
+        if (!response.ok) {
+            const err = await response.json();
+            alert('Generation failed: ' + (err.error || 'Unknown error. Check console.'));
+            return;
+        }
+
+        const data = await response.json();
+
+        // Auto-fill fields
+        if (data.title) document.querySelector('[name="title"]').value = data.title;
+        if (data.subtitle) document.querySelector('[name="subtitle"]').value = data.subtitle;
+        if (data.category) document.querySelector('[name="category"]').value = data.category;
+
+        if (data.description) document.querySelector('[name="description"]').value = data.description;
+        if (data.outcomes) document.querySelector('[name="outcomes"]').value = data.outcomes;
+        if (data.target_audience) document.querySelector('[name="target_audience"]').value = data.target_audience;
+        if (data.agenda) document.querySelector('[name="agenda"]').value = data.agenda;
+
+        closeAiModal();
+
+        // Visual feedback to user
+        alert('✨ Workshop content generated successfully! Please review and modify as needed.');
+    }
+
+    async function generateFromTopic() {
+        const topic = document.getElementById('ai_topic').value;
+        const duration = document.getElementById('ai_duration_1').value;
+
+        if (!topic) return alert('Please enter a topic');
+
+        document.getElementById('aiLoading').style.display = 'flex';
+
+        const res = await fetch('/workshops/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name="csrf_token"]').value
+            },
+            body: JSON.stringify({ topic, duration })
+        });
+
+        await handleAiResponse(res);
+    }
+
+    async function generateFromDocument() {
+        const fileInput = document.getElementById('ai_file');
+        const duration = document.getElementById('ai_duration_2').value;
+
+        if (!fileInput.files.length) return alert('Please select a file');
+
+        document.getElementById('aiLoading').style.display = 'flex';
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('duration', duration);
+
+        const res = await fetch('/workshops/generate', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name="csrf_token"]').value
+            },
+            body: formData
+        });
+
+        await handleAiResponse(res);
+    }
+</script>
+{% endblock %}
