@@ -81,7 +81,59 @@ def get_workshop(slug):
     return jsonify(_workshop_to_dict(w))
 
 
-# ── Registration ──────────────────────────────────────────────────────────────
+# ── Dashboard Stats ──────────────────────────────────────────────────────────
+
+@website_bp.route('/stats')
+def get_stats():
+    """Return consolidated stats for the admin dashboard."""
+    if not _verify_token():
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    total_workshops = Workshop.query.filter_by(status='published').count()
+    total_registrations = WorkshopRegistration.query.count()
+    
+    # Revenue: sum of amount_paid for all successful registrations
+    from sqlalchemy import func
+    total_revenue = db.session.query(func.sum(WorkshopRegistration.amount_paid)).scalar() or 0
+
+    return jsonify({
+        'totalWorkshops': total_workshops,
+        'totalRegistrations': total_registrations,
+        'totalRevenue': float(total_revenue)
+    })
+
+
+# ── Registration Listing ──────────────────────────────────────────────────────
+
+@website_bp.route('/registrations')
+def list_registrations():
+    """Return recent registrations with workshop titles."""
+    if not _verify_token():
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    limit = request.args.get('limit', 50, type=int)
+    regs = (WorkshopRegistration.query
+            .order_by(WorkshopRegistration.registered_at.desc())
+            .limit(limit)
+            .all())
+
+    result = []
+    for r in regs:
+        result.append({
+            'id': r.id,
+            'name': r.name,
+            'email': r.email,
+            'status': r.status.upper(),
+            'createdAt': r.registered_at.isoformat() if r.registered_at else None,
+            'workshop': {
+                'title': r.workshop.title if r.workshop else 'Unknown Workshop'
+            }
+        })
+
+    return jsonify({'registrations': result})
+
+
+# ── Registration (Existing) ──────────────────────────────────────────────────
 
 @website_bp.route('/workshops/<slug>/register', methods=['POST'])
 def register_for_workshop(slug):
