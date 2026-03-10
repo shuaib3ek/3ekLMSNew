@@ -1,0 +1,37 @@
+# Task Checklist: LMS Separation & Deployment (Final)
+
+- [x] **Phase 1: Architecture & Model Finalization**
+  - [x] Update `config.py` and `run.py` to utilize **Port 3001**.
+  - [x] Implement `Learner` and `LearnerProgress` models into `app/workshops/models.py`.
+  - [x] Refactor `app/crm_client/client.py` to exclusively fetch `ClientContacts` and `StaffUsers`, dropping LMS-learner logic.
+- [x] **Phase 2: Management Portal & Authentication**
+  - [x] Build a standalone `/login` route in the LMS.
+  - [x] Implement CRM-delegated authentication (LMS validates staff credentials against CRM API, then sets local Flask-Login session).
+  - [x] Verify existing robust `app/templates/workshops` UI loads correctly under the new auth system.
+- [x] **Phase 3: Database & Local Testing**
+  - [x] Generate database migrations for the isolated LMS.
+  - [x] Run `flask db upgrade` locally.
+  - [x] Test the staff login flow and Workshop creation screens.
+- [x] **Phase 4: AI Feature Restoration**
+  - [x] Restore `/generate` backend route.
+  - [x] Fix AI service API key configuration.
+  - [x] Patch frontend for robust AI error handling.
+- [x] **Phase 5: Stability & Submission Fixes**
+  - [x] Debug CSRF token mismatch on workshop creation.
+  - [x] Resolved cookie collision with CRM via unique `SESSION_COOKIE_NAME`.
+  - [x] Added `WTF_CSRF_SSL_STRICT` and hardened session settings in `config.py`.
+  - [x] Implemented custom `CSRFError` handler for better diagnostics.
+  - [x] Cleaned up legacy CRM/Pulse API calls in layout (fixed 404s).
+  - [x] Verify full workshop lifecycle (Create -> Edit -> List).
+
+- [x] **Phase 6: Route Reconciliation & DB Fixes**
+  - [x] Handle `BuildError` by implementing missing workshop routes (document upload, invites, etc.).
+  - [x] Investigate and resolve unexpected Postgres connection attempts.
+  - [x] Verify database URI via startup diagnostics.
+- [ ] **Phase 7: Searchable UI & Mailing Client**
+  - [ ] Implement `TomSelect` (searchable/filterable) for trainer selection in `detail.html`.
+  - [ ] Add `list_contacts` to `app/crm_client/client.py`.
+  - [ ] Restore the mailing client by implementing `send_invite` route (GET and POST).
+  - [ ] Add email preview functionality to `detail_workshop` route.
+  - [ ] Sync historical trainer engagements from Pulse CRM for the Trainer Dashboard.
+  - [ ] Verify the full mailing flow and searchable dropdowns.
