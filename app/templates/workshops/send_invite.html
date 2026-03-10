@@ -95,8 +95,8 @@
                         <select name="contact_ids" id="contacts_filter" class="form-control" multiple
                             style="width: 100%; max-width: 500px;">
                             {% for contact in contacts %}
-                            <option value="{{ contact.id }}">{{ contact.full_name }} {% if contact.client %}({{
-                                contact.client.company_name }}){% endif %}</option>
+                            <option value="{{ contact.id }}">{{ contact.name }} {% if contact.company %}({{
+                                contact.company }}){% endif %}</option>
                             {% endfor %}
                         </select>
                     </div>

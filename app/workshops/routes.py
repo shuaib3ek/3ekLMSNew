@@ -625,13 +625,13 @@ def send_invite(workshop_id):
         recipients = []
 
         if filter_type == 'all_active':
-            recipients = [{'id': c['id'], 'name': c['full_name'], 'email': c['email']} for c in contacts if c.get('email')]
+            recipients = [{'id': c['id'], 'name': c['name'], 'email': c['email']} for c in contacts if c.get('email')]
         elif filter_type == 'contacts':
             selected_ids = request.form.getlist('contact_ids')
             recipients = []
             for c in contacts:
                 if str(c['id']) in selected_ids and c.get('email'):
-                    recipients.append({'id': c['id'], 'name': c['full_name'], 'email': c['email']})
+                    recipients.append({'id': c['id'], 'name': c['name'], 'email': c['email']})
         elif filter_type == 'custom':
             custom_list = request.form.get('custom_emails', '').split('\n')
             for line in custom_list:

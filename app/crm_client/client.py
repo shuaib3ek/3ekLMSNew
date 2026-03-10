@@ -46,8 +46,12 @@ def list_clients() -> list:
     """Return all active CRM clients."""
     try:
         r = requests.get(f'{_base()}/api/v1/crm/clients', headers=_headers(), timeout=5)
-        return r.json().get('data', []) if r.ok else []
-    except Exception:
+        if not r.ok:
+            current_app.logger.warning(f'[CRM Client] list_clients failed with status {r.status_code}: {r.text}')
+            return []
+        return r.json().get('data', [])
+    except Exception as e:
+        current_app.logger.error(f'[CRM Client] list_clients Exception: {e}')
         return []
 
 
@@ -66,8 +70,12 @@ def list_contacts() -> list:
     """Return all active CRM contacts for invitation."""
     try:
         r = requests.get(f'{_base()}/api/v1/crm/contacts', headers=_headers(), timeout=5)
-        return r.json().get('data', []) if r.ok else []
-    except Exception:
+        if not r.ok:
+            current_app.logger.warning(f'[CRM Client] list_contacts failed with status {r.status_code}: {r.text}')
+            return []
+        return r.json().get('data', [])
+    except Exception as e:
+        current_app.logger.error(f'[CRM Client] list_contacts Exception: {e}')
         return []
 
 

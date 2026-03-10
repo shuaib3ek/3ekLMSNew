@@ -51,7 +51,7 @@ def login():
                     flash('Invalid credentials or CRM access denied.', 'danger')
             except Exception as e:
                 current_app.logger.error(f'[LMS Auth] Gateway error: {e}')
-                flash(f'Failed to reach authentication gateway at {base}. Check CRM_API_URL.', 'danger')
+                flash('Failed to reach authentication gateway.', 'danger')
         else:
             # ── Trainer / Client / Learner (Demo Password Mode) ──
             # Accept a default master password for these roles
