@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — 3EK LMS</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --teal: #14b8a6;
+            --teal-light: #f0fdfa;
+            --teal-mid: #ccfbf1;
+            --teal-dark: #0d9488;
+            --teal-glow: rgba(20, 184, 166, 0.15);
+            --zinc-950: #09090b;
+            --zinc-900: #18181b;
+            --zinc-800: #27272a;
+            --text: #111827;
+            --text-muted: #52525b;
+            --border: #e4e4e7;
+            --border-active: #14b8a6;
+            --surface: #fafafa;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #f8fafc 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .login-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 4px 32px rgba(6, 182, 212, 0.08), 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Brand */
+        .brand {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .brand img {
+            height: 40px;
+            margin-bottom: 0.85rem;
+        }
+
+        .brand h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.3rem;
+        }
+
+        .brand p {
+            font-size: 0.84rem;
+            color: var(--text-muted);
+        }
+
+        /* Flash messages */
+        .alert {
+            padding: 0.7rem 1rem;
+            border-radius: 10px;
+            font-size: 0.84rem;
+            margin-bottom: 1.25rem;
+            border: 1px solid;
+        }
+
+        .alert-danger {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #b91c1c;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #15803d;
+        }
+
+        .alert-info {
+            background: #ecfeff;
+            border-color: #a5f3fc;
+            color: #0e7490;
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            border-color: #fde68a;
+            color: #b45309;
+        }
+
+        /* Role label */
+        .role-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 0.65rem;
+        }
+
+        /* Role grid */
+        .role-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.55rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .role-card {
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 0.85rem 0.4rem 0.7rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            user-select: none;
+        }
+
+        .role-card:hover {
+            border-color: var(--cyan);
+            background: var(--cyan-light);
+            transform: translateY(-1px);
+        }
+
+        .role-card.active {
+            border-color: var(--cyan);
+            background: var(--cyan-mid);
+            box-shadow: 0 0 0 3px var(--cyan-glow);
+        }
+
+        .role-card .role-icon {
+            font-size: 1.35rem;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 0.35rem;
+            transition: color 0.18s;
+        }
+
+        .role-card.active .role-icon,
+        .role-card:hover .role-icon {
+            color: var(--cyan-dark);
+        }
+
+        .role-card .role-name {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: color 0.18s;
+        }
+
+        .role-card.active .role-name,
+        .role-card:hover .role-name {
+            color: var(--cyan-dark);
+        }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin-bottom: 1.4rem;
+        }
+
+        /* Form */
+        .form-group {
+            margin-bottom: 1.1rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+        }
+
+        .form-control {
+            width: 100%;
+            background: var(--white);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 0.68rem 0.9rem;
+            font-size: 0.88rem;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.18s, box-shadow 0.18s;
+        }
+
+        .form-control:focus {
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 3px var(--cyan-glow);
+        }
+
+        .form-control::placeholder {
+            color: #d1d5db;
+        }
+
+        .otp-hint {
+            font-size: 0.77rem;
+            color: var(--text-muted);
+            margin-top: 0.35rem;
+        }
+
+        /* Submit button */
+        .btn-submit {
+            width: 100%;
+            padding: 0.78rem;
+            background: var(--cyan);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 0.88rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            margin-top: 0.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+        }
+
+        .btn-submit:hover {
+            background: var(--cyan-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.3);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        /* Form panels */
+        .form-panel {
+            display: none;
+        }
+
+        .form-panel.visible {
+            display: block;
+        }
+
+        /* Footer */
+        .login-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.73rem;
+            color: #d1d5db;
+        }
+
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 1.75rem 1.25rem;
+            }
+
+            .role-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-card">
+        <!-- Brand -->
+        <div class="brand">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="3EK LMS">
+            <h1>Welcome to 3EK LMS</h1>
+            <p>Select your role to continue</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <!-- Role Selector -->
+        <div class="role-label">I am a…</div>
+        <div class="role-grid">
+            <div class="role-card active" data-role="admin" onclick="selectRole('admin')">
+                <i class="ph ph-shield-check role-icon"></i>
+                <div class="role-name">Admin</div>
+            </div>
+            <div class="role-card" data-role="trainer" onclick="selectRole('trainer')">
+                <i class="ph ph-chalkboard-teacher role-icon"></i>
+                <div class="role-name">Trainer</div>
+            </div>
+            <div class="role-card" data-role="client" onclick="selectRole('client')">
+                <i class="ph ph-buildings role-icon"></i>
+                <div class="role-name">Client</div>
+            </div>
+            <div class="role-card" data-role="learner" onclick="selectRole('learner')">
+                <i class="ph ph-graduation-cap role-icon"></i>
+                <div class="role-name">Learner</div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Admin Form (Password) -->
+        <div class="form-panel visible" id="panel-admin">
+            <form method="POST" action="{{ url_for('auth.login') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="role" value="admin">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" name="email" class="form-control" placeholder="you@3ek.in" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-submit">
+                    <i class="ph ph-sign-in"></i> Sign In as Admin
+                </button>
+            </form>
+        </div>
+
+        <!-- Trainer Form -->
+        <div class="form-panel" id="panel-trainer">
+            <form method="POST" action="{{ url_for('auth.login') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="role" value="trainer">
+                <div class="form-group">
+                    <label class="form-label">Your Trainer Email</label>
+                    <input type="email" name="email" class="form-control" placeholder="trainer@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                    <div class="otp-hint">Enter your portal password.</div>
+                </div>
+                <button type="submit" class="btn-submit">
+                    <i class="ph ph-sign-in"></i> Sign In as Trainer
+                </button>
+            </form>
+        </div>
+
+        <!-- Client Form -->
+        <div class="form-panel" id="panel-client">
+            <form method="POST" action="{{ url_for('auth.login') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="role" value="client">
+                <div class="form-group">
+                    <label class="form-label">Your Work Email</label>
+                    <input type="email" name="email" class="form-control" placeholder="you@yourcompany.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                    <div class="otp-hint">Enter your portal password.</div>
+                </div>
+                <button type="submit" class="btn-submit">
+                    <i class="ph ph-sign-in"></i> Sign In as Client
+                </button>
+            </form>
+        </div>
+
+        <!-- Learner Form -->
+        <div class="form-panel" id="panel-learner">
+            <form method="POST" action="{{ url_for('auth.login') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="role" value="learner">
+                <div class="form-group">
+                    <label class="form-label">Your Email Address</label>
+                    <input type="email" name="email" class="form-control" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                    <div class="otp-hint">Enter your portal password.</div>
+                </div>
+                <button type="submit" class="btn-submit">
+                    <i class="ph ph-sign-in"></i> Sign In as Learner
+                </button>
+            </form>
+        </div>
+
+        <div class="login-footer">3EK Learning Management System &copy; 2026</div>
+    </div>
+
+    <script>
+        function selectRole(role) {
+            document.querySelectorAll('.role-card').forEach(c => c.classList.remove('active'));
+            document.querySelector(`[data-role="${role}"]`).classList.add('active');
+            document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('visible'));
+            document.getElementById(`panel-${role}`).classList.add('visible');
+            const emailInput = document.querySelector(`#panel-${role} input[type="email"]`);
+            if (emailInput) setTimeout(() => emailInput.focus(), 50);
+        }
+
+        // Auto-select role from URL param
+        const urlParams = new URLSearchParams(window.location.search);
+        const roleParam = urlParams.get('role');
+        if (roleParam && ['admin', 'trainer', 'client', 'learner'].includes(roleParam)) {
+            selectRole(roleParam);
+        }
+
+        localStorage.removeItem('3ek_last_activity');
+    </script>
+</body>
+
+</html>

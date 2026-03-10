@@ -2,7 +2,7 @@ import os
 from datetime import timedelta
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 
 class Config:
@@ -13,7 +13,13 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     WTF_CSRF_ENABLED = True
+    WTF_CSRF_SSL_STRICT = False  # Allow HTTP for local dev
+    WTF_CSRF_TIME_LIMIT = None  # Tokens last for the entire session
+    
     PERMANENT_SESSION_LIFETIME = timedelta(days=30)
+    SESSION_COOKIE_NAME = '3ek_lms_session'
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
 
     APP_NAME = '3EK LMS'
     THEME_COLOR = '#6366f1'
@@ -22,7 +28,7 @@ class Config:
     # The LMS never connects to the CRM database.
     # All shared entity lookups (Users, Clients, Contacts, Trainers) go through
     # the CRM internal REST API via app/crm_client/client.py.
-    CRM_API_URL = os.environ.get('CRM_API_URL') or 'http://localhost:5000'
+    CRM_API_URL = os.environ.get('CRM_API_URL') or 'http://localhost:8013'
     CRM_SERVICE_TOKEN = os.environ.get('CRM_SERVICE_TOKEN')
 
     # Token that authorises incoming calls FROM the CRM to this LMS

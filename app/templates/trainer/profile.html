@@ -1,0 +1,100 @@
+{% extends "trainer/base.html" %}
+{% block title %}My Profile — Trainer{% endblock %}
+
+{% block content %}
+<div class="lp-panel"
+    style="padding: 2.5rem; margin-bottom: 2.5rem; display:flex; align-items:center; justify-content:space-between;">
+    <div>
+        <div class="lp-portal-pill"
+            style="margin-bottom: 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+            <i class="ph ph-user-circle"></i> Identity
+        </div>
+        <h1 style="font-size:1.75rem; font-weight:800; color:var(--text); margin-bottom:0.3rem;">Instructor <span
+                style="color:var(--teal);">Profile</span></h1>
+        <p style="font-size:0.9rem; color:var(--text-muted);">View your professional details and expertise information
+            from the CRM.</p>
+    </div>
+    <div style="font-size:3.5rem; opacity:0.12;">👤</div>
+</div>
+
+<div class="lp-grid-2col" style="grid-template-columns: 1fr 340px;">
+    <!-- Left: Profile Details -->
+    <div>
+        <div class="lp-panel" style="padding: 2rem;">
+            <div
+                style="display:flex; align-items:center; gap:1.5rem; margin-bottom:2.5rem; padding-bottom:1.5rem; border-bottom:1px solid var(--zinc-100);">
+                <div
+                    style="width:72px; height:72px; background:var(--teal-light); border:1px solid var(--teal-border); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2rem; font-weight:800; color:var(--teal-dark);">
+                    {{ current_user.first_name[0] | upper if current_user.first_name else 'T' }}
+                </div>
+                <div>
+                    <h2 style="font-size:1.45rem; font-weight:800; color:var(--text);">{{ trainer.first_name }} {{
+                        trainer.last_name }}</h2>
+                    <div style="font-size:0.9rem; color:var(--text-muted); margin-top:0.3rem;">{{ trainer.email }}</div>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:2rem; margin-bottom: 2rem;">
+                <div>
+                    <div
+                        style="font-size:0.65rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">
+                        Expertise Level</div>
+                    <div style="font-weight:700; font-size:1rem; color:var(--text);">{{ trainer.expertise_level |
+                        default('Senior Trainer') | title }}</div>
+                </div>
+                <div>
+                    <div
+                        style="font-size:0.65rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">
+                        Associated Since</div>
+                    <div style="font-weight:700; font-size:1rem; color:var(--text);">{{ trainer.created_at or 'March
+                        2024' }}</div>
+                </div>
+                <div>
+                    <div
+                        style="font-size:0.65rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">
+                        Phone Number</div>
+                    <div style="font-weight:700; font-size:1rem; color:var(--text);">{{ trainer.phone or '–' }}</div>
+                </div>
+                <div>
+                    <div
+                        style="font-size:0.65rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">
+                        Status</div>
+                    <div style="font-weight:700; font-size:1rem; color:var(--success);">ACTIVE</div>
+                </div>
+            </div>
+
+            <div
+                style="background:var(--zinc-50); border:1px solid var(--zinc-200); border-radius:12px; padding:1.25rem;">
+                <div
+                    style="font-size:0.65rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.75rem;">
+                    Short Bio</div>
+                <p style="font-size:0.85rem; line-height:1.6; color:var(--text-muted);">
+                    {{ trainer.bio or 'Subject matter expert and lead facilitator for 3EK corporate learning programs.
+                    Passionate about empowering learners through technology.' }}
+                </p>
+            </div>
+
+            <p style="margin-top:2rem; font-size:0.75rem; color:var(--text-muted); font-style:italic;">
+                Trainer details are managed by the CRM administrator. Please contact IT support to request changes.
+            </p>
+        </div>
+    </div>
+
+    <!-- Right: Sidebar -->
+    <div class="lp-panel">
+        <div class="lp-panel-label">Trainer Support</div>
+        <p style="font-size:0.8rem; color:var(--text-muted); line-height:1.6; margin-bottom:1.5rem;">
+            Facing issues with the portal or your profile data?
+        </p>
+        <a href="mailto:trainers@3ek.in" class="lp-btn-primary"
+            style="width:100%; font-size:0.8rem; padding:0.65rem;">Request Support</a>
+
+        <div style="margin-top:2.5rem;">
+            <a href="{{ url_for('auth.logout') }}"
+                style="color:var(--danger); font-size:0.85rem; font-weight:600; text-decoration:none; display:flex; align-items:center; gap:0.5rem;">
+                <i class="ph ph-sign-out"></i> Logout
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

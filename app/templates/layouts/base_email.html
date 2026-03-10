@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ subject }}</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-width: 100%;
+            width: 100% !important;
+            height: 100% !important;
+            background-color: #f1f5f9;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        img {
+            border: 0;
+            height: auto;
+            outline: none;
+            text-decoration: none;
+        }
+
+        table {
+            border-collapse: collapse !important;
+        }
+
+        .wrapper {
+            width: 100%;
+            table-layout: fixed;
+            background-color: #f1f5f9;
+            padding-bottom: 40px;
+        }
+
+        .main {
+            background-color: #ffffff;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 600px;
+            border-spacing: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #334155;
+        }
+
+        .footer {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .main {
+                width: 100% !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper">
+        <center>
+            <table class="main" width="100%">
+                <tr>
+                    <td style="padding: 40px 0 20px; text-align: center; background-color: #ffffff;">
+                        <img src="https://app1.3ek.in/static/img/3ek_logo_dark.png" alt="3EK" width="120"
+                            style="display: block; margin: 0 auto;">
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 0 40px 40px;">
+                        {% block content %}{% endblock %}
+                    </td>
+                </tr>
+            </table>
+
+            <div class="footer">
+                <p>&copy; {{ now.year if now else '2026' }} 3EK Pulse. All rights reserved.<br>
+                    Empowering Corporate Learning Excellence.</p>
+                <div style="margin-top: 10px;">
+                    <a href="https://3ek.in" style="color: #94a3b8; text-decoration: none;">Website</a> &bull;
+                    <a href="mailto:support@3ek.in" style="color: #94a3b8; text-decoration: none;">Support</a>
+                </div>
+            </div>
+        </center>
+    </div>
+</body>
+
+</html>

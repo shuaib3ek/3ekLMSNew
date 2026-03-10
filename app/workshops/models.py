@@ -163,6 +163,26 @@ class WorkshopTrainer(db.Model):
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    @property
+    def trainer(self):
+        """Transparently fetches trainer profile from CRM so old templates don't break."""
+        from app.crm_client import client as crm
+        t_data = crm.get_trainer(self.crm_trainer_id)
+        
+        class MockTrainer:
+            def __init__(self, data):
+                self.name = data.get('name') or f"{data.get('first_name','')} {data.get('last_name','')}".strip() or 'Expert Trainer'
+                self.photo_url = data.get('profile_picture')
+                self.bio = data.get('bio')
+                self.years_experience = data.get('years_experience', 5)
+                self.email = data.get('email')
+                self.phone = data.get('phone')
+        
+        if t_data:
+            return MockTrainer(t_data)
+            
+        return MockTrainer({})
+
     def __repr__(self):
         return f'<WorkshopTrainer workshop={self.workshop_id} crm_trainer={self.crm_trainer_id}>'
 
@@ -230,23 +250,40 @@ class WorkshopSession(db.Model):
         return f'<WorkshopSession {self.session_date} — {self.topic}>'
 
 
-class WorkshopRegistration(db.Model):
+class Learner(db.Model):
     """
-    An individual learner registered for a workshop.
-    May be linked to a CRM Contact or be a brand-new external learner.
+    An individual learner who attends workshops.
+    Managed entirely within the LMS database.
+    """
+    __tablename__ = 'learners'
 
-    crm_contact_id is a soft reference — no DB-level FK.
-    Learner name/email are always stored here so records survive CRM changes.
-    """
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    phone = db.Column(db.String(50))
+    company = db.Column(db.String(255))
+    job_title = db.Column(db.String(255))
+
+    # ── CRM soft reference for B2B company context (NO FK constraint) ──
+    crm_client_id = db.Column(db.Integer, nullable=True)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<Learner {self.name} — {self.email}>'
+
+
+class WorkshopRegistration(db.Model):
     __tablename__ = 'workshop_registrations'
 
     id = db.Column(db.Integer, primary_key=True)
     workshop_id = db.Column(db.Integer, db.ForeignKey('workshops.id'), nullable=False)
 
-    # ── CRM soft reference (NO FK constraint) ────────────────────────────────
-    crm_contact_id = db.Column(db.Integer, nullable=True)
+    learner_id = db.Column(db.Integer, db.ForeignKey('learners.id'), nullable=False)
+    learner = db.relationship('Learner', backref=db.backref('registrations', cascade='all, delete-orphan'))
 
-    # Denormalized learner details (always stored locally)
+    # Denormalized learner details (stored locally for quick access)
     name = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), nullable=False)
     phone = db.Column(db.String(50))
@@ -351,6 +388,29 @@ class GraphSubscription(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class OtpToken(db.Model):
+    """
+    Stores one-time passwords for Learner / Trainer / Client passwordless login.
+    Stored in DB so they survive server restarts and are not session-dependent.
+    """
+    __tablename__ = 'otp_tokens'
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), nullable=False, index=True)
+    role = db.Column(db.String(30), nullable=False)   # learner, trainer, client
+    code = db.Column(db.String(6), nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def is_valid(self):
+        return not self.used and datetime.utcnow() < self.expires_at
+
+    def __repr__(self):
+        return f'<OtpToken {self.email} ({self.role})>'
+
+
+
 class SystemTask(db.Model):
     """
     Lightweight internal task queue for LMS background operations
@@ -373,15 +433,13 @@ class SystemTask(db.Model):
 
 class WorkshopVideoProgress(db.Model):
     """
-    Tracks an individual user's progress watching a session recording.
-    crm_user_id is a soft reference to CRM's users table.
+    Tracks an individual learner's progress watching a session recording.
     """
     __tablename__ = 'workshop_video_progress'
 
     id = db.Column(db.Integer, primary_key=True)
 
-    # ── CRM soft reference (NO FK constraint) ────────────────────────────────
-    crm_user_id = db.Column(db.Integer, nullable=False)
+    learner_id = db.Column(db.Integer, db.ForeignKey('learners.id'), nullable=False)
 
     session_id = db.Column(db.Integer, db.ForeignKey('workshop_sessions.id'), nullable=False)
 
@@ -396,11 +454,11 @@ class WorkshopVideoProgress(db.Model):
     session = db.relationship('WorkshopSession', backref='user_progress')
 
     __table_args__ = (
-        db.UniqueConstraint('crm_user_id', 'session_id', name='uq_user_session_progress'),
+        db.UniqueConstraint('learner_id', 'session_id', name='uq_learner_session_progress'),
     )
 
     def __repr__(self):
-        return f'<WorkshopVideoProgress user={self.crm_user_id} session={self.session_id}>'
+        return f'<WorkshopVideoProgress learner={self.learner_id} session={self.session_id}>'
 
 
 class Certificate(db.Model):
@@ -410,9 +468,7 @@ class Certificate(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     workshop_id = db.Column(db.Integer, db.ForeignKey('workshops.id'), nullable=False)
     registration_id = db.Column(db.Integer, db.ForeignKey('workshop_registrations.id'), nullable=False)
-
-    # ── CRM soft reference (NO FK constraint) ────────────────────────────────
-    crm_contact_id = db.Column(db.Integer, nullable=True)
+    learner_id = db.Column(db.Integer, db.ForeignKey('learners.id'), nullable=False)
 
     issued_at = db.Column(db.DateTime, default=datetime.utcnow)
     certificate_url = db.Column(db.String(512))

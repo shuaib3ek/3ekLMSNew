@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My Learning — 3EK{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/learner_portal.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+
+    <!-- Top Nav -->
+    <nav class="lp-nav">
+        <a href="{{ url_for('learner_portal.dashboard') }}" class="lp-brand">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="3EK">
+            <span class="lp-portal-pill">Learner</span>
+        </a>
+
+        <div class="lp-nav-links">
+            <a href="{{ url_for('learner_portal.dashboard') }}"
+                class="lp-nav-link {% if request.endpoint == 'learner_portal.dashboard' %}active{% endif %}">
+                <i class="ph ph-house"></i> Dashboard
+            </a>
+            <a href="{{ url_for('learner_portal.certificates') }}"
+                class="lp-nav-link {% if request.endpoint == 'learner_portal.certificates' %}active{% endif %}">
+                <i class="ph ph-certificate"></i> Certificates
+            </a>
+            <a href="{{ url_for('learner_portal.profile') }}"
+                class="lp-nav-link {% if request.endpoint == 'learner_portal.profile' %}active{% endif %}">
+                <i class="ph ph-user-circle"></i> Profile
+            </a>
+        </div>
+
+        <div class="lp-nav-user">
+            <div class="lp-user-chip">
+                <div class="lp-avatar">
+                    {{ current_user.first_name[0] | upper if current_user.first_name else '?' }}
+                </div>
+                <span class="lp-user-name">{{ current_user.full_name }}</span>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" class="lp-btn-logout">
+                <i class="ph ph-sign-out"></i> Sign Out
+            </a>
+        </div>
+    </nav>
+
+    <!-- Page Content -->
+    <div class="lp-page">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+        <div class="lp-alert lp-alert-{{ category }}">{{ message }}</div>
+        {% endfor %}{% endif %}{% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

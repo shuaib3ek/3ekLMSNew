@@ -1,0 +1,71 @@
+{% extends "learner/base.html" %}
+{% block title %}My Certificates — 3EK{% endblock %}
+
+{% block content %}
+<div class="lp-panel"
+    style="padding: 2rem 2.5rem; margin-bottom: 2rem; display:flex; align-items:center; justify-content:space-between;">
+    <div>
+        <div class="lp-portal-pill"
+            style="margin-bottom: 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+            <i class="ph ph-award"></i> Accomplishments
+        </div>
+        <h1 style="font-size:1.75rem; font-weight:800; color:var(--text); margin-bottom:0.3rem;">My <span
+                style="color:var(--teal);">Certificates</span></h1>
+        <p style="font-size:0.9rem; color:var(--text-muted);">View and download official 3EK certificates from your
+            completed workshops.</p>
+    </div>
+    <div style="font-size:3.5rem; opacity:0.15;">🏆</div>
+</div>
+
+{% if certificates %}
+<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap:1.25rem;">
+    {% for cert in certificates %}
+    <div class="lp-panel"
+        style="display:flex; flex-direction:column; gap:1.25rem; transition:transform 0.2s, box-shadow 0.2s; cursor:default;"
+        onmouseover="this.style.boxShadow='0 8px 30px rgba(0,0,0,0.06)'; this.style.transform='translateY(-2px)'"
+        onmouseout="this.style.boxShadow='none'; this.style.transform='none'">
+        <div style="display:flex; align-items:flex-start; gap:1rem;">
+            <div
+                style="width:54px; height:54px; background:var(--teal-light); border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.75rem; color:var(--teal-dark); flex-shrink:0;">
+                <i class="ph ph-certificate"></i>
+            </div>
+            <div>
+                <div
+                    style="font-size:0.95rem; font-weight:700; color:var(--text); line-height:1.4; margin-bottom:0.35rem;">
+                    {{ cert.workshop.title }}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted); font-weight:500;">Issued on {{
+                    cert.issued_at.strftime('%d %b %Y') }}</div>
+            </div>
+        </div>
+
+        <div
+            style="background:var(--zinc-50); border:1px dashed var(--zinc-300); border-radius:10px; padding:0.75rem 1rem;">
+            <div
+                style="font-size:0.6rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:0.25rem;">
+                Certificate ID</div>
+            <div style="font-size:0.8rem; font-weight:600; font-family:monospace; color:var(--text);">3EK-{{ cert.id
+                }}-{{ cert.certificate_number[:8] if cert.certificate_number else 'VERIFIED' }}</div>
+        </div>
+
+        <div style="margin-top:auto; display:grid; grid-template-columns: 1fr; gap:0.5rem;">
+            <a href="{{ cert.certificate_url or '#' }}" target="_blank" class="lp-btn-primary"
+                style="display:flex; align-items:center; justify-content:center; gap:0.5rem;">
+                <i class="ph ph-download-simple"></i> Download PDF
+            </a>
+            <a href="{{ url_for('learner_portal.workshop_detail', workshop_id=cert.workshop.id) }}"
+                class="lp-btn-outline" style="font-size:0.75rem;">
+                View Workshop Details
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="lp-empty" style="padding: 4rem 2rem;">
+    <i class="ph ph-certificate" style="font-size:3rem; margin-bottom:1rem; opacity:0.3;"></i>
+    <div style="font-size:1.1rem; font-weight:700; color:var(--text); margin-bottom:0.5rem;">No Certificates Yet</div>
+    <p style="font-size:0.9rem; color:var(--text-muted); max-width:400px; margin:0 auto;">Earn official 3EK certificates
+        by attending and completing our expert-led workshops.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,210 @@
+{% extends "client/base.html" %}
+{% block title %}Dashboard — {{ company_name }} — 3EK{% endblock %}
+
+{% block content %}
+<!-- Hero Header -->
+<div class="lp-panel"
+    style="padding:1.5rem 2rem; margin-bottom:1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+    <div>
+        <div
+            style="font-size:0.8rem; font-weight:600; color:var(--teal); text-transform:uppercase; letter-spacing:.05em; margin-bottom:0.25rem;">
+            Corporate Partner Hub</div>
+        <h1 style="font-size:1.5rem; font-weight:800; color:var(--text); margin:0 0 0.25rem;">
+            {{ company_name }}
+        </h1>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin:0;">Manage your training engagements, invoices, and
+            team enrollments.</p>
+    </div>
+    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+        <a href="{{ url_for('client_portal.discover') }}" class="lp-btn lp-btn-secondary"
+            style="display:inline-flex; align-items:center; gap:0.5rem; font-size:0.85rem;">
+            <i class="ph ph-magnifying-glass"></i> Discover Workshops
+        </a>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:1rem; margin-bottom:2rem;">
+    <div class="lp-panel" style="padding:1.25rem; display:flex; align-items:center; gap:1rem;">
+        <div
+            style="width:40px; height:40px; border-radius:8px; background:rgba(0,209,178,0.1); color:var(--teal); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
+            <i class="ph ph-presentation-chart"></i>
+        </div>
+        <div>
+            <div style="font-size:1.4rem; font-weight:800; color:var(--text); line-height:1;">{{ stats.total_programs }}
+            </div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.2rem;">Total Engagements</div>
+        </div>
+    </div>
+    <div class="lp-panel" style="padding:1.25rem; display:flex; align-items:center; gap:1rem;">
+        <div
+            style="width:40px; height:40px; border-radius:8px; background:rgba(99,102,241,0.1); color:var(--indigo); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
+            <i class="ph ph-activity"></i>
+        </div>
+        <div>
+            <div style="font-size:1.4rem; font-weight:800; color:var(--text); line-height:1;">{{ stats.active }}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.2rem;">Active Now</div>
+        </div>
+    </div>
+    <div class="lp-panel" style="padding:1.25rem; display:flex; align-items:center; gap:1rem;">
+        <div
+            style="width:40px; height:40px; border-radius:8px; background:rgba(16,185,129,0.1); color:var(--success); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
+            <i class="ph ph-books"></i>
+        </div>
+        <div>
+            <div style="font-size:1.4rem; font-weight:800; color:var(--text); line-height:1;">{{ stats.unique_topics }}
+            </div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.2rem;">Topics Covered</div>
+        </div>
+    </div>
+    <div class="lp-panel" style="padding:1.25rem; display:flex; align-items:center; gap:1rem;">
+        <div
+            style="width:40px; height:40px; border-radius:8px; background:rgba(245,158,11,0.1); color:var(--warning, #f59e0b); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
+            <i class="ph ph-clipboard-text"></i>
+        </div>
+        <div>
+            <div style="font-size:1.4rem; font-weight:800; color:var(--text); line-height:1;">{{ stats.open_requests }}
+            </div>
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.2rem;">Open Requests</div>
+        </div>
+    </div>
+</div>
+
+<div class="lp-grid-2col" style="gap:1.5rem;">
+    <!-- LEFT: Active Programs + Open Requests -->
+    <div>
+        <!-- Open Training Requests -->
+        <div class="lp-heading" style="margin-bottom:1rem;">
+            <i class="ph-bold ph-clipboard-text"></i> <span
+                style="display:inline-flex; align-items:center; gap:0.3rem; flex-wrap:wrap;">Open <span
+                    class="accent">Requests</span></span>
+            <a href="{{ url_for('client_portal.open_requests') }}"
+                style="margin-left:auto; font-size:0.8rem; color:var(--teal); text-decoration:none;">View all →</a>
+        </div>
+        {% if open_requests %}
+        <div class="lp-ws-list" style="margin-bottom:1.5rem;">
+            {% for req in open_requests[:3] %}
+            <div class="lp-ws-card">
+                <div
+                    style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.35rem;">
+                    <div style="font-weight:600; color:var(--text);">{{ req.topic }}</div>
+                    <span
+                        class="lp-pill lp-pill-{{ 'danger' if req.urgency == 'urgent' else ('warning' if req.urgency == 'medium' else 'info') }}"
+                        style="font-size:0.7rem; white-space:nowrap; margin-left:0.5rem;">
+                        {{ req.stage }}
+                    </span>
+                </div>
+                <div style="font-size:0.8rem; color:var(--text-muted); display:flex; gap:1rem; flex-wrap:wrap;">
+                    {% if req.training_type %}<span><i class="ph ph-monitor"></i> {{ req.training_type }}</span>{% endif
+                    %}
+                    {% if req.participants %}<span><i class="ph ph-users"></i> {{ req.participants }} pax</span>{% endif
+                    %}
+                    {% if req.requested_date %}<span><i class="ph ph-calendar"></i> {{ req.requested_date }}</span>{%
+                    endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="lp-empty-state" style="margin-bottom:1.5rem;">
+            <p style="color:var(--text-muted); font-size:0.9rem; margin:0.5rem 0 0;">No open training requests.</p>
+        </div>
+        {% endif %}
+
+        <!-- Active Programs -->
+        <div class="lp-heading" style="margin-bottom:1rem;">
+            <i class="ph-bold ph-presentation-chart"></i> <span
+                style="display:inline-flex; align-items:center; gap:0.3rem; flex-wrap:wrap;">Active <span
+                    class="accent">Engagements</span></span>
+        </div>
+        {% if active_programs %}
+        <div class="lp-ws-list">
+            {% for prog in active_programs %}
+            <a href="{{ url_for('client_portal.program_detail', engagement_id=prog.id) }}" class="lp-ws-card"
+                style="text-decoration:none;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+                    <div style="font-weight:700; color:var(--text); font-size:0.95rem;">{{ prog.topic }}</div>
+                    <span class="lp-pill lp-pill-{{ 'success' if prog.status == 'IN PROGRESS' else 'info' }}"
+                        style="font-size:0.7rem; white-space:nowrap; margin-left:0.5rem;">
+                        {{ prog.status }}
+                    </span>
+                </div>
+                <div style="display:flex; gap:1rem; font-size:0.8rem; color:var(--text-muted);">
+                    {% if prog.trainer_name %}<span><i class="ph ph-user"></i> {{ prog.trainer_name }}</span>{% endif %}
+                    {% if prog.start_date %}<span><i class="ph ph-calendar"></i> {{ prog.start_date }}</span>{% endif %}
+                    {% if prog.duration %}<span><i class="ph ph-clock"></i> {{ prog.duration }}</span>{% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="lp-empty-state">
+            <i class="ph ph-calendar-x" style="font-size:2rem; opacity:0.4;"></i>
+            <p style="color:var(--text-muted); font-size:0.9rem; margin:0.5rem 0 0;">No active engagements right now.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- RIGHT: Recent Past Programs + Account Manager -->
+    <div>
+        <!-- Account Manager Card -->
+        {% if account_manager %}
+        <div class="lp-panel" style="margin-bottom:1.5rem; padding:1.25rem;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+                <div style="font-size:0.8rem; font-weight:600; color:var(--text);">Your Account Manager</div>
+                <a href="mailto:{{ account_manager.email }}"
+                    style="color:var(--teal); font-size:0.8rem; text-decoration:none;"><i
+                        class="ph-bold ph-paper-plane-tilt"></i> Message</a>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+                <div class="lp-avatar"
+                    style="width:40px; height:40px; font-size:1.1rem; background:var(--indigo); flex-shrink:0;">
+                    {{ account_manager.name[0] | upper }}
+                </div>
+                <div>
+                    <div style="font-weight:600; font-size:0.95rem; color:var(--text);">{{ account_manager.name }}</div>
+                    {% if account_manager.mobile %}
+                    <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.1rem;"><i
+                            class="ph ph-phone"></i> {{ account_manager.mobile }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Past Programs -->
+        <div class="lp-heading" style="margin-bottom:1rem;">
+            <i class="ph-bold ph-archive"></i>
+            <span style="display:inline-flex; align-items:center; gap:0.3rem; flex-wrap:wrap;">Recent <span
+                    class="accent">Past Engagements</span></span>
+            <a href="{{ url_for('client_portal.programs') }}"
+                style="margin-left:auto; font-size:0.8rem; color:var(--teal); text-decoration:none;">All programs →</a>
+        </div>
+        {% if past_programs %}
+        <div class="lp-ws-list">
+            {% for prog in past_programs[:5] %}
+            <a href="{{ url_for('client_portal.program_detail', engagement_id=prog.id) }}" class="lp-ws-card"
+                style="text-decoration:none;">
+                <div style="display:flex; align-items:center; gap:1rem;">
+                    <div
+                        style="font-weight:600; color:var(--text); font-size:0.9rem; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        {{ prog.topic }}</div>
+                    {% if prog.trainer_name %}<div style="font-size:0.8rem; color:var(--text-muted); flex-shrink:0;">{{
+                        prog.trainer_name }}</div>{% endif %}
+                    {% if prog.start_date %}<div
+                        style="font-size:0.8rem; color:var(--text-muted); font-weight:600; flex-shrink:0;">{{
+                        prog.start_date[:4] }}</div>{% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="lp-empty-state">
+            <i class="ph ph-book-open" style="font-size:2rem; opacity:0.4;"></i>
+            <p style="color:var(--text-muted); font-size:0.9rem; margin:0.5rem 0 0;">No past engagements yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

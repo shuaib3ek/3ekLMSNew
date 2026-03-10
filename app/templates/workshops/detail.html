@@ -196,7 +196,8 @@
                 <form method="POST" action="{{ url_for('workshops.add_trainer', workshop_id=workshop.id) }}"
                     style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <select name="trainer_id" class="form-control" style="flex: 2; min-width: 160px;" required>
+                    <select name="trainer_id" id="trainer-select" class="form-control"
+                        style="flex: 2; min-width: 160px;" required>
                         <option value="">Select Trainer...</option>
                         {% for t in all_trainers %}
                         {% if t.id not in assigned_trainer_ids %}
@@ -625,4 +626,18 @@
         </div>
     </div>
 </div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        if (document.getElementById('trainer-select')) {
+            new TomSelect('#trainer-select', {
+                create: false,
+                sortField: {
+                    field: "text",
+                    direction: "asc"
+                },
+                placeholder: 'Search and select trainer...'
+            });
+        }
+    });
+</script>
 {% endblock %}

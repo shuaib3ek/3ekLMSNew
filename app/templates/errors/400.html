@@ -1,0 +1,39 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Bad Request - 3ek LMS{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 4rem auto; text-align: center;">
+    <div
+        style="background: white; padding: 3rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid var(--border-color);">
+        <div
+            style="width: 80px; height: 80px; background: #fff1f2; color: #e11d48; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+            <i class="ph ph-shield-warning" style="font-size: 2.5rem;"></i>
+        </div>
+
+        <h1
+            style="font-family: var(--font-heading); font-size: 1.75rem; color: var(--text-primary); margin-bottom: 1rem;">
+            Session Security Check Failed
+        </h1>
+
+        <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 2rem;">
+            {{ message or "The CSRF tokens do not match. This usually happens if your session has expired or you have
+            multiple tabs open." }}
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <button onclick="window.location.reload();" class="btn btn-primary" style="width: 100%;">
+                <i class="ph ph-arrows-clockwise" style="margin-right: 0.5rem;"></i>
+                Refresh Page
+            </button>
+            <a href="{{ url_for('workshops.list_workshops') }}" class="btn btn-outline" style="width: 100%;">
+                Back to Dashboard
+            </a>
+        </div>
+
+        <p style="margin-top: 2rem; font-size: 0.85rem; color: var(--text-tertiary);">
+            If this persists, please try clearing your browser cookies or using a private window.
+        </p>
+    </div>
+</div>
+{% endblock %}

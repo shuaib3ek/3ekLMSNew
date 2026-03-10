@@ -1,0 +1,151 @@
+{% extends "learner/base.html" %}
+{% block title %}My Profile — 3EK{% endblock %}
+
+{% block content %}
+<div class="lp-panel"
+    style="padding: 2rem 2.5rem; margin-bottom: 2rem; display:flex; align-items:center; justify-content:space-between;">
+    <div>
+        <div class="lp-portal-pill"
+            style="margin-bottom: 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+            <i class="ph ph-user"></i> My Identity
+        </div>
+        <h1 style="font-size:1.75rem; font-weight:800; color:var(--text); margin-bottom:0.3rem;">Learner <span
+                style="color:var(--teal);">Profile</span></h1>
+        <p style="font-size:0.9rem; color:var(--text-muted);">View and manage your personal details and professional
+            information.</p>
+    </div>
+    <div style="font-size:3.5rem; opacity:0.15;">👤</div>
+</div>
+
+<div class="lp-grid-2col" style="grid-template-columns: 1fr 400px;">
+
+    <!-- Left: Profile Edit Form -->
+    <div class="lp-panel" style="padding: 2rem;">
+        <div
+            style="display:flex; align-items:center; gap:1.5rem; margin-bottom:2.5rem; padding-bottom:2rem; border-bottom:1px solid var(--zinc-100);">
+            <div
+                style="width:84px; height:84px; background:var(--teal-light); border:2px solid var(--teal-border); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:2.25rem; font-weight:800; color:var(--teal-dark); flex-shrink:0;">
+                {{ learner.name[0] | upper }}
+            </div>
+            <div>
+                <h2 style="font-size:1.5rem; font-weight:800; color:var(--text); margin-bottom:0.4rem;">{{ learner.name
+                    }}</h2>
+                <div style="display:flex; align-items:center; gap:0.6rem; color:var(--text-muted); font-size:0.9rem;">
+                    <i class="ph ph-envelope-simple" style="font-size:1.05rem;"></i>
+                    {{ learner.email }}
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('learner_portal.profile') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1.5rem 2rem; margin-bottom: 2rem;">
+                <!-- Full Name -->
+                <div class="form-group">
+                    <label
+                        style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">
+                        Full Name
+                    </label>
+                    <input type="text" name="name" value="{{ learner.name }}" required
+                        style="width:100%; padding:0.75rem; border:1px solid var(--zinc-200); border-radius:8px; font-size:0.95rem; font-family:inherit;">
+                </div>
+
+                <!-- Email (Read Only) -->
+                <div class="form-group">
+                    <label
+                        style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">
+                        Email Address
+                    </label>
+                    <input type="email" value="{{ learner.email }}" disabled
+                        style="width:100%; padding:0.75rem; border:1px solid var(--zinc-100); background:var(--zinc-50); border-radius:8px; font-size:0.95rem; color:var(--text-muted); cursor:not-allowed;">
+                    <p style="font-size:0.65rem; color:var(--text-muted); margin-top:0.3rem;">Login email cannot be
+                        changed.</p>
+                </div>
+
+                <!-- Phone -->
+                <div class="form-group">
+                    <label
+                        style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">
+                        Phone Number
+                    </label>
+                    <input type="text" name="phone" value="{{ learner.phone or '' }}" placeholder="+91 ..."
+                        style="width:100%; padding:0.75rem; border:1px solid var(--zinc-200); border-radius:8px; font-size:0.95rem; font-family:inherit;">
+                </div>
+
+                <!-- Company -->
+                <div class="form-group">
+                    <label
+                        style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">
+                        Company Name
+                    </label>
+                    <input type="text" name="company" value="{{ learner.company or '' }}" placeholder="Org Name"
+                        style="width:100%; padding:0.75rem; border:1px solid var(--zinc-200); border-radius:8px; font-size:0.95rem; font-family:inherit;">
+                </div>
+
+                <!-- Job Title -->
+                <div class="form-group">
+                    <label
+                        style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">
+                        Job Title
+                    </label>
+                    <input type="text" name="job_title" value="{{ learner.job_title or '' }}"
+                        placeholder="Role Description"
+                        style="width:100%; padding:0.75rem; border:1px solid var(--zinc-200); border-radius:8px; font-size:0.95rem; font-family:inherit;">
+                </div>
+
+                <!-- Member Since -->
+                <div class="form-group">
+                    <label
+                        style="display:block; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.5rem;">
+                        Member Since
+                    </label>
+                    <div style="padding:0.75rem; color:var(--text-muted); font-size:0.95rem; font-weight:600;">
+                        {{ learner.created_at.strftime('%B %Y') }}
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="lp-btn-primary" style="width:200px; padding:0.85rem; font-size:1rem;">
+                Save Changes
+            </button>
+        </form>
+    </div>
+
+    <!-- Right: Support / FAQ Card -->
+    <div>
+        <div class="lp-panel" style="padding: 1.5rem;">
+            <div class="lp-panel-label">Need Help?</div>
+            <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.6; margin-bottom:1.5rem;">
+                Your professional details are used to issue certificates. Please ensure they are accurate.
+            </p>
+
+            <div
+                style="background:var(--teal-light); border:1px solid var(--teal-border); border-radius:12px; padding:1.25rem; margin-bottom:1.5rem;">
+                <div
+                    style="font-size:0.85rem; font-weight:700; color:var(--teal-dark); margin-bottom:0.5rem; display:flex; align-items:center; gap:0.5rem;">
+                    <i class="ph ph-envelope-simple-open" style="font-size:1.1rem;"></i> Account Admin
+                </div>
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:1rem; line-height:1.5;">
+                    For manual account verification or email changes, reach out to us:
+                </div>
+                <a href="mailto:info@3ek.in"
+                    style="font-size:0.9rem; font-weight:700; color:var(--teal-dark); text-decoration:none;">info@3ek.in</a>
+            </div>
+
+            <div class="lp-panel-label">Other Options</div>
+            <div style="display:grid; grid-template-columns: 1fr; gap:0.5rem;">
+                <a href="https://3ek.in" target="_blank" class="lp-btn-outline"
+                    style="text-align:left; display:flex; align-items:center; gap:0.6rem;">
+                    <i class="ph ph-browser" style="font-size:1.1rem;"></i> Visit website
+                </a>
+                <a href="{{ url_for('auth.logout') }}" class="lp-btn-outline"
+                    style="text-align:left; display:flex; align-items:center; gap:0.6rem; color:var(--danger); border-color:rgba(185,28,28,0.1);">
+                    <i class="ph ph-sign-out" style="font-size:1.1rem;"></i> Sign out
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

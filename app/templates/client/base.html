@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Corporate Portal — 3EK{% endblock %}</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Shared Portal Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/learner_portal.css') }}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+    <nav class="lp-nav">
+        <a href="{{ url_for('client_portal.dashboard') }}" class="lp-brand">
+            <img src="https://3ek.in/logo.png" alt="3EK Logo">
+            <span class="lp-portal-pill">Corporate</span>
+        </a>
+
+        <div class="lp-nav-links">
+            <a href="{{ url_for('client_portal.dashboard') }}"
+                class="lp-nav-link {{ 'active' if request.endpoint == 'client_portal.dashboard' }}">
+                <i class="ph ph-squares-four"></i> Dashboard
+            </a>
+            <a href="{{ url_for('client_portal.programs') }}"
+                class="lp-nav-link {{ 'active' if request.endpoint in ('client_portal.programs', 'client_portal.program_detail') }}">
+                <i class="ph ph-chart-bar"></i> Engagements
+            </a>
+            <a href="{{ url_for('client_portal.open_requests') }}"
+                class="lp-nav-link {{ 'active' if request.endpoint == 'client_portal.open_requests' }}">
+                <i class="ph ph-clipboard-text"></i> Requests
+            </a>
+            <a href="{{ url_for('client_portal.discover') }}"
+                class="lp-nav-link {{ 'active' if request.endpoint == 'client_portal.discover' }}">
+                <i class="ph ph-magnifying-glass"></i> Discover
+            </a>
+            <a href="{{ url_for('client_portal.profile') }}"
+                class="lp-nav-link {{ 'active' if request.endpoint == 'client_portal.profile' }}">
+                <i class="ph ph-building"></i> Company
+            </a>
+        </div>
+
+        <div class="lp-nav-user">
+            <div class="lp-user-chip">
+                <div class="lp-avatar">
+                    {{ current_user.first_name[0] | upper if current_user.first_name else 'C' }}
+                </div>
+                <span class="lp-user-name">{{ current_user.full_name or 'Client Point-of-Contact' }}</span>
+            </div>
+            <a href="{{ url_for('auth.logout') }}" class="lp-btn-logout">
+                <i class="ph ph-sign-out"></i>
+                <span>Sign Out</span>
+            </a>
+        </div>
+    </nav>
+
+    <main class="lp-page">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="lp-alert lp-alert-{{ category if category != 'message' else 'info' }}">
+            <i class="ph-bold ph-info"></i>
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

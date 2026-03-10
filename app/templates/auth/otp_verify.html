@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Sign In — 3EK LMS</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0a0b0f;
+            --surface: #111318;
+            --surface-2: #1a1d26;
+            --border: rgba(255, 255, 255, 0.07);
+            --text: #f0f2f8;
+            --text-muted: #7c84a0;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.25);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -20%;
+            left: -10%;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .brand img {
+            height: 38px;
+            margin-bottom: 0.75rem;
+            filter: brightness(0) invert(1);
+        }
+
+        .brand h1 {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .brand p {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-top: 0.3rem;
+        }
+
+        .brand .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            background: rgba(99, 102, 241, 0.12);
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 6px;
+            padding: 0.25rem 0.65rem;
+            margin-top: 0.6rem;
+        }
+
+        .otp-grid {
+            display: flex;
+            gap: 0.6rem;
+            justify-content: center;
+            margin: 1.5rem 0;
+        }
+
+        .otp-grid input {
+            width: 48px;
+            height: 58px;
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            background: var(--surface-2);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .otp-grid input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .alert {
+            padding: 0.7rem 0.9rem;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            margin-bottom: 1.25rem;
+            border: 1px solid;
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: #fcd34d;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 0.8rem;
+            background: var(--accent);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-submit:hover {
+            background: #4f52e0;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+        }
+
+        .hint {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 1.25rem;
+        }
+
+        .hint a {
+            color: #a5b4fc;
+            text-decoration: none;
+        }
+
+        .hint a:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 1.25rem 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <div class="brand">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="3EK LMS">
+            <h1>Check Your Inbox</h1>
+            <p>We sent a 6-digit code to <strong>{{ email }}</strong></p>
+            <span class="role-badge">
+                {% if role == 'trainer' %}<i class="ph ph-chalkboard-teacher"></i> Trainer
+                {% elif role == 'client' %}<i class="ph ph-buildings"></i> Client
+                {% else %}<i class="ph ph-graduation-cap"></i> Learner
+                {% endif %}
+            </span>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}{% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}{% endif %}{% endwith %}
+
+        <form method="POST" id="otp-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="otp" id="otp-hidden">
+            <input type="hidden" name="tid" value="{{ tid }}">
+            <input type="hidden" name="email" value="{{ email }}">
+            <input type="hidden" name="role" value="{{ role }}">
+
+            <div class="otp-grid">
+                <input type="text" maxlength="1" class="otp-digit" id="d1" inputmode="numeric" pattern="[0-9]"
+                    autocomplete="one-time-code">
+                <input type="text" maxlength="1" class="otp-digit" id="d2" inputmode="numeric" pattern="[0-9]">
+                <input type="text" maxlength="1" class="otp-digit" id="d3" inputmode="numeric" pattern="[0-9]">
+                <input type="text" maxlength="1" class="otp-digit" id="d4" inputmode="numeric" pattern="[0-9]">
+                <input type="text" maxlength="1" class="otp-digit" id="d5" inputmode="numeric" pattern="[0-9]">
+                <input type="text" maxlength="1" class="otp-digit" id="d6" inputmode="numeric" pattern="[0-9]">
+            </div>
+
+            <button type="submit" class="btn-submit" id="verify-btn" disabled>
+                <i class="ph ph-check-circle"></i> Verify & Sign In
+            </button>
+        </form>
+
+        <div class="divider"></div>
+        <div class="hint">
+            Didn't receive it? <a href="{{ url_for('auth.login') }}?role={{ role }}">Try again</a> &nbsp;·&nbsp;
+            <a href="{{ url_for('auth.login') }}">Change role</a>
+        </div>
+    </div>
+
+    <script>
+        const digits = document.querySelectorAll('.otp-digit');
+        const hidden = document.getElementById('otp-hidden');
+        const btn = document.getElementById('verify-btn');
+
+        function updateBtn() {
+            const val = Array.from(digits).map(d => d.value).join('');
+            hidden.value = val;
+            btn.disabled = val.length < 6;
+        }
+
+        digits.forEach((d, i) => {
+            d.addEventListener('input', () => {
+                d.value = d.value.replace(/\D/, '');
+                if (d.value && i < 5) digits[i + 1].focus();
+                updateBtn();
+            });
+            d.addEventListener('keydown', e => {
+                if (e.key === 'Backspace' && !d.value && i > 0) {
+                    digits[i - 1].focus();
+                }
+            });
+            d.addEventListener('paste', e => {
+                const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+                if (paste.length === 6) {
+                    digits.forEach((inp, j) => inp.value = paste[j] || '');
+                    digits[5].focus();
+                    updateBtn();
+                    e.preventDefault();
+                }
+            });
+        });
+
+        // Auto-submit when all 6 filled
+        function checkAutoSubmit() {
+            const val = Array.from(digits).map(d => d.value).join('');
+            if (val.length === 6) {
+                hidden.value = val;
+                document.getElementById('otp-form').submit();
+            }
+        }
+        digits.forEach(d => d.addEventListener('input', checkAutoSubmit));
+
+        digits[0].focus();
+    </script>
+</body>
+
+</html>

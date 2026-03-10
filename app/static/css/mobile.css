@@ -1,0 +1,1622 @@
+/* =================================================================
+   3ek LMS — Mobile / Handheld Responsive Stylesheet
+   Loaded after style.css. Plugs all mobile gaps.
+   Breakpoints:
+     768px → Tablet & smaller
+     480px → Phone / small handheld
+================================================================= */
+
+/* ---------------------------------------------------------------
+   0. BASE BODY — allow scroll on mobile (style.css sets overflow:hidden)
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+    body {
+        overflow: auto !important;
+        height: auto !important;
+    }
+
+    .layout-content {
+        margin-top: 60px;
+        height: calc(100vh - 60px);
+        overflow-y: auto;
+    }
+}
+
+/* ---------------------------------------------------------------
+   1. MOBILE HEADER — polished top bar
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .mobile-header {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 1rem;
+        background: #020617;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        z-index: 800;
+    }
+
+    .mobile-menu-btn {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: #f1f5f9;
+        font-size: 1.3rem;
+        cursor: pointer;
+    }
+}
+
+/* ---------------------------------------------------------------
+   2. SIDEBAR — slide-in overlay toggle
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .layout-sidebar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 280px !important;
+        z-index: 1000;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
+    }
+
+    .layout-sidebar.active {
+        transform: translateX(0) !important;
+        box-shadow: 20px 0 60px rgba(0, 0, 0, 0.4);
+    }
+
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+        z-index: 900;
+    }
+
+    .sidebar-overlay.active {
+        display: block;
+    }
+
+    /* Nav items — bigger touch targets */
+    .nav-item {
+        padding: 0.65rem 0.75rem !important;
+        font-size: 0.88rem !important;
+        min-height: 44px;
+    }
+}
+
+/* ---------------------------------------------------------------
+   3. DASHBOARD — PULSE BLOCK (deck-stage-wrapper)
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .deck-stage-wrapper {
+        grid-template-columns: 1fr !important;
+        height: auto !important;
+        min-height: auto !important;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .deck-rail {
+        width: 100% !important;
+        border-right: none !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.5rem !important;
+        gap: 0.25rem;
+    }
+
+    .rail-header {
+        display: none !important;
+    }
+
+    .deck-tab {
+        flex-direction: row !important;
+        align-items: center;
+        padding: 0.4rem 0.75rem !important;
+        white-space: nowrap;
+        border-radius: 8px !important;
+        gap: 0.5rem;
+        min-height: 36px;
+        flex-shrink: 0;
+    }
+
+    .deck-tab.active::before {
+        width: 100% !important;
+        height: 2px !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: auto !important;
+    }
+
+    .board-deck-container {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .deck-pane.active {
+        height: auto !important;
+        min-height: 200px;
+    }
+}
+
+/* ---------------------------------------------------------------
+   4. STATS GRID
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.75rem !important;
+    }
+
+    .stats-grid .card {
+        padding: 0.85rem !important;
+    }
+
+    .stats-grid .card .stat-value {
+        font-size: 1.4rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.5rem !important;
+    }
+
+    .stats-grid .card canvas {
+        display: none;
+    }
+}
+
+/* ---------------------------------------------------------------
+   5. CHARTS GRID
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .charts-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    .charts-grid .card[style*="grid-column"] {
+        grid-column: auto !important;
+    }
+}
+
+/* ---------------------------------------------------------------
+   6. ALL 2-COLUMN DESKTOP GRIDS → Single column on mobile
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+
+    .grid-2-col,
+    .grid-2-1-col,
+    .controller-main-grid,
+    .hub-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    .kpi-strip {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .kpi-strip>* {
+        flex: 1 1 calc(50% - 0.375rem);
+    }
+
+    .status-bar {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}
+
+/* ---------------------------------------------------------------
+   7. NOTIFICATION PANEL — full-width overlay on mobile
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .notification-panel {
+        left: 0 !important;
+        right: 0 !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        border-radius: 0 !important;
+        border: none !important;
+    }
+}
+
+/* ---------------------------------------------------------------
+   8. MODALS — always edge-to-edge on mobile
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .modal-std {
+        width: calc(100% - 1rem) !important;
+        max-width: calc(100% - 1rem) !important;
+        margin: 0.5rem auto !important;
+        border-radius: 16px !important;
+    }
+
+    .modal-body {
+        max-height: 65vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .modal-footer {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .modal-footer .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .modal-content {
+        width: calc(100% - 2rem) !important;
+        max-width: calc(100% - 2rem) !important;
+        padding: 1.25rem !important;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+}
+
+/* ---------------------------------------------------------------
+   9. TABLES — horizontal scroll
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table-container table {
+        min-width: 600px;
+    }
+
+    .table-container td:last-child,
+    .table-container th:last-child {
+        position: sticky;
+        right: 0;
+        background: #fff;
+        box-shadow: -2px 0 6px rgba(0, 0, 0, 0.05);
+    }
+}
+
+/* ---------------------------------------------------------------
+   10. FORMS — full-width fields, big touch targets
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+
+    .form-grid,
+    .form-row {
+        grid-template-columns: 1fr !important;
+        display: block !important;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-group.span-2,
+    .form-group.span-3 {
+        grid-column: auto !important;
+    }
+
+    .form-control,
+    .std-input,
+    select.form-control {
+        font-size: 16px !important;
+        min-height: 44px;
+        padding: 0.6rem 0.8rem;
+    }
+
+    .form-label,
+    label {
+        font-size: 0.85rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .ts-control {
+        min-height: 44px;
+        font-size: 16px;
+    }
+}
+
+/* ---------------------------------------------------------------
+   11. BUTTONS — 44px minimum touch target
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .btn {
+        min-height: 44px;
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .btn-sm {
+        min-height: 36px;
+        padding: 0.4rem 0.75rem;
+        font-size: 0.82rem;
+    }
+
+    .btn-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .header-actions .btn {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+    }
+}
+
+/* ---------------------------------------------------------------
+   12. CARDS & PAGE STRUCTURE
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .card {
+        padding: 1rem !important;
+        margin-bottom: 1rem;
+    }
+
+    .card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .card-header>div,
+    .card-header>form,
+    .card-header a:not(.btn) {
+        width: 100%;
+    }
+
+    .page-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .page-title {
+        font-size: 1.2rem !important;
+    }
+}
+
+/* ---------------------------------------------------------------
+   13. SPLIT VIEWS (Schedule, Detail views)
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+
+    .split-view,
+    .detail-layout {
+        flex-direction: column !important;
+        min-height: auto !important;
+        height: auto !important;
+    }
+
+    .panel-left,
+    .panel-right,
+    .detail-main,
+    .detail-sidebar {
+        width: 100% !important;
+        flex: none !important;
+        max-width: 100% !important;
+        border-right: none !important;
+        border-bottom: 1px solid var(--border-light);
+        padding-right: 0 !important;
+        padding-left: 0 !important;
+        min-height: auto !important;
+    }
+
+    .panel-right.pl-dynamic {
+        padding-left: 0 !important;
+        border-bottom: none !important;
+    }
+}
+
+/* ---------------------------------------------------------------
+   14. KANBAN & MISSION CONTROL
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .kanban-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1rem;
+    }
+
+    .kanban-column {
+        min-height: auto !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .kanban-grid {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: 0.75rem;
+        padding-bottom: 1rem;
+    }
+
+    .kanban-column {
+        min-width: 280px;
+        scroll-snap-align: start;
+        flex-shrink: 0;
+    }
+}
+
+/* ---------------------------------------------------------------
+   15. TABS — horizontal scroll
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+
+    .tabs,
+    .tab-nav {
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 4px;
+        display: flex;
+        gap: 0;
+    }
+
+    .tab-item,
+    .tab-btn {
+        white-space: nowrap;
+        padding: 0.65rem 1rem;
+        flex-shrink: 0;
+        min-height: 44px;
+        font-size: 0.85rem;
+    }
+}
+
+/* ---------------------------------------------------------------
+   16. INQUIRY DETAIL — 70/30 split → stacked
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .inquiry-layout {
+        flex-direction: column !important;
+    }
+
+    .inquiry-main,
+    .inquiry-sidebar {
+        width: 100% !important;
+        flex: none !important;
+    }
+}
+
+/* ---------------------------------------------------------------
+   17. FINANCE & LEDGER
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .filter-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem;
+    }
+
+    .filter-panel-mobile {
+        padding: 1rem !important;
+    }
+
+    .controller-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .status-bar {
+        flex-wrap: wrap;
+    }
+}
+
+/* ---------------------------------------------------------------
+   18. TYPOGRAPHY SCALING
+--------------------------------------------------------------- */
+@media (max-width: 480px) {
+
+    h1,
+    .h1 {
+        font-size: 1.5rem;
+    }
+
+    h2,
+    .h2 {
+        font-size: 1.25rem;
+    }
+
+    h3,
+    .h3 {
+        font-size: 1.1rem;
+    }
+
+    .stat-value {
+        font-size: 1.3rem !important;
+    }
+
+    .page-title {
+        font-size: 1.1rem !important;
+    }
+}
+
+/* ---------------------------------------------------------------
+   19. SAFE ZONES — avoid content behind notch / home bar
+--------------------------------------------------------------- */
+@supports (padding: env(safe-area-inset-bottom)) {
+    @media (max-width: 768px) {
+        .layout-content {
+            padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+        }
+
+        .mobile-header {
+            padding-left: calc(1rem + env(safe-area-inset-left));
+            padding-right: calc(1rem + env(safe-area-inset-right));
+        }
+    }
+}
+
+/* ---------------------------------------------------------------
+   20. UTILITY HELPERS
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .hide-on-mobile {
+        display: none !important;
+    }
+
+    .show-on-mobile {
+        display: block !important;
+    }
+
+    .truncate-mobile {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 180px;
+    }
+}
+
+@media (min-width: 769px) {
+    .show-on-mobile {
+        display: none !important;
+    }
+}
+
+/* ===============================================================
+   21. PRECISION LIST PAGES — Contacts, Clients, Inquiries,
+       Trainers, Users, Finance lists
+   All use .precision-row multi-column CSS grids + .command-bar
+================================================================= */
+
+/* --- 21a. PAGE HEADER (inline-style flex row → stacked) --- */
+@media (max-width: 768px) {
+
+    /* Target page headers that use inline display:flex; justify-content:space-between */
+    div[style*="justify-content: space-between"][style*="margin-bottom"] {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.75rem !important;
+    }
+
+    div[style*="justify-content: space-between"][style*="margin-bottom"]>div:last-child,
+    div[style*="justify-content: space-between"][style*="margin-bottom"]>a:last-child {
+        width: 100%;
+    }
+
+    div[style*="justify-content: space-between"][style*="margin-bottom"] .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* Page title scale on all list pages */
+    h1[style*="font-size: 2rem"],
+    h1[style*="font-size:2rem"] {
+        font-size: 1.4rem !important;
+    }
+}
+
+/* --- 21b. COMMAND BAR — wrap pills on mobile --- */
+@media (max-width: 768px) {
+    .command-bar {
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+        padding: 0.75rem !important;
+        position: sticky;
+        top: 60px;
+        /* stick below mobile header */
+        z-index: 100;
+        border-radius: 10px !important;
+        margin-bottom: 1rem !important;
+    }
+
+    .cmd-group {
+        flex-wrap: wrap !important;
+        padding-right: 0 !important;
+        border-right: none !important;
+        border-bottom: 1px solid #334155;
+        padding-bottom: 0.5rem;
+        width: 100%;
+        gap: 6px !important;
+    }
+
+    /* Last group (search bar) — no border */
+    .cmd-group:last-child {
+        border-bottom: none !important;
+        padding-bottom: 0;
+    }
+
+    /* Filter pills — touch friendly */
+    .cmd-pill,
+    .cmd-pill label {
+        padding: 8px 12px !important;
+        font-size: 0.78rem !important;
+        min-height: 36px !important;
+        border-radius: 6px !important;
+    }
+
+    /* Search input full width */
+    .cmd-search {
+        min-width: 0 !important;
+        width: 100% !important;
+        font-size: 16px !important;
+        /* prevent iOS zoom */
+    }
+
+    .cmd-select {
+        font-size: 14px !important;
+    }
+}
+
+/* --- 21c. PRECISION GRID CONTAINER — remove fixed height --- */
+@media (max-width: 768px) {
+    .precision-grid-container {
+        max-height: none !important;
+        border-radius: 10px !important;
+        overflow: visible !important;
+        /* allow card shadows */
+    }
+
+    .precision-grid-body {
+        overflow-y: visible !important;
+    }
+}
+
+/* --- 21d. PRECISION ROW → CARD (the main fix) --- */
+@media (max-width: 768px) {
+
+    /* Header row — hide on mobile (labels are inline in card) */
+    .precision-row.header,
+    .precision-grid-header {
+        display: none !important;
+    }
+
+    /* Each data row becomes a card */
+    .precision-row {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: none !important;
+        background: var(--bg-surface) !important;
+        border-bottom: none !important;
+        border: 1px solid var(--border-light) !important;
+        border-radius: 10px !important;
+        margin: 0 0 0.75rem 0 !important;
+        padding: 0.85rem 1rem !important;
+        min-height: auto !important;
+        gap: 0 !important;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .precision-row:hover {
+        background: var(--bg-surface) !important;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Colour strip → thin left border on card */
+    .status-strip {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        height: 100% !important;
+        width: 4px !important;
+    }
+
+    /* All cells — stack vertically, full width */
+    .p-cell,
+    .p-cell-center,
+    .p-cell-action {
+        padding: 0.3rem 0 0.3rem 0 !important;
+        align-items: flex-start !important;
+        text-align: left !important;
+        width: 100% !important;
+    }
+
+    /* Divider between cells */
+    .p-cell+.p-cell,
+    .p-cell+.p-cell-center,
+    .p-cell-center+.p-cell {
+        border-top: 1px solid var(--border-light);
+        padding-top: 0.5rem !important;
+        margin-top: 0.25rem;
+    }
+
+    /* Action cell (CMD) → right aligned row at bottom */
+    .p-cell-action {
+        flex-direction: row !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        border-top: 1px solid var(--border-light) !important;
+        padding-top: 0.6rem !important;
+        margin-top: 0.25rem;
+    }
+
+    /* Text sizes inside cards */
+    .mono-data {
+        font-size: 0.9rem !important;
+        white-space: normal !important;
+    }
+
+    .sub-data {
+        font-size: 0.8rem !important;
+        white-space: normal !important;
+    }
+
+    /* Status badge — inline */
+    .precision-row .status-badge {
+        display: inline-flex !important;
+        margin-top: 0.25rem;
+    }
+}
+
+/* --- 21e. INQUIRY LIST specific cells --- */
+@media (max-width: 768px) {
+
+    /* Status column in inquiries is the first visible cell */
+    .precision-row .p-cell:first-of-type {
+        padding-left: 0.5rem !important;
+        /* compensate for strip */
+    }
+
+    /* Logistics (date/venue) — show as smaller muted text */
+    .precision-row [style*="font-size: 0.75rem"],
+    .precision-row [style*="font-size:0.75rem"] {
+        font-size: 0.78rem !important;
+    }
+
+    /* Smart popovers — disable on mobile (tap = navigate) */
+    .smart-popover {
+        display: none !important;
+    }
+}
+
+/* --- 21f. CLIENTS LIST specific: Metrics column --- */
+@media (max-width: 768px) {
+
+    .precision-row [style*="display: flex; gap: 1.5rem"],
+    .precision-row [style*="display:flex; gap: 1.5rem"] {
+        flex-direction: column !important;
+        gap: 0.25rem !important;
+    }
+}
+
+/* --- 21g. TRAINERS LIST specific --- */
+@media (max-width: 768px) {
+
+    /* Rating stars — keep inline */
+    .precision-row [style*="color: #f59e0b"] {
+        display: inline !important;
+    }
+}
+
+/* ---------------------------------------------------------------
+   22. FINANCE LIST PAGES (Salaries, Expenses, Ledger, etc.)
+   These use standard <table> inside .table-container — make them
+   horizontal scrollable with min-width.
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+
+    /* Program Ledger & other finance tables */
+    .table-container {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 8px;
+    }
+
+    .table-container table {
+        min-width: 640px !important;
+        table-layout: auto !important;
+    }
+
+    /* Ledger filter row — stack */
+    .ledger-filters,
+    [class*="filter-row"] {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+}
+
+/* ---------------------------------------------------------------
+   23. DETAIL PAGES — Contact Detail, Client Detail, Inquiry Detail
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+
+    /* Most detail pages use an inline "display: flex; gap: 2rem" wrapper */
+    [style*="display: flex"][style*="gap: 2rem"],
+    [style*="display:flex"][style*="gap:2rem"] {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+
+    /* Detail sidebar becomes bottom section on mobile */
+    [style*="width: 320px"],
+    [style*="width:320px"],
+    [style*="width: 300px"],
+    [style*="min-width: 320px"] {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex: none !important;
+    }
+
+    /* Remove fixed heights from detail containers */
+    [style*="height: calc(100vh"] {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+    }
+
+    /* Tab content within details */
+    [style*="overflow-y: auto"][style*="max-height"] {
+        max-height: none !important;
+        overflow-y: visible !important;
+    }
+}
+
+/* ---------------------------------------------------------------
+   24. SCHEDULE PAGE — calendar view stacked on mobile
+--------------------------------------------------------------- */
+@media (max-width: 768px) {
+
+    /* FullCalendar toolbar */
+    .fc-header-toolbar {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+
+    .fc-toolbar-chunk {
+        display: flex;
+        justify-content: center;
+    }
+
+    .fc-button {
+        font-size: 0.82rem !important;
+        padding: 0.4rem 0.6rem !important;
+    }
+
+    /* Calendar grid — force smaller view */
+    .fc-daygrid-day-number,
+    .fc-col-header-cell-cushion {
+        font-size: 0.75rem !important;
+    }
+}
+
+/* ===============================================================
+   25. INQUIRY DETAIL PAGE — /ops/inquiries/<id>
+   Fixes all mobile layout problems for this complex page.
+================================================================= */
+
+@media (max-width: 768px) {
+
+    /* ---- 25a. TAB HEADER — horizontal scroll ---- */
+    .tabs-container {
+        display: flex !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+        gap: 0;
+        padding-bottom: 2px;
+        border-bottom: 1px solid var(--border-light);
+        margin-bottom: 1rem !important;
+        scrollbar-width: none;
+    }
+
+    .tabs-container::-webkit-scrollbar {
+        display: none;
+    }
+
+    .inquiry-tab-header-item {
+        flex-shrink: 0 !important;
+        white-space: nowrap;
+        padding: 0.65rem 1rem !important;
+        font-size: 0.82rem !important;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    /* ---- 25b. PAGE HEADER — title + action buttons stack ---- */
+    /* The outer flex row with title and actions */
+    div[style*="justify-content: space-between"][style*="align-items: flex-start"] {
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+    }
+
+    /* Action buttons become full-width row */
+    .header-actions[style*="margin-left: auto"] {
+        margin-left: 0 !important;
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .header-actions[style*="margin-left: auto"] .btn {
+        flex: 1;
+        justify-content: center;
+        min-width: 100px;
+    }
+
+    /* Page title gradient text — reduce size */
+    .page-title {
+        font-size: 1.15rem !important;
+        line-height: 1.3 !important;
+    }
+
+    /* ---- 25c. INFO GRID (Program Details) — 3-col → 2-col ---- */
+    .info-grid[style*="repeat(3, 1fr)"],
+    .info-grid[style*="repeat(3,1fr)"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* Finance info-grid — 2-col → 1-col on phone */
+    .info-grid[style*="1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* ---- 25d. PROGRAM DETAILS CARD — metadata flex row ---- */
+    /* Client / Contact / Trainer row */
+    div[style*="flex-wrap: wrap"][style*="gap: 1.5rem"] {
+        flex-direction: column !important;
+        gap: 0.6rem !important;
+        align-items: flex-start !important;
+    }
+
+    /* Trainer item pushed to auto margin on desktop → reset */
+    div[style*="margin-left: auto"][style*="align-items: center"] {
+        margin-left: 0 !important;
+    }
+
+    /* Program Status selector row inside card header */
+    div[style*="justify-content: space-between"][style*="margin-bottom: 0.5rem"] {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.6rem !important;
+    }
+
+    /* ---- 25e. FINANCIALS GRID inside Program Details ---- */
+    /* The outer 1fr 1fr grid (Revenue+Cost | Margin) */
+    div[style*="grid-template-columns: 1fr 1fr"][style*="gap: 2rem"] {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    /* The inner 1fr 1fr grid (Revenue | Trainer Cost) */
+    div[style*="grid-template-columns: 1fr 1fr"][style*="gap: 1rem"] {
+        grid-template-columns: 1fr !important;
+        gap: 0.5rem !important;
+    }
+
+    /* Remove the border-right between Revenue and Cost on single column */
+    div[style*="padding-right: 1rem"][style*="border-right"] {
+        padding-right: 0 !important;
+        border-right: none !important;
+        border-bottom: 1px solid var(--border-light);
+        padding-bottom: 0.75rem !important;
+    }
+
+    div[style*="padding-left: 1rem"]:not([style*="border-left"]) {
+        padding-left: 0 !important;
+    }
+
+    /* Margin box on mobile — full width */
+    div[style*="display: flex"][style*="gap: 1.5rem"][style*="background"][style*="padding: 0.75rem"] {
+        flex-direction: row !important;
+        flex-wrap: wrap;
+        gap: 1rem !important;
+    }
+
+    /* ---- 25f. CANDIDATE MATCHES TABLE ---- */
+    /* Quick search bar: 400px → full width */
+    div[style*="width: 400px"] {
+        width: 100% !important;
+    }
+
+    /* Matches section header: flex → stacked */
+    div[style*="justify-content: space-between"][style*="margin-bottom: 1.5rem"] {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.75rem !important;
+    }
+
+    /* table-responsive already wraps, make min-width reasonable */
+    .table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table-responsive .data-sheet {
+        min-width: 560px !important;
+    }
+
+    /* "Email Selected / Select All" button row */
+    div[style*="margin-bottom: 1rem"][style*="display: flex"][style*="gap: 0.5rem"] {
+        flex-wrap: wrap;
+        gap: 0.5rem !important;
+    }
+
+    /* ---- 25g. COURSE STUDIO TAB ---- */
+    /* 350px + 1fr → single column */
+    div[style*="grid-template-columns: 350px 1fr"] {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    /* Version explorer — remove fixed height */
+    .version-explorer-list,
+    div[style*="max-height: 600px"] {
+        max-height: none !important;
+        overflow-y: visible !important;
+    }
+
+    /* Course Authoring buttons — stack */
+    div[style*="display: flex; flex-wrap: wrap"][style*="gap: 1rem"] .btn {
+        flex: 1 1 calc(50% - 0.5rem);
+        justify-content: center;
+    }
+
+    /* ---- 25h. FINANCE TAB ---- */
+    /* Finance Controller header row */
+    div[style*="justify-content: space-between"][style*="align-items: center"][style*="background: var(--bg-surface)"] {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.75rem !important;
+    }
+
+    /* Finance action buttons */
+    div[style*="display: flex"][style*="gap: 0.5rem"][style*="align-items: center"] {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    /* Finance 1fr 1fr cards (Client | Trainer side by side) → stacked */
+    .info-grid[style*="grid-template-columns: 1fr 1fr"],
+    div.info-grid[style*="1fr 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Zoho sync timestamp — hide on mobile to save space */
+    span[style*="font-size: 0.7rem"][style*="color: var(--text-tertiary)"] {
+        display: none;
+    }
+
+    /* Finance section headers with icon + buttons */
+    h3.section-title[style*="display: flex"][style*="justify-content: space-between"] {
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
+
+    /* ---- 25i. COLLABORATION TAB (if present) ---- */
+    /* Task/comment forms full width */
+    .collaboration-form,
+    form[style*="display: flex"][style*="gap"] {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+
+    form[style*="display: flex"][style*="gap"] input,
+    form[style*="display: flex"][style*="gap"] textarea {
+        width: 100% !important;
+        font-size: 16px !important;
+    }
+
+    /* ---- 25j. BREADCRUMB — condensed ---- */
+    .breadcrumb {
+        font-size: 0.8rem;
+        margin-bottom: 0.75rem !important;
+    }
+
+    /* ---- 25k. CONTENT BODY PADDING — reduce on mobile ---- */
+    .content-body {
+        padding: 0 !important;
+    }
+
+    /* Tab panes — remove extra top margin */
+    .inquiry-tab-pane.active {
+        margin-top: 0 !important;
+    }
+
+    /* Detail cards padding */
+    .detail-card {
+        padding: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+}
+
+/* Extra tight for small phones */
+@media (max-width: 480px) {
+
+    /* Info grid → single column on small phones */
+    .info-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Tab text — icon only on very small screens */
+    .inquiry-tab-header-item span {
+        display: none;
+    }
+
+    .inquiry-tab-header-item {
+        gap: 0 !important;
+        padding: 0.65rem 0.85rem !important;
+    }
+
+    /* Version explorer items — tighter */
+    .version-item {
+        padding: 0.5rem 0.75rem !important;
+    }
+}
+
+/* ================================================================
+   26. GLOBAL REMAINING PAGES — Comprehensive Mobile Overrides
+   Covers: Detail Pages, Finance, Forms, Admin, Auth, Reports,
+           Trainers, Tickets, Schedule, Data Import, AI
+================================================================= */
+
+@media (max-width: 768px) {
+
+    /* ============================================================
+       26a. SPLIT-VIEW DETAIL PAGES
+       Contact Detail, Client Detail, Trainer Detail
+       Each use .split-view → .panel-left + .panel-right
+    ============================================================ */
+    .split-view {
+        flex-direction: column !important;
+        gap: 1.5rem !important;
+    }
+
+    .panel-left,
+    .panel-right {
+        width: 100% !important;
+        flex: none !important;
+        min-width: 0 !important;
+        padding-left: 0 !important;
+        border-left: none !important;
+    }
+
+    /* Page header flex row — any justify-content:space-between with flex-wrap:nowrap */
+    .page-header>div[style*="flex-wrap: nowrap"] {
+        flex-wrap: wrap !important;
+        gap: 0.75rem !important;
+    }
+
+    /* Right-side action buttons in page header — full width row */
+    .page-header>div>div[style*="flex-shrink: 0"],
+    .page-header>div>div[style*="gap: 0.75rem"][style*="align-items: center"],
+    .page-header>div>div[style*="gap: 8px"][style*="align-items: center"] {
+        width: 100% !important;
+        flex-wrap: wrap;
+    }
+
+    /* Avatar + name + title rows — keep compact */
+    div[style*="align-items: flex-start"][style*="gap: 1.25rem"] {
+        gap: 0.75rem !important;
+    }
+
+    /* Page title — scale down on detail pages */
+    .page-title[style*="font-size: 1.85rem"],
+    h1.page-title[style*="1.85rem"] {
+        font-size: 1.3rem !important;
+        white-space: normal !important;
+    }
+
+    /* Primary contact row (email/phone/linkedin — flex-wrap already there) */
+    div[style*="gap: 2rem"][style*="flex-wrap: wrap"] {
+        gap: 0.75rem !important;
+    }
+
+    /* Secondary info grid (1fr 1fr divider row in contact detail) */
+    div[style*="grid-template-columns: 1fr 1fr"][style*="gap: 2rem"] {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+    }
+
+    /* Action buttons group in header */
+    .btn-group[style*="display: flex"] {
+        flex-wrap: wrap;
+        gap: 6px !important;
+    }
+
+    /* Tables in detail pages (call activity, history) — scroll horizontally */
+    .table-container,
+    div[style*="border-radius: 8px"][style*="overflow: hidden"]>table {
+        overflow-x: auto !important;
+    }
+
+    .table-container table,
+    div.table-container>table {
+        min-width: 500px;
+        font-size: 0.8rem !important;
+    }
+
+    /* ============================================================
+       26b. PAGE HEADER — Global (all pages using .page-header)
+    ============================================================ */
+    .page-header {
+        padding-bottom: 1rem !important;
+        margin-bottom: 1rem !important;
+    }
+
+    .page-header .header-content h1 {
+        font-size: 1.3rem !important;
+    }
+
+    .page-header .header-actions {
+        width: 100% !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
+
+    .page-header .header-actions .btn {
+        flex: 1 1 calc(50% - 0.25rem);
+        justify-content: center;
+        font-size: 0.82rem;
+    }
+
+    /* ============================================================
+       26c. STATS GRID — Finance pages (4 cols → 2 → 1)
+    ============================================================ */
+    .stats-grid[style*="repeat(4, 1fr)"],
+    div.stats-grid[style*="repeat(4,1fr)"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .stats-grid[style*="repeat(3, 1fr)"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* ============================================================
+       26d. FINANCE DASHBOARD (unified_dashboard + cashflow + tax)
+    ============================================================ */
+
+    /* Main 2fr 1fr grid → single column */
+    div[style*="grid-template-columns: 2fr 1fr"],
+    div[style*="grid-template-columns: 1.8fr 1fr"],
+    div[style*="grid-template-columns: 2.5fr 1fr"],
+    div[style*="grid-template-columns: 1fr 2fr"] {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    /* Tax report: 1fr 1fr tables side by side → stack */
+    div[style*="grid-template-columns: 1fr 1fr"][style*="gap: 2rem"] {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    /* Reconciliation: repeat(4,1fr) → 2 cols */
+    div[style*="grid-template-columns: repeat(4, 1fr)"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* Finance tables — horizontal scroll */
+    .table-container {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table-container table {
+        min-width: 480px;
+    }
+
+    /* ============================================================
+       26e. FORMS (inquiry_form, program_form, client_form, etc.)
+    ============================================================ */
+
+    /* Multi-column form grids → single column */
+    div[style*="grid-template-columns: 1fr 1fr 1fr"],
+    div[style*="grid-template-columns: 1fr 1fr 1.5fr"],
+    div[style*="grid-template-columns: 1fr 1fr"][style*="gap: 2rem"],
+    div[style*="grid-template-columns: 2.5fr 1fr"],
+    div[style*="grid-template-columns: 1fr 1fr 1fr; gap"] {
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+    }
+
+    /* Form inputs — prevent zoom on iOS (font-size >= 16px) */
+    input[type="text"],
+    input[type="email"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="date"],
+    input[type="password"],
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+
+    /* Form cards with side padding */
+    .card form,
+    form.card-body {
+        padding: 1rem !important;
+    }
+
+    /* ============================================================
+       26f. ADMIN DASHBOARD
+    ============================================================ */
+
+    /* Admin stat grid is defined inline in the template with CSS class .admin-stats-grid */
+    .admin-stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* Admin section with repeat(3, 1fr) modules grid */
+    div[style*="grid-template-columns: repeat(3, 1fr)"][class*="card"],
+    div[style*="repeat(3, 1fr)"].modules-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* ============================================================
+       26g. SCHEDULE DASHBOARD (precision-row already fixed above)
+       Add specific overrides for FullCalendar on mobile
+    ============================================================ */
+    .fc-toolbar {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        align-items: flex-start !important;
+    }
+
+    .fc-toolbar-title {
+        font-size: 1rem !important;
+    }
+
+    /* ============================================================
+       26h. SOURCING MODAL — min-width: 400px panel
+    ============================================================ */
+    /* Modal panel stacks */
+    div[style*="min-width: 400px"] {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+
+    /* ============================================================
+       26i. TICKETS (admin + user dashboards)
+    ============================================================ */
+
+    /* Ticket user dashboard: 400px 1fr → single col */
+    div[style*="grid-template-columns: 400px 1fr"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Ticket auto-fit minmax cards — already safe, reduce min */
+    div[style*="minmax(240px, 1fr)"] {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+    }
+
+    /* ============================================================
+       26j. CRM DASHBOARD
+    ============================================================ */
+    .crm-stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* ============================================================
+       26k. AUTH LOGIN PAGE
+    ============================================================ */
+    .auth-container,
+    div[style*="max-width: 400px"][style*="margin"] {
+        max-width: 100% !important;
+        padding: 1rem !important;
+    }
+
+    /* ============================================================
+       26l. DATA MANAGEMENT / IMPORT PAGES
+    ============================================================ */
+    .import-dropzone,
+    div[style*="border: 2px dashed"] {
+        padding: 1.5rem 1rem !important;
+    }
+
+    /* ============================================================
+       26m. INTELLIGENCE / MISSION CONTROL
+    ============================================================ */
+
+    /* Chat-style layout — stack input area */
+    .chat-container {
+        flex-direction: column !important;
+    }
+
+    .chat-input-bar {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+
+    .chat-input-bar textarea,
+    .chat-input-bar input {
+        width: 100% !important;
+        font-size: 16px !important;
+    }
+
+    /* ============================================================
+       26n. REPORT PAGES (dashboard, client_receivables, trainer_payables)
+    ============================================================ */
+
+    /* auto-fill / auto-fit with minmax(300px) → shrink to fit */
+    div[style*="minmax(300px, 1fr)"],
+    div[style*="minmax(350px, 1fr)"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Summary stat rows at top of report pages */
+    div[style*="minmax(240px, 1fr)"] {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* ============================================================
+       26o. SALARY / PAYROLL PAGES
+    ============================================================ */
+
+    /* Salary list search width: 400px → full */
+    div[style*="width: 400px"],
+    input[style*="width: 400px"] {
+        width: 100% !important;
+    }
+
+    /* Salary table — horizontal scroll */
+    .salary-table-container {
+        overflow-x: auto !important;
+    }
+
+    /* ============================================================
+       26p. KANBAN (if used) — already covered above
+    ============================================================ */
+
+    /* ============================================================
+       26q. MODALS — global tightening on mobile
+    ============================================================ */
+    .modal-box,
+    dialog>div[style*="max-width"] {
+        max-width: calc(100vw - 2rem) !important;
+        margin: 1rem !important;
+        padding: 1rem !important;
+        border-radius: 12px !important;
+    }
+
+    /* Modal content grids */
+    .modal-box .info-grid,
+    dialog .info-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* ============================================================
+       26r. GLOBAL TYPOGRAPHY SCALE-DOWN
+    ============================================================ */
+    .section-title {
+        font-size: 0.85rem !important;
+    }
+
+    .stat-value[style*="font-size: 1.5rem"] {
+        font-size: 1.2rem !important;
+    }
+
+    .stat-value[style*="font-size: 2rem"] {
+        font-size: 1.4rem !important;
+    }
+
+    /* ============================================================
+       26s. PROGRAM LEDGER (finance precision-row)
+    ============================================================ */
+    /* Covered by Section 21 already.
+       Specific to finance/program_ledger: hide extra button text */
+    .program-list-actions .btn span {
+        display: none;
+    }
+
+    /* ============================================================
+       26t. MERGE WIZARD
+    ============================================================ */
+    .merge-wizard-container {
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+
+    .merge-panel {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    /* ============================================================
+       26u. GLOBAL — Any remaining 2-col side-by-side flex
+       that hasn't been caught by specific selectors
+    ============================================================ */
+
+    /* Catch-all: Card headers with space-between that overflow */
+    .card-header {
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
+
+    /* Safe area bottom for phones with home bar */
+    body {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+}
+
+/* ============================================================
+   Extra small phones (< 480px)
+============================================================ */
+@media (max-width: 480px) {
+
+    /* Stats grids → 1 column */
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .stats-grid[style*="repeat(4, 1fr)"],
+    .stats-grid[style*="repeat(3, 1fr)"],
+    .stats-grid[style*="repeat(2, 1fr)"] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Page header reduces more */
+    .page-header .header-actions .btn {
+        flex: 1 1 100%;
+    }
+
+    /* Smaller stat text */
+    .stat-value {
+        font-size: 1.1rem !important;
+    }
+
+    /* Form labels */
+    label {
+        font-size: 0.8rem;
+    }
+
+    /* Cards inner padding */
+    .card {
+        padding: 0.85rem !important;
+    }
+
+    .detail-card {
+        padding: 0.85rem !important;
+    }
+}

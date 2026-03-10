@@ -3,6 +3,7 @@ Workshops Module — Admin & Public Routes
 LMS-owned. No imports from 3EK-Pulse (CRM).
 Trainer/Contact resolution uses crm_client HTTP calls.
 """
+import os
 import json
 import re
 import uuid
@@ -19,10 +20,11 @@ from flask_login import login_required, current_user
 from . import workshops_bp
 from .models import (
     Workshop, WorkshopTrainer, WorkshopSession,
-    WorkshopRegistration, WorkshopEmailLog, WorkshopDocument
+    WorkshopRegistration, WorkshopEmailLog, WorkshopDocument, Learner
 )
 from app.core.extensions import db
-from app.crm_client import get_trainer, list_trainers, get_contact
+from app.crm_client import get_trainer, list_trainers, get_contact, list_contacts
+from app.services.ai_workshop_service import generate_workshop_content, extract_text_from_file
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -134,6 +136,18 @@ def new_workshop():
 @login_required
 def detail_workshop(workshop_id):
     workshop = Workshop.query.get_or_404(workshop_id)
+
+    # Email Preview Logic
+    if request.args.get('preview_email'):
+        # Just a placeholder recipient for preview
+        dummy_recipient = {'first_name': 'Learning', 'last_name': 'Professional', 'email': 'test@example.com'}
+        return render_template(
+            'workshops/email_invitation_client.html',
+            workshop=workshop,
+            recipient=dummy_recipient,
+            now=datetime.utcnow()
+        )
+
     # Trainers from CRM via HTTP
     all_trainers = list_trainers(status='active')
     assigned_trainer_ids = {wt.crm_trainer_id for wt in workshop.trainers}
@@ -285,6 +299,55 @@ def confirm_trainer(workshop_id, wt_id):
     return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
 
 
+# ─── AI Generation ────────────────────────────────────────────────────────────
+
+@workshops_bp.route('/generate', methods=['POST'])
+@login_required
+def generate_content():
+    _admin_required()
+    
+    # Mode 1: From Topic (JSON)
+    if request.is_json:
+        data = request.get_json()
+        topic = data.get('topic')
+        duration = data.get('duration')
+        
+        if not topic:
+            return jsonify({'error': 'Topic is required.'}), 400
+            
+        result = generate_workshop_content(topic=topic, duration=duration)
+        if 'error' in result:
+            return jsonify(result), 400
+        return jsonify(result)
+        
+    # Mode 2: From Document (Multipart)
+    else:
+        file = request.files.get('file')
+        duration = request.form.get('duration')
+        
+        if not file:
+            return jsonify({'error': 'File is required.'}), 400
+            
+        # Save temp file
+        temp_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'temp')
+        os.makedirs(temp_dir, exist_ok=True)
+        file_path = os.path.join(temp_dir, f"{uuid.uuid4()}_{file.filename}")
+        file.save(file_path)
+        
+        try:
+            text, error = extract_text_from_file(file_path, file.filename)
+            if error:
+                return jsonify({'error': error}), 400
+                
+            result = generate_workshop_content(file_text=text, duration=duration)
+            if 'error' in result:
+                return jsonify(result), 400
+            return jsonify(result)
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+
+
 # ─── Registrations ────────────────────────────────────────────────────────────
 
 @workshops_bp.route('/<int:workshop_id>/registrations')
@@ -311,13 +374,24 @@ def add_registration(workshop_id):
         flash(f'{email} is already registered for this workshop.', 'warning')
         return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
 
+    phone = request.form.get('phone', '')
+    company = request.form.get('company', '')
+    job_title = request.form.get('job_title', '')
+
+    learner = Learner.query.filter_by(email=email).first()
+    if not learner:
+        learner = Learner(name=name, email=email, phone=phone, company=company, job_title=job_title)
+        db.session.add(learner)
+        db.session.flush()
+
     reg = WorkshopRegistration(
         workshop_id=workshop_id,
+        learner_id=learner.id,
         name=name,
         email=email,
-        phone=request.form.get('phone', ''),
-        company=request.form.get('company', ''),
-        job_title=request.form.get('job_title', ''),
+        phone=phone,
+        company=company,
+        job_title=job_title,
         status='confirmed',
         payment_status=request.form.get('payment_status', 'free'),
         source='manual',
@@ -393,14 +467,16 @@ def register_public(slug):
             return render_template('workshops/register_public.html', workshop=workshop,
                                    error='You are already registered. Check your inbox.')
 
-        # Optionally link to a CRM contact — resolved via HTTP, never via DB join
-        crm_contact = get_contact(email)  # stub: client can search by email if CRM supports it
-        crm_contact_id = crm_contact.get('id') if crm_contact else None
+        learner = Learner.query.filter_by(email=email).first()
+        if not learner:
+            learner = Learner(name=name, email=email, phone=phone, company=company, job_title=job_title)
+            db.session.add(learner)
+            db.session.flush()
 
         token = secrets.token_urlsafe(32)
         reg = WorkshopRegistration(
             workshop_id=workshop.id,
-            crm_contact_id=crm_contact_id,
+            learner_id=learner.id,
             name=name,
             email=email,
             phone=phone,
@@ -467,3 +543,222 @@ def _send_confirmation_email(workshop, registration):
             graph.send_email(ms_token, registration.email, subject, html_body, is_html=True)
     except Exception as e:
         current_app.logger.error(f'[LMS] Confirmation email failed: {e}')
+
+
+# ─── Document Management ──────────────────────────────────────────────────────
+
+@workshops_bp.route('/<int:workshop_id>/documents/upload', methods=['POST'])
+@login_required
+def upload_document(workshop_id):
+    _admin_required()
+    workshop = Workshop.query.get_or_404(workshop_id)
+    file = request.files.get('document')
+    doc_type = request.form.get('document_type', 'Handout')
+
+    if not file:
+        flash('No file selected.', 'danger')
+        return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
+
+    # Save file
+    workshop_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'workshops', str(workshop_id))
+    os.makedirs(workshop_dir, exist_ok=True)
+    filename = f"{uuid.uuid4().hex[:8]}_{file.filename}"
+    file_path = os.path.join(workshop_dir, filename)
+    file.save(file_path)
+
+    # In a real app, this might be a S3 URL. For now, local path or relative web path.
+    # Assuming /static/uploads/ mapping or similar. 
+    # For standalone LMS, let's use a placeholder URL for now or relative path.
+    file_url = f"/workshops/docs/{workshop_id}/{filename}"
+
+    doc = WorkshopDocument(
+        workshop_id=workshop.id,
+        filename=file.filename,
+        file_url=file_url,
+        document_type=doc_type,
+        size_bytes=os.path.getsize(file_path),
+        crm_uploaded_by_id=current_user.id
+    )
+    db.session.add(doc)
+    db.session.commit()
+    flash(f'Document "{file.filename}" uploaded.', 'success')
+    return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
+
+
+@workshops_bp.route('/<int:workshop_id>/documents/<int:document_id>/delete', methods=['POST'])
+@login_required
+def delete_document(workshop_id, document_id):
+    _admin_required()
+    doc = WorkshopDocument.query.get_or_404(document_id)
+    db.session.delete(doc)
+    db.session.commit()
+    flash('Document deleted.', 'success')
+    return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
+
+
+# ─── Lifecycle & Communications ───────────────────────────────────────────────
+
+@workshops_bp.route('/<int:workshop_id>/delete', methods=['POST'])
+@login_required
+def delete_workshop(workshop_id):
+    _admin_required()
+    workshop = Workshop.query.get_or_404(workshop_id)
+    title = workshop.title
+    db.session.delete(workshop)
+    db.session.commit()
+    flash(f'Workshop "{title}" and all related data deleted.', 'success')
+    return redirect(url_for('workshops.list_workshops'))
+
+
+@workshops_bp.route('/<int:workshop_id>/invite', methods=['GET', 'POST'])
+@login_required
+def send_invite(workshop_id):
+    _admin_required()
+    workshop = Workshop.query.get_or_404(workshop_id)
+    contacts = list_contacts()
+
+    if request.method == 'POST':
+        filter_type = request.form.get('filter_type')
+        email_type = request.form.get('email_type', 'individual')
+        preview_only = request.form.get('preview_only') == 'true'
+
+        recipients = []
+
+        if filter_type == 'all_active':
+            recipients = [{'id': c['id'], 'name': c['full_name'], 'email': c['email']} for c in contacts if c.get('email')]
+        elif filter_type == 'contacts':
+            selected_ids = request.form.getlist('contact_ids')
+            recipients = []
+            for c in contacts:
+                if str(c['id']) in selected_ids and c.get('email'):
+                    recipients.append({'id': c['id'], 'name': c['full_name'], 'email': c['email']})
+        elif filter_type == 'custom':
+            custom_list = request.form.get('custom_emails', '').split('\n')
+            for line in custom_list:
+                line = line.strip()
+                if not line: continue
+                if ',' in line:
+                    email, name = map(str.strip, line.split(',', 1))
+                else:
+                    email, name = line, 'Colleague'
+                if email and '@' in email:
+                    recipients.append({'id': None, 'name': name, 'email': email})
+
+        if preview_only:
+            return jsonify({
+                'count': len(recipients),
+                'sample': recipients[:3]
+            })
+
+        # Process sending
+        count = 0
+        errors = 0
+        from app.services.ms_graph_service import MSGraphService
+        graph = MSGraphService()
+
+        # Create a single log entry for this blast
+        log = WorkshopEmailLog(
+            workshop_id=workshop.id,
+            email_type='invitation',
+            subject=f"Invitation: {workshop.title}",
+            filter_description=filter_type,
+            sent_at=datetime.utcnow(),
+            crm_sent_by_id=current_user.id if hasattr(current_user, 'id') else None
+        )
+        db.session.add(log)
+
+        for r in recipients:
+            try:
+                subject = f"Invitation: {workshop.title}"
+                html_body = render_template(
+                    'workshops/email_invitation_client.html',
+                    workshop=workshop,
+                    recipient=r,
+                    email_type=email_type,
+                    now=datetime.utcnow()
+                )
+                sent = graph.send_email(r['email'], subject, html_body)
+                if sent:
+                    count += 1
+                else:
+                    errors += 1
+                    current_app.logger.warning(f"[LMS] Email not sent to {r['email']} — check MS Graph config.")
+            except Exception as e:
+                errors += 1
+                current_app.logger.error(f"[LMS] Exception sending invite to {r['email']}: {e}")
+
+        # Update log with final counts
+        log.recipient_count = count
+        if errors:
+            log.notes = f"Failed to send to {errors} recipients. Check logs."
+            
+        db.session.commit()
+        
+        if errors:
+            flash(f'Sent {count} invitations. {errors} failed — check the server logs and MS Graph config.', 'warning')
+        else:
+            flash(f'Successfully sent {count} invitations.', 'success')
+            
+        return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
+
+    return render_template('workshops/send_invite.html', workshop=workshop, contacts=contacts)
+
+
+@workshops_bp.route('/<int:workshop_id>/send-joining-details', methods=['POST'])
+@login_required
+def send_joining_details(workshop_id):
+    _admin_required()
+    workshop = Workshop.query.get_or_404(workshop_id)
+    # Placeholder for joining details logic
+    flash(f'Joining details sent to all participants for "{workshop.title}".', 'success')
+    return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
+
+
+@workshops_bp.route('/<int:workshop_id>/registrations/<int:reg_id>/invite-lms', methods=['POST'])
+@login_required
+def invite_lms(workshop_id, reg_id):
+    _admin_required()
+    reg = WorkshopRegistration.query.get_or_404(reg_id)
+    # Placeholder for LMS access logic
+    flash(f'LMS access granted to {reg.name}.', 'success')
+    return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
+
+
+@workshops_bp.route('/<int:workshop_id>/registrations/<int:reg_id>/send-payment-link', methods=['POST'])
+@login_required
+def send_payment_link_email(workshop_id, reg_id):
+    _admin_required()
+    reg = WorkshopRegistration.query.get_or_404(reg_id)
+    # Placeholder for payment link logic
+    flash(f'Payment reminder sent to {reg.name}.', 'success')
+    return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
+
+
+# ─── Recordings & Analysis ────────────────────────────────────────────────────
+
+@workshops_bp.route('/session/<int:session_id>/recording')
+@login_required
+def view_recording(session_id):
+    session = WorkshopSession.query.get_or_404(session_id)
+    # Placeholder for recording viewer
+    flash(f'Recording viewer for session "{session.topic}" not yet implemented.', 'info')
+    return redirect(url_for('workshops.detail_workshop', workshop_id=session.workshop_id))
+
+
+@workshops_bp.route('/session/<int:session_id>/compliance')
+@login_required
+def session_compliance(session_id):
+    _admin_required()
+    session = WorkshopSession.query.get_or_404(session_id)
+    # Placeholder for compliance/audit view
+    flash(f'AI Pedagogical Audit for session "{session.topic}" not yet implemented.', 'info')
+    return redirect(url_for('workshops.detail_workshop', workshop_id=session.workshop_id))
+
+
+# ─── Payments ─────────────────────────────────────────────────────────────────
+
+@workshops_bp.route('/checkout/<token>')
+def payment_checkout(token):
+    reg = WorkshopRegistration.query.filter_by(confirmation_token=token).first_or_404()
+    # Placeholder for checkout page
+    return f"Checkout page for {reg.workshop.title} (Token: {token})"

@@ -1,0 +1,161 @@
+{% extends "client/base.html" %}
+{% block title %}{{ workshop.title }} — Corporate Detail{% endblock %}
+
+{% block content %}
+<div class="lp-panel" style="padding: 2rem 2.5rem; margin-bottom: 2.5rem;">
+    <div style="display:flex; justify-content:space-between; align-items:start;">
+        <div style="flex:1;">
+            <div
+                style="display:flex; align-items:center; gap:0.6rem; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:1rem;">
+                <i class="ph ph-buildings" style="font-size:1.1rem; color:var(--teal);"></i>
+                {{ 'Dedicated Program' if is_bespoke else 'Employee Enrollments' }}
+            </div>
+            <h1 style="font-size:1.85rem; font-weight:900; color:var(--text); line-height:1.2; margin-bottom:1.5rem;">{{
+                workshop.title }}</h1>
+
+            <div style="display:flex; flex-wrap:wrap; gap:1.5rem; margin-top:1rem;">
+                <div style="display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; color:var(--text-muted);">
+                    <i class="ph ph-calendar-blank" style="font-size:1.2rem; color:var(--teal);"></i>
+                    {{ workshop.start_date.strftime('%d %B %Y') }}
+                </div>
+                <div style="display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; color:var(--text-muted);">
+                    <i class="ph ph-clock" style="font-size:1.2rem; color:var(--teal);"></i>
+                    {{ workshop.start_time }} – {{ workshop.end_time }}
+                </div>
+                <div style="display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; color:var(--text-muted);">
+                    <i class="ph ph-map-pin" style="font-size:1.2rem; color:var(--teal);"></i>
+                    {{ workshop.mode | title }} – {{ workshop.venue or 'Virtual' }}
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align:right;">
+            <div
+                style="background:var(--teal-light); border: 1px solid var(--teal-border); border-radius:12px; padding:1.25rem; min-width:180px;">
+                <div style="font-size:1.75rem; font-weight:800; color:var(--text); line-height:1;">{{ registrations |
+                    length }}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; margin-top:0.4rem;">Employees
+                    Enrolled</div>
+                <div
+                    style="font-size:0.65rem; color:var(--teal-dark); font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-top:0.6rem;">
+                    Status: Active</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="lp-grid-2col" style="grid-template-columns: 1fr 340px;">
+    <!-- Left: Employee Roster -->
+    <div>
+        <div class="lp-heading">
+            <i class="ph-bold ph-users"></i> Team <span class="accent">Enrollment Roster</span>
+        </div>
+
+        <div class="lp-panel" style="padding: 0; overflow: hidden;">
+            <table style="width:100%; border-collapse: collapse; font-size:0.88rem;">
+                <thead>
+                    <tr style="background:var(--zinc-50); border-bottom:1px solid var(--zinc-200); text-align:left;">
+                        <th
+                            style="padding:1rem 1.25rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; font-size:0.68rem; letter-spacing:0.06em;">
+                            Employee & Role</th>
+                        <th
+                            style="padding:1rem 1.25rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; font-size:0.68rem; letter-spacing:0.06em;">
+                            Engagement Status</th>
+                        {% if is_bespoke %}
+                        <th
+                            style="padding:1rem 1.25rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; font-size:0.68rem; letter-spacing:0.06em;">
+                            Feedback</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody style="background: white;">
+                    {% for reg in registrations %}
+                    <tr style="border-bottom: 1px solid var(--zinc-100);">
+                        <td style="padding:1.1rem 1.25rem;">
+                            <div style="font-weight:700; color:var(--text);">{{ reg.name }}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">
+                                {{ reg.job_title or 'Employee' }} • {{ reg.email }}
+                            </div>
+                        </td>
+                        <td style="padding:1.1rem 1.25rem;">
+                            <span class="lp-pill lp-pill-{{ reg.status.lower() if reg.status else 'pending' }}">{{
+                                reg.status | upper }}</span>
+                        </td>
+                        {% if is_bespoke %}
+                        <td style="padding:1.1rem 1.25rem;">
+                            {% if reg.feedback_submitted %}
+                            <div style="display:flex; align-items:center; gap:0.25rem; color:var(--warning);">
+                                {% for i in range(reg.feedback_score) %}<i class="ph-fill ph-star"></i>{% endfor %}
+                            </div>
+                            {% else %}
+                            <span style="font-size:0.75rem; color:var(--zinc-400);">Pending</span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if not registrations %}
+            <div class="lp-empty" style="border:none;">
+                <i class="ph ph-users-three"></i> No team members have registered yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right: Sidebar -->
+    <div>
+        {% if is_bespoke %}
+        <!-- Shared Materials -->
+        <div class="lp-panel">
+            <div class="lp-panel-label">Course Materials</div>
+            {% if documents %}
+            <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                {% for doc in documents %}
+                <a href="{{ doc.file_url }}" target="_blank" class="lp-btn-outline"
+                    style="text-align:left; display:flex; align-items:center; gap:0.6rem; padding:0.7rem;">
+                    <i class="ph ph-file-pdf" style="font-size:1.1rem;" {% if 'pdf' in doc.filename.lower()
+                        %}style="color:var(--danger);" {% else %}style="color:var(--teal);" {% endif %}></i>
+                    <div style="min-width:0; flex:1;">
+                        <div
+                            style="font-weight:700; font-size:0.78rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            {{ doc.filename }}</div>
+                        <div style="font-size:0.65rem;">{{ doc.document_type }}</div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="lp-empty" style="padding:1.5rem; font-size:0.75rem;">
+                <i class="ph ph-file-x" style="font-size:1.5rem;"></i> No internal handouts available.
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <!-- Upsell Card for Open Enrollment -->
+        <div class="lp-panel" style="background:var(--teal-light); border-color:var(--teal-border);">
+            <div class="lp-panel-label" style="color:var(--teal-dark);">Want a Dedicated Batch?</div>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1.5rem; line-height:1.6;">
+                Need to train more than 5 employees? Book an exclusive, customized batch for your organization.
+            </p>
+            <a href="mailto:corporate@3ek.in" class="lp-btn-primary" style="background:var(--teal-dark); color:white;">
+                Request Corporate Proposal
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Invoice Support -->
+        <div class="lp-panel">
+            <div class="lp-panel-label" style="color:var(--text-muted);">Billing & Invoicing</div>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:1.5rem; line-height:1.5;">
+                Need the official tax invoice or attendance receipt for this program?
+            </p>
+            <a href="mailto:accounts@3ek.in?subject=Invoice Request: {{ workshop.title }}" class="lp-btn-outline"
+                style="text-align:center;">
+                Contact Finance
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

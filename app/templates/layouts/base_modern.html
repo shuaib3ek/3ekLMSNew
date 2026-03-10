@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}3ek LMS{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=11">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- TomSelect -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
+    <style>
+        /* Modern Layout Overrides */
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-primary);
+            overflow: hidden;
+            /* Prevent body scroll, layout handles it */
+        }
+
+        .layout-sidebar {
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-light);
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        .layout-header {
+            background: var(--bg-header);
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 10;
+        }
+
+        .layout-content {
+            padding: 2rem;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Sidebar Hierarchy Logic */
+        .nav-group-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+            padding-left: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            /* Reduced size for inactive */
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            margin-bottom: 2px;
+            opacity: 0.8;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-app);
+            color: var(--text-primary);
+            opacity: 1;
+        }
+
+        .nav-item i {
+            font-size: 1.1rem;
+            transition: transform 0.2s;
+        }
+
+        /* ACTIVE STATE - Highlighted & Transitioned */
+        .nav-item.active {
+            background: linear-gradient(90deg, var(--bg-app) 0%, transparent 100%);
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 1.15rem;
+            /* Larger font */
+            padding: 0.75rem 1rem;
+            /* More prominent padding */
+            margin: 0.5rem 0;
+            /* Space around active item */
+            box-shadow: -4px 0 0 0 var(--accent);
+            /* Left accent bar */
+            opacity: 1;
+            transform: translateX(4px);
+            /* Slight bump right */
+        }
+
+        .nav-item.parent-active {
+            color: var(--accent) !important;
+            font-weight: 700 !important;
+            font-size: 1.15rem !important;
+        }
+
+        .nav-item.active i {
+            font-size: 1.3rem;
+            /* Larger icon */
+            color: var(--accent);
+        }
+
+        /* Logo Area */
+        .logo-area {
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        /* Dark Mode Logo Inversion */
+        [data-theme="dark"] .logo-area img {
+            filter: brightness(0) invert(1);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- SIDEBAR -->
+        <aside class="layout-sidebar">
+            <div class="logo-area">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="3ek Learning"
+                    style="height: 36px; display: block;">
+            </div>
+
+            <nav class="nav-links" id="sidebar-nav">
+                <!-- HQ -->
+                <div class="nav-group" id="group-hq">
+                    <a href="{{ url_for('workshops.list_workshops') }}"
+                        class="nav-item {% if request.endpoint == 'workshops.list_workshops' %}active{% endif %}">
+                        <i class="ph ph-presentation-chart"></i>
+                        <span>Workshops</span>
+                    </a>
+                </div>
+
+
+
+                <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-light); padding-top: 0.5rem;">
+                    <a href="#" class="nav-item">
+                        <i class="ph ph-headset"></i>
+                        <span>Help Desk</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div style="flex:1"></div>
+
+            <!-- Bottom Actions -->
+            <div class="nav-group">
+                <button onclick="toggleTheme()" class="nav-item"
+                    style="cursor: pointer; width: 100%; border:none; background:none;">
+                    <i class="ph ph-moon"></i>
+                    <span>Theme</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- HEADER -->
+        <header class="layout-header">
+            <!-- Left: Breadcrumb/Title placeholder -->
+            <div style="font-weight: 600; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+                {% block page_title %}Dashboard{% endblock %}
+            </div>
+
+            <!-- Center: Search -->
+            <div style="flex: 1; max-width: 500px; margin: 0 2rem;">
+                <div onclick="openSearchModal()"
+                    style="background: var(--bg-app); border: 1px solid var(--border-light); padding: 0.5rem 1rem; border-radius: 8px; display: flex; align-items: center; gap: 0.5rem; cursor: text; color: var(--text-secondary); transition: all 0.2s;">
+                    <i class="ph ph-magnifying-glass"></i>
+                    <span style="font-size: 0.9rem;">Ask Pulse...</span>
+                    <span
+                        style="margin-left: auto; font-size: 0.75rem; background: var(--border-light); padding: 1px 6px; border-radius: 4px;">⌘K</span>
+                </div>
+            </div>
+
+            <!-- Right: Actions -->
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <!-- Notification Bell -->
+                <div class="notification-trigger" onclick="toggleNotifDrawer()"
+                    style="position: relative; cursor: pointer; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; transition: background 0.2s;">
+                    <i class="ph ph-bell" style="font-size: 1.4rem; color: var(--text-secondary);"></i>
+                    <span class="notification-count" id="header-notif-badge"
+                        style="display: none; position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; background: var(--danger); border-radius: 50%; box-shadow: 0 0 0 2px var(--bg-header);"></span>
+                </div>
+
+                <!-- User Profile -->
+                <div style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;">
+                    <div
+                        style="width: 36px; height: 36px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.95rem;">
+                        {{ current_user.first_name[0] }}
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <main class="layout-content">
+            <div class="container">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Theme Toggle & Logic -->
+    <script>
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const target = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', target);
+            localStorage.setItem('theme', target);
+        }
+
+        // Init Theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+
+        // --- MENU TRANSITION LOGIC ---
+        // Moves the active item to the top of its group to satisfy "Transition to top" request
+        document.addEventListener('DOMContentLoaded', () => {
+            const activeItem = document.querySelector('.nav-item.active');
+            if (activeItem) {
+                const parentGroup = activeItem.closest('.nav-group');
+                if (parentGroup) {
+                    // Check if there is a label
+                    const label = parentGroup.querySelector('.nav-group-label');
+                    if (label) {
+                        // If label exists, insert after label
+                        label.after(activeItem);
+                    } else {
+                        // Otherwise prepend to group
+                        parentGroup.prepend(activeItem);
+                    }
+                }
+            }
+        });
+    </script>
+
+    <script>
+        function toggleNotifDrawer() {
+            alert('Notification drawer connecting...');
+        }
+        function openSearchModal() {
+            if (window.PulseApp) window.PulseApp.toggle();
+        }
+    </script>
+</body>
+
+</html>

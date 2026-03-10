@@ -1,0 +1,162 @@
+{% extends "trainer/base.html" %}
+{% block title %}{{ workshop.title }} — Trainer Detail{% endblock %}
+
+{% block content %}
+<div class="lp-panel" style="padding: 2rem 2.5rem; margin-bottom: 2.5rem;">
+    <div style="display:flex; justify-content:space-between; align-items:start;">
+        <div style="flex:1;">
+            <div
+                style="display:flex; align-items:center; gap:0.6rem; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:1rem;">
+                <i class="ph ph-chalkboard-teacher" style="font-size:1.1rem; color:var(--teal);"></i>
+                Assigned Engagement
+            </div>
+            <h1 style="font-size:1.85rem; font-weight:900; color:var(--text); line-height:1.2; margin-bottom:1.5rem;">{{
+                workshop.title }}</h1>
+
+            <div style="display:flex; flex-wrap:wrap; gap:1.5rem; margin-top:1rem;">
+                <div style="display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; color:var(--text-muted);">
+                    <i class="ph ph-calendar-blank" style="font-size:1.2rem; color:var(--teal);"></i>
+                    {{ workshop.start_date.strftime('%d %B %Y') }}
+                </div>
+                <div style="display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; color:var(--text-muted);">
+                    <i class="ph ph-clock" style="font-size:1.2rem; color:var(--teal);"></i>
+                    {{ workshop.start_time }} – {{ workshop.end_time }}
+                </div>
+                <div style="display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; color:var(--text-muted);">
+                    <i class="ph ph-map-pin" style="font-size:1.2rem; color:var(--teal);"></i>
+                    {{ workshop.mode | title }} – {{ workshop.venue or 'Virtual' }}
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align:right;">
+            <div
+                style="background:var(--teal-light); border: 1px solid var(--teal-border); border-radius:12px; padding:1.25rem; min-width:180px;">
+                <div style="font-size:1.75rem; font-weight:800; color:var(--text); line-height:1;">{{
+                    workshop.seats_booked }}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; margin-top:0.4rem;">Enrolled
+                    Participants</div>
+                <div
+                    style="font-size:0.65rem; color:var(--teal-dark); font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-top:0.6rem;">
+                    Status: Live</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="lp-grid-2col" style="grid-template-columns: 1fr 340px;">
+    <!-- Left: Participant List -->
+    <div>
+        <div class="lp-heading">
+            <i class="ph-bold ph-users"></i> Participant <span class="accent">Roster</span>
+        </div>
+
+        <div class="lp-panel" style="padding: 0; overflow: hidden;">
+            <table style="width:100%; border-collapse: collapse; font-size:0.88rem;">
+                <thead>
+                    <tr style="background:var(--zinc-50); border-bottom:1px solid var(--zinc-200); text-align:left;">
+                        <th
+                            style="padding:1rem 1.25rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; font-size:0.68rem; letter-spacing:0.06em;">
+                            Learner</th>
+                        <th
+                            style="padding:1rem 1.25rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; font-size:0.68rem; letter-spacing:0.06em;">
+                            Organization</th>
+                        <th
+                            style="padding:1rem 1.25rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; font-size:0.68rem; letter-spacing:0.06em;">
+                            Status</th>
+                        <th
+                            style="padding:1rem 1.25rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; font-size:0.68rem; letter-spacing:0.06em;">
+                            Actions</th>
+                    </tr>
+                </thead>
+                <tbody style="background: white;">
+                    {% for reg in registrations %}
+                    <tr style="border-bottom: 1px solid var(--zinc-100);">
+                        <td style="padding:1.1rem 1.25rem;">
+                            <div style="font-weight:700; color:var(--text);">{{ reg.name }}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">{{ reg.email }}
+                            </div>
+                        </td>
+                        <td style="padding:1.1rem 1.25rem; color:var(--text-muted); font-size:0.8rem;">
+                            {{ reg.company or '–' }}
+                        </td>
+                        <td style="padding:1.1rem 1.25rem;">
+                            <span class="lp-pill lp-pill-{{ reg.status_badge }}">{{ reg.status | upper }}</span>
+                        </td>
+                        <td style="padding:1.1rem 1.25rem;">
+                            <form action="{{ url_for('trainer_portal.update_attendance', workshop_id=workshop.id) }}"
+                                method="POST" style="display:flex; gap:0.4rem;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="registration_id" value="{{ reg.id }}">
+                                <select name="status" onchange="this.form.submit()"
+                                    style="font-size:0.75rem; padding:0.35rem 0.5rem; border:1px solid var(--zinc-200); border-radius:6px; cursor:pointer;">
+                                    <option value="confirmed" {{ 'selected' if reg.status=='confirmed' }}>Confirmed
+                                    </option>
+                                    <option value="attended" {{ 'selected' if reg.status=='attended' }}>Attended
+                                    </option>
+                                    <option value="cancelled" {{ 'selected' if reg.status=='cancelled' }}>
+                                        Absent/Cancelled</option>
+                                </select>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if not registrations %}
+            <div class="lp-empty" style="border:none;">
+                <i class="ph ph-users-three"></i> No participants have registered yet.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Right: Sidebar -->
+    <div>
+        <!-- Materials -->
+        <div class="lp-panel">
+            <div class="lp-panel-label">Session Materials</div>
+            {% if documents %}
+            <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                {% for doc in documents %}
+                <a href="{{ doc.file_url }}" target="_blank" class="lp-btn-outline"
+                    style="text-align:left; display:flex; align-items:center; gap:0.6rem; padding:0.7rem;">
+                    <i class="ph ph-file-pdf"
+                        style="font-size:1.1rem; color: {% if 'pdf' in doc.filename.lower() %}var(--danger){% else %}var(--teal){% endif %};"></i>
+                    <div style="min-width:0; flex:1;">
+                        <div
+                            style="font-weight:700; font-size:0.78rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            {{ doc.filename }}</div>
+                        <div style="font-size:0.65rem;">{{ doc.document_type }}</div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="lp-empty" style="padding:1.5rem; font-size:0.75rem;">
+                <i class="ph ph-file-x" style="font-size:1.5rem;"></i> No handouts uploaded by admin.
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Session Link -->
+        <div class="lp-panel" style="background:var(--zinc-900);">
+            <div class="lp-panel-label" style="color:var(--zinc-400);">Virtual Meeting</div>
+            <p style="font-size:0.8rem; color:var(--white); margin-bottom:1.5rem; line-height:1.5;">
+                Start the Teams session to deliver your presentation and record the training.
+            </p>
+            {% if workshop.meeting_link %}
+            <a href="{{ workshop.meeting_link }}" target="_blank" class="lp-btn-primary"
+                style="background:var(--teal); color:var(--white);">
+                Join MS Teams Session
+            </a>
+            {% else %}
+            <div
+                style="color:var(--zinc-400); font-size:0.75rem; text-align:center; padding:0.5rem; border:1px dashed var(--zinc-700); border-radius:8px;">
+                No meeting link provided.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

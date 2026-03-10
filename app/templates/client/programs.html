@@ -1,0 +1,227 @@
+{% extends "client/base.html" %}
+{% block title %}Engagements — {{ company_name }} — 3EK{% endblock %}
+
+{% block extra_css %}
+<style>
+    .excel-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid var(--zinc-300);
+        background: var(--white);
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .excel-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+        color: var(--text);
+        text-align: left;
+    }
+
+    .excel-table th {
+        background: #f8fafc;
+        padding: 0.4rem 0.6rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        border-bottom: 2px solid var(--zinc-300);
+        border-right: 1px solid var(--zinc-200);
+        white-space: nowrap;
+    }
+
+    .excel-table th:last-child {
+        border-right: none;
+    }
+
+    .excel-table td {
+        padding: 0.4rem 0.6rem;
+        border-bottom: 1px solid var(--zinc-200);
+        border-right: 1px solid var(--zinc-200);
+        vertical-align: middle;
+    }
+
+    .excel-table td:last-child {
+        border-right: none;
+    }
+
+    .excel-table tbody tr:hover {
+        background: #f1f5f9;
+    }
+
+    .excel-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .excel-link {
+        color: var(--teal);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .excel-link:hover {
+        text-decoration: underline;
+    }
+
+    .excel-status {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        background: #f1f5f9;
+        color: var(--text-muted);
+        border: 1px solid var(--zinc-300);
+        white-space: nowrap;
+    }
+
+    .excel-status.in-progress {
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+        color: var(--success);
+    }
+
+    .excel-status.upcoming {
+        background: #fffbeb;
+        border-color: #fde68a;
+        color: var(--warning);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+    <div>
+        <h1 style="font-size:1.6rem; font-weight:800; color:var(--text); margin:0 0 0.2rem;">Training <span
+                style="color:var(--teal);">Engagements</span></h1>
+        <p style="color:var(--text-muted); font-size:0.9rem; margin:0;">All engagements delivered to {{ company_name }}
+            by
+            3EK.</p>
+    </div>
+</div>
+
+<!-- Scheduled Engagements -->
+{% if scheduled_programs %}
+<h2 style="font-size:1.1rem; font-weight:700; color:var(--text); margin:2rem 0 0.75rem;">Scheduled Engagements</h2>
+<div class="excel-table-wrapper">
+    <table class="excel-table">
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Topic</th>
+                <th>Type</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Duration</th>
+                <th>Trainer</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for prog in scheduled_programs %}
+            <tr>
+                <td>
+                    <span class="excel-status upcoming">
+                        {{ prog.status }}
+                    </span>
+                </td>
+                <td style="font-weight:600;">{{ prog.topic }}</td>
+                <td style="color:var(--text-muted);">{{ prog.training_type or '—' }}</td>
+                <td style="white-space:nowrap;">{{ prog.start_date or '—' }}</td>
+                <td style="white-space:nowrap;">{{ prog.end_date or '—' }}</td>
+                <td>{{ prog.duration or '—' }}</td>
+                <td>{{ prog.trainer_name or '—' }}</td>
+                <td><a href="{{ url_for('client_portal.program_detail', engagement_id=prog.id) }}"
+                        class="excel-link">Open</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Active Engagements -->
+{% if active_programs %}
+<h2 style="font-size:1.1rem; font-weight:700; color:var(--text); margin:2rem 0 0.75rem;">Active Engagements</h2>
+<div class="excel-table-wrapper">
+    <table class="excel-table">
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Topic</th>
+                <th>Type</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Duration</th>
+                <th>Trainer</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for prog in active_programs %}
+            <tr>
+                <td>
+                    <span class="excel-status in-progress">
+                        {{ prog.status }}
+                    </span>
+                </td>
+                <td style="font-weight:600;">{{ prog.topic }}</td>
+                <td style="color:var(--text-muted);">{{ prog.training_type or '—' }}</td>
+                <td style="white-space:nowrap;">{{ prog.start_date or '—' }}</td>
+                <td style="white-space:nowrap;">{{ prog.end_date or '—' }}</td>
+                <td>{{ prog.duration or '—' }}</td>
+                <td>{{ prog.trainer_name or '—' }}</td>
+                <td><a href="{{ url_for('client_portal.program_detail', engagement_id=prog.id) }}"
+                        class="excel-link">Open</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- Past Engagements -->
+{% if past_programs %}
+<h2 style="font-size:1.1rem; font-weight:700; color:var(--text); margin:2rem 0 0.75rem;">Past Engagements</h2>
+<div class="excel-table-wrapper">
+    <table class="excel-table">
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Topic</th>
+                <th>Type</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Duration</th>
+                <th>Trainer</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for prog in past_programs %}
+            <tr>
+                <td>
+                    <span class="excel-status" style="background:#f8fafc; color:var(--text-muted);">COMPLETED</span>
+                </td>
+                <td style="font-weight:600; color:var(--text-muted);">{{ prog.topic }}</td>
+                <td style="color:var(--text-muted);">{{ prog.training_type or '—' }}</td>
+                <td style="color:var(--text-muted); white-space:nowrap;">{{ prog.start_date or '—' }}</td>
+                <td style="color:var(--text-muted); white-space:nowrap;">{{ prog.end_date or '—' }}</td>
+                <td style="color:var(--text-muted);">{{ prog.duration or '—' }}</td>
+                <td style="color:var(--text-muted);">{{ prog.trainer_name or '—' }}</td>
+                <td><a href="{{ url_for('client_portal.program_detail', engagement_id=prog.id) }}"
+                        class="excel-link">View</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if not scheduled_programs and not active_programs and not past_programs %}
+<div class="lp-empty-state" style="padding:4rem; text-align:center;">
+    <i class="ph ph-presentation-chart" style="font-size:3rem; opacity:0.2;"></i>
+    <h3 style="color:var(--text-muted); margin:1rem 0 0.5rem;">No engagements yet</h3>
+    <p style="color:var(--text-muted); font-size:0.9rem;">Your training engagements with 3EK will appear here.</p>
+</div>
+{% endif %}
+{% endblock %}

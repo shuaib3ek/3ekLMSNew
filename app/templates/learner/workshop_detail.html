@@ -1,0 +1,217 @@
+{% extends "learner/base.html" %}
+{% block title %}{{ workshop.title }} — My Learning{% endblock %}
+
+{% block content %}
+<!-- Back link -->
+<a href="{{ url_for('learner_portal.dashboard') }}"
+    style="font-size:0.82rem; font-weight:600; color:var(--text-muted); text-decoration:none; display:inline-flex; align-items:center; gap:0.4rem; margin-bottom:1.5rem; transition:color 0.15s;"
+    onmouseover="this.style.color='var(--teal-dark)'" onmouseout="this.style.color='var(--text-muted)'">
+    <i class="ph ph-arrow-left" style="font-weight:700"></i> Back to Dashboard
+</a>
+
+<!-- Header Section (Matches Website Hero) -->
+<div class="lp-panel" style="padding: 2.5rem; margin-bottom: 2rem;">
+    <div class="lp-portal-pill" style="margin-bottom: 1rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+        <i class="ph ph-cpu"></i> {{ workshop.mode | title }} Workshop
+    </div>
+    <h1 style="font-size:2.25rem; font-weight:800; color:var(--text); margin-bottom:1.5rem; line-height:1.2;">
+        {{ workshop.title }}
+    </h1>
+
+    <div style="display:flex; gap:2.5rem; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+            <div
+                style="width:40px; height:40px; background:var(--teal-light); border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--teal-dark); font-size:1.1rem;">
+                <i class="ph ph-calendar"></i>
+            </div>
+            <div>
+                <div
+                    style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
+                    Dates</div>
+                <div style="font-size:0.9rem; font-weight:700;">{{ workshop.start_date.strftime('%d %b %Y') }}</div>
+            </div>
+        </div>
+        {% if workshop.start_time %}
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+            <div
+                style="width:40px; height:40px; background:var(--teal-light); border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--teal-dark); font-size:1.1rem;">
+                <i class="ph ph-clock"></i>
+            </div>
+            <div>
+                <div
+                    style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
+                    Schedule</div>
+                <div style="font-size:0.9rem; font-weight:700;">{{ workshop.start_time }} — {{ workshop.end_time or
+                    '05:00 PM' }} IST</div>
+            </div>
+        </div>
+        {% endif %}
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+            <div
+                style="width:40px; height:40px; background:var(--teal-light); border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--teal-dark); font-size:1.1rem;">
+                <i class="ph ph-map-pin"></i>
+            </div>
+            <div>
+                <div
+                    style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
+                    Location</div>
+                <div style="font-size:0.9rem; font-weight:700;">{{ workshop.venue or 'Online' }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="lp-grid-2col">
+
+    <!-- Left: Main Content -->
+    <div>
+        <!-- About Section (Website style) -->
+        <div style="margin-bottom: 2.5rem;">
+            <div class="lp-heading">
+                <i class="ph ph-book-open"></i> About this <span class="accent">Workshop</span>
+            </div>
+            <div style="font-size:0.95rem; color:var(--text-muted); line-height:1.75; white-space: pre-line;">
+                {{ workshop.description or 'No description available for this workshop.' }}
+            </div>
+        </div>
+
+        <!-- Sessions & Recordings -->
+        <div style="margin-bottom: 2rem;">
+            <div class="lp-heading">
+                <i class="ph ph-video"></i> Sessions & <span class="accent">Recordings</span>
+            </div>
+            <div class="lp-ws-list">
+                {% if sessions_data %}
+                {% for item in sessions_data %}
+                <div class="lp-panel" style="padding: 1.25rem; margin-bottom: 0.75rem;">
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 0.5rem;">
+                        <div style="display:flex; gap:1rem; align-items:center;">
+                            <div
+                                style="width:36px; height:36px; background:var(--zinc-900); color:white; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:0.9rem;">
+                                {{ loop.index }}
+                            </div>
+                            <div>
+                                <div style="font-size:0.95rem; font-weight:700; color:var(--text);">{{
+                                    item.session.topic or 'Workshop Session' }}</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted);">
+                                    {{ item.session.session_date.strftime('%d %b %Y') }}
+                                    {% if item.session.start_time %} · {{ item.session.start_time }}{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% if item.session.recording_status == 'ready' %}
+                        <span class="lp-pill lp-pill-attended"><i class="ph ph-check"></i> Recording Available</span>
+                        {% else %}
+                        <span class="lp-pill"
+                            style="background:var(--zinc-100); border-color:var(--zinc-200); color:var(--text-muted); opacity:0.7;">Upcoming
+                            / Pending</span>
+                        {% endif %}
+                    </div>
+
+                    {% if item.session.recording_status == 'ready' %}
+                    <div style="margin-top: 1rem; border-top: 1px solid var(--zinc-100); padding-top: 1rem;">
+                        <a href="#" class="lp-btn-primary"
+                            style="display:inline-flex; align-items:center; gap:0.5rem; padding: 0.5rem 1.25rem;">
+                            <i class="ph ph-play-circle"></i> Watch Recording
+                        </a>
+                        {% if item.progress %}
+                        <div style="margin-top:0.75rem; font-size:0.72rem; color:var(--teal-dark); font-weight:600;">
+                            Max Progress: {{ item.progress.max_position // 60 }} mins
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="lp-empty">
+                    <i class="ph ph-video"></i> No session data available.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Sticky Sidebar Card -->
+    <div style="position: sticky; top: 84px;">
+        <!-- Enrollment Status (Website Floating Card style) -->
+        <div class="lp-panel"
+            style="padding: 1.5rem; background: var(--white); box-shadow: 0 4px 24px rgba(0,0,0,0.04);">
+            <div class="lp-panel-label">Enrollment Status</div>
+
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+                <span class="lp-pill lp-pill-{{ registration.status }}"
+                    style="font-size:0.8rem; padding:0.35rem 0.85rem;">
+                    {{ registration.status | title }}
+                </span>
+                <span style="font-size:0.8rem; font-weight:700; color:var(--teal-dark);">
+                    ID: #LMS-{{ registration.id }}
+                </span>
+            </div>
+
+            {% if workshop.meeting_link and registration.status == 'confirmed' %}
+            <div
+                style="padding: 1.25rem; background: var(--teal-light); border: 1px solid var(--teal-border); border-radius: 12px; margin-bottom: 1.5rem;">
+                <div
+                    style="font-size:0.85rem; font-weight:700; color:var(--teal-dark); margin-bottom:0.75rem; display:flex; align-items:center; gap:0.4rem;">
+                    <i class="ph ph-video-camera"></i> Live Workshop
+                </div>
+                <a href="{{ workshop.meeting_link }}" target="_blank" class="lp-btn-primary"
+                    style="background: var(--teal-dark);">
+                    Join Meeting Now →
+                </a>
+                {% if workshop.meeting_credentials %}<div
+                    style="margin-top:0.6rem; font-size:0.7rem; color:var(--teal-dark); opacity:0.8;">{{
+                    workshop.meeting_credentials }}</div>{% endif %}
+            </div>
+            {% endif %}
+
+            <div class="lp-panel-label">Materials</div>
+            <div class="lp-ws-list" style="gap: 0.5rem;">
+                {% if documents %}
+                {% for doc in documents %}
+                <a href="{{ doc.file_url }}" target="_blank"
+                    style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem; background:var(--zinc-50); border:1px solid var(--zinc-100); border-radius:10px; text-decoration:none; color:inherit; transition:all 0.15s;">
+                    <div
+                        style="width:32px; height:32px; background:var(--white); border:1px solid var(--zinc-200); border-radius:6px; display:flex; align-items:center; justify-content:center; color:var(--teal-dark);">
+                        <i class="ph ph-file-pdf"></i>
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                        <div
+                            style="font-size:0.78rem; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                            {{ doc.filename }}</div>
+                        <div style="font-size:0.65rem; color:var(--text-muted); text-transform:uppercase;">{{
+                            doc.document_type }}</div>
+                    </div>
+                    <i class="ph ph-download-simple" style="color:var(--text-muted);"></i>
+                </a>
+                {% endfor %}
+                {% else %}
+                <div style="text-align:center; padding:1.5rem 0; color:var(--text-muted); font-size:0.8rem;">
+                    No materials uploaded yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if registration.status == 'attended' %}
+        <div class="lp-panel"
+            style="background: linear-gradient(135deg, var(--zinc-900) 0%, var(--zinc-800) 100%); color: white; border: none;">
+            <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem;">
+                <div style="font-size:1.75rem; color:var(--teal);"><i class="ph ph-certificate"></i></div>
+                <div>
+                    <div style="font-size:0.9rem; font-weight:700;">Earned Certificate</div>
+                    <div style="font-size:0.75rem; color:rgba(255,255,255,0.6);">Workshop completed!</div>
+                </div>
+            </div>
+            <a href="{{ url_for('learner_portal.certificates') }}" class="lp-btn-primary"
+                style="background:var(--teal); color:white;">
+                Download Certificate
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

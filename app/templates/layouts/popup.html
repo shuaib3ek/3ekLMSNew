@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}3ek Pulse{% endblock %}</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-primary);
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        /* Override page header margins for popup */
+        .page-header {
+            padding-top: 0 !important;
+        }
+
+        /* Hide unwanted elements if they leak in */
+        .layout-sidebar,
+        .layout-header {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container" style="max-width: 100%; margin: 0 auto;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div style="margin-bottom: 1.5rem;">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}"
+                style="padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; background: var(--bg-surface); border: 1px solid var(--border-light);">
+                {{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+    {% include "components/trainer_profile_modal.html" %}
+    {% include "components/pdf_viewer_modal.html" %}
+</body>
+
+</html>

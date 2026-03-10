@@ -1,0 +1,217 @@
+{% extends "trainer/base.html" %}
+{% block title %}Trainer Dashboard — 3EK{% endblock %}
+
+{% block extra_css %}
+<style>
+    .excel-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid var(--zinc-300);
+        background: var(--white);
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .excel-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+        color: var(--text);
+        text-align: left;
+    }
+
+    .excel-table th {
+        background: #f8fafc;
+        padding: 0.4rem 0.6rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        border-bottom: 2px solid var(--zinc-300);
+        border-right: 1px solid var(--zinc-200);
+        white-space: nowrap;
+    }
+
+    .excel-table th:last-child {
+        border-right: none;
+    }
+
+    .excel-table td {
+        padding: 0.4rem 0.6rem;
+        border-bottom: 1px solid var(--zinc-200);
+        border-right: 1px solid var(--zinc-200);
+        vertical-align: middle;
+    }
+
+    .excel-table td:last-child {
+        border-right: none;
+    }
+
+    .excel-table tbody tr:hover {
+        background: #f1f5f9;
+    }
+
+    .excel-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .excel-link {
+        color: var(--teal);
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .excel-link:hover {
+        text-decoration: underline;
+    }
+
+    .excel-status {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        background: #f1f5f9;
+        color: var(--text-muted);
+        border: 1px solid var(--zinc-300);
+        white-space: nowrap;
+    }
+
+    .excel-status.upcoming {
+        background: #fffbeb;
+        border-color: #fde68a;
+        color: var(--warning);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="lp-panel"
+    style="padding: 2.5rem; margin-bottom: 2rem; display:flex; align-items:center; justify-content:space-between;">
+    <div>
+        <div class="lp-portal-pill"
+            style="margin-bottom: 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+            <i class="ph ph-chalkboard-teacher"></i> Expert Access
+        </div>
+        <h1 style="font-size:1.75rem; font-weight:800; color:var(--text); margin-bottom:0.3rem;">Welcome Back, <span
+                style="color:var(--teal);">{{ current_user.first_name }}</span>!</h1>
+        <p style="font-size:0.9rem; color:var(--text-muted);">Manage your upcoming workshops, track attendance, and
+            access materials.</p>
+    </div>
+    <div style="font-size:3.5rem; opacity:0.15; transform: rotate(10deg);">👨‍🏫</div>
+</div>
+
+<div class="lp-grid-2col">
+    <!-- Left: Workshops -->
+    <div>
+        {% if upcoming %}
+        <div class="lp-heading" style="margin-bottom:1rem;">
+            <i class="ph-bold ph-calendar-blank"></i> Assigned <span class="accent">Workshops</span>
+        </div>
+        <div class="excel-table-wrapper">
+            <table class="excel-table">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Title</th>
+                        <th>Mode</th>
+                        <th>Start Date</th>
+                        <th>Enrolled</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for workshop in upcoming %}
+                    <tr>
+                        <td><span class="excel-status upcoming">UPCOMING</span></td>
+                        <td style="font-weight:600;">{{ workshop.title }}</td>
+                        <td style="color:var(--text-muted);">{{ workshop.mode | title }}</td>
+                        <td style="white-space:nowrap;">{{ workshop.start_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ workshop.seats_booked }} pax</td>
+                        <td><a href="{{ url_for('trainer_portal.workshop_detail', workshop_id=workshop.id) }}"
+                                class="excel-link">Manage</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="lp-heading" style="margin-bottom:1rem;">
+            <i class="ph-bold ph-calendar-blank"></i> Assigned <span class="accent">Workshops</span>
+        </div>
+        <div class="lp-empty">
+            <i class="ph ph-calendar-x"></i>
+            No upcoming workshops are currently assigned to you.
+        </div>
+        {% endif %}
+
+        {% if past %}
+        <div class="lp-heading" style="margin-top: 3rem; margin-bottom:1rem; opacity:0.6;">
+            <i class="ph-bold ph-hourglass-medium"></i> Past <span class="accent">Engagements</span>
+        </div>
+        <div class="excel-table-wrapper" style="opacity:0.7;">
+            <table class="excel-table">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Title</th>
+                        <th>Mode</th>
+                        <th>Start/End Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for workshop in past %}
+                    <tr>
+                        <td><span class="excel-status"
+                                style="background:#f8fafc; color:var(--text-muted);">COMPLETED</span></td>
+                        <td style="font-weight:600; color:var(--text-muted);">{{ workshop.title }}</td>
+                        <td style="color:var(--text-muted);">{{ workshop.mode | title }}</td>
+                        <td style="color:var(--text-muted); white-space:nowrap;">{{
+                            workshop.start_date.strftime('%Y-%m-%d') }}{% if workshop.end_date %} to {{
+                            workshop.end_date.strftime('%Y-%m-%d') }}{% endif %}</td>
+                        <td><a href="{{ url_for('trainer_portal.workshop_detail', workshop_id=workshop.id) }}"
+                                class="excel-link">View</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right: Quick Links / Profile Sidebar -->
+    <div class="lp-panel" style="padding: 1.5rem;">
+        <div class="lp-panel-label">My Expertise</div>
+        <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+            <div class="lp-avatar" style="width:40px; height:40px; font-size:1.1rem;">{{ current_user.first_name[0] |
+                upper }}</div>
+            <div>
+                <div style="font-weight:700; font-size:0.95rem;">{{ current_user.full_name }}</div>
+                <div style="font-size:0.75rem; color:var(--text-muted);">Lead Trainer</div>
+            </div>
+        </div>
+
+        <div
+            style="background:var(--teal-light); border:1px solid var(--teal-border); border-radius:12px; padding:1.25rem; margin-bottom:1.5rem;">
+            <div style="font-size:0.8rem; font-weight:700; color:var(--teal-dark); margin-bottom:0.5rem;">
+                <i class="ph ph-notebook" style="font-size:1rem;"></i> Instructor Resources
+            </div>
+            <div style="font-size:0.75rem; color:var(--text-muted); line-height:1.5; margin-bottom:0.8rem;">
+                Access teaching guides, slide templates and recording instructions.
+            </div>
+            <a href="#" class="lp-btn-primary" style="font-size:0.8rem; padding:0.5rem; width:100%;">Instructor
+                Guide</a>
+        </div>
+
+        <div class="lp-panel-label">Portal Support</div>
+        <div style="display:grid; grid-template-columns: 1fr; gap:0.5rem;">
+            <a href="mailto:trainers@3ek.in" class="lp-btn-outline"
+                style="text-align:left; display:flex; align-items:center; gap:0.6rem;">
+                <i class="ph ph-envelope-simple" style="font-size:1.1rem;"></i> Contact Admin
+            </a>
+            <a href="{{ url_for('trainer_portal.profile') }}" class="lp-btn-outline"
+                style="text-align:left; display:flex; align-items:center; gap:0.6rem;">
+                <i class="ph ph-user-circle" style="font-size:1.1rem;"></i> View Profile
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

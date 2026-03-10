@@ -484,6 +484,11 @@
 
         const data = await response.json();
 
+        if (data.error) {
+            alert('Generation failed: ' + data.error);
+            return;
+        }
+
         // Auto-fill fields
         if (data.title) document.querySelector('[name="title"]').value = data.title;
         if (data.subtitle) document.querySelector('[name="subtitle"]').value = data.subtitle;

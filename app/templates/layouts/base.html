@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}3ek LMS{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=28">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}?v=4">
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- TomSelect -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
+    <style>
+        /* Modern Layout Overrides */
+        body {
+            background-color: var(--bg-app);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        .layout-sidebar {
+            background: #020617;
+            /* Slate 950 - Always Dark */
+            padding: 1.5rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            gap: 1rem;
+            overflow: hidden;
+            /* Pin bottom section */
+            transition: all 0.3s ease;
+            color: #e2e8f0;
+
+            /* Variable Overrides for Dark Sidebar */
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-tertiary: #64748b;
+            --border-light: rgba(255, 255, 255, 0.1);
+            --bg-surface: #020617;
+        }
+
+        .layout-header {
+            background: var(--bg-header);
+            /* border-bottom: 1px solid var(--border-light); REMOVED */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 10;
+        }
+
+        .layout-content {
+            padding: 2rem;
+            overflow-y: auto;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        /* Sidebar Hierarchy Logic */
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            text-decoration: none;
+            color: #94a3b8;
+            /* Slate 400 - High legibility on dark */
+            font-size: 0.75rem;
+            /* Reduced base size */
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            margin-bottom: 2px;
+            opacity: 1;
+            cursor: pointer;
+            /* Reverted global uppercase */
+        }
+
+        /* Apply Header Style to Top-Level Items Only */
+        /* 1. HQ Group Items (Dashboard, Mission Control) */
+        #group-hq .nav-item,
+        /* 2. Parent Headers (Operations, Network, etc.) */
+        details.nav-group summary.nav-item {
+            text-transform: none;
+            /* Removed CAPS */
+            font-weight: 600;
+            color: #e2e8f0;
+            /* Slate 200 */
+            font-size: 0.8rem;
+            /* Slightly larger than tiny */
+            letter-spacing: 0.02em;
+            opacity: 1;
+        }
+
+        /* Hide Sidebar Scrollbar */
+        #sidebar-nav::-webkit-scrollbar {
+            display: none;
+        }
+
+        #sidebar-nav {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            /* Slate 50 */
+        }
+
+        .nav-item i {
+            font-size: 1.1rem;
+            transition: transform 0.2s;
+        }
+
+        /* ACTIVE STATE (Bold, Large & Teal Accent) */
+        .nav-item.active {
+            background: rgba(17, 157, 171, 0.12);
+            /* Stronger background emphasis */
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            font-size: 1.1rem !important;
+            /* Emphasized size as requested */
+            margin: 0.25rem 0;
+            box-shadow: none;
+            opacity: 1;
+            transform: translateX(4px);
+            /* Slightly more prominent shift */
+        }
+
+        /* Parent Active State (Main menu bold & teal when child selected) */
+        .nav-item.parent-active {
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            font-size: 1.1rem !important;
+            /* Match active item size */
+            opacity: 1 !important;
+        }
+
+        .nav-item.active i,
+        .nav-item.parent-active i {
+            font-size: 1.25rem;
+            color: #38bdf8;
+            /* Keep icon colored (Sky 400) for visual anchor */
+        }
+
+        /* Nav Group (Accordion separation) */
+        .nav-group {
+            border-bottom: 1px solid transparent;
+            padding-bottom: 0.25rem;
+        }
+
+        /* SUBMENUS (Accordions) */
+        details.nav-group summary {
+            list-style: none;
+            /* Hide default triangle */
+        }
+
+        details.nav-group summary::-webkit-details-marker {
+            display: none;
+        }
+
+        /* Rotatable Chevron */
+        details.nav-group summary .caret-icon {
+            transition: transform 0.2s ease;
+        }
+
+        details.nav-group[open] summary .caret-icon {
+            transform: rotate(90deg);
+        }
+
+        /* HEADER STYLING DUPLICATE REMOVED */
+
+        .nav-submenu-content {
+            padding-left: 0.5rem;
+            margin-top: 0.25rem;
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+            /* Stronger hierarchy line */
+            margin-left: 1.1rem;
+        }
+
+        .nav-submenu-content .nav-item {
+            font-size: 0.7rem;
+            /* Tiny submenu items */
+            padding: 0.3rem 0.6rem;
+            border-left: none;
+            /* Reset inherited borders */
+        }
+
+        /* Active child styling fix within submenu */
+        .nav-submenu-content .nav-item.active {
+            box-shadow: none;
+            background: transparent;
+            color: var(--accent) !important;
+            border-left: none;
+        }
+
+        .nav-submenu-content .nav-item.active::before {
+            content: "•";
+            color: #38bdf8;
+            /* Sky 400 */
+            font-weight: bold;
+            display: inline-block;
+            margin-right: -5px;
+            transform: scale(1.5);
+        }
+
+        /* Logo Area */
+        .logo-area {
+            padding-bottom: 1rem;
+            margin-bottom: 0.5rem;
+            /* border-bottom: 1px solid var(--border-light); REMOVED */
+        }
+
+        /* Dark Mode Logo Inversion (Always active on dark sidebar) */
+        .layout-sidebar .logo-area img {
+            filter: brightness(0) invert(1);
+            opacity: 0.9;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <div class="app-layout">
+        <!-- Mobile Sidebar Overlay -->
+        <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
+
+        <!-- Mobile Header -->
+        <header class="mobile-header">
+            <button class="mobile-menu-btn" onclick="toggleMobileSidebar()">
+                <i class="ph ph-list"></i>
+            </button>
+            <div style="font-weight: 700; font-size: 1.1rem; color: var(--accent);">
+                3ek LMS
+            </div>
+            <div style="width: 32px; display: flex; justify-content: flex-end;">
+                <i class="ph ph-bell" onclick="toggleNotifDrawer()"
+                    style="font-size: 1.25rem; color: var(--text-primary);"></i>
+            </div>
+        </header>
+
+        <!-- SIDEBAR -->
+        <aside class="layout-sidebar">
+            <div class="logo-area">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="3ek Learning"
+                    style="height: 36px; display: block;">
+            </div>
+
+            <nav class="nav-links" id="sidebar-nav" style="flex: 1; overflow-y: auto; min-height: 0;">
+                <!-- HQ (Always Open / Top Level) -->
+                <div class="nav-group" id="group-hq">
+                    <a href="{{ url_for('workshops.list_workshops') }}"
+                        class="nav-item {% if request.endpoint == 'workshops.list_workshops' %}active{% endif %}"
+                        style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="ph ph-squares-four"></i>
+                            <span>Dashboard</span>
+                        </div>
+                        <i class="ph ph-bell"
+                            onclick="event.preventDefault(); event.stopPropagation(); toggleNotifDrawer();"
+                            style="font-size: 1.2rem; cursor: pointer; position: relative; padding: 0.25rem;">
+                            <span class="notification-badge" id="sidebar-notif-badge"
+                                style="display: none; position: absolute; top: -2px; right: -2px; min-width: 16px; height: 16px; font-size: 0.65rem; padding: 0 4px; border-radius: 99px; background: var(--danger); color: white; align-items: center; justify-content: center; font-weight: 700; box-shadow: 0 0 0 2px var(--bg-surface);">0</span>
+                        </i>
+                    </a>
+                </div>
+                <!-- Quick Search Trigger -->
+                <div onclick="toggleQuickSearch()" class="nav-item" style="cursor: pointer; position: relative;">
+                    <i class="ph ph-magnifying-glass"></i>
+                    <span>Quick Search...</span>
+                    <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: auto;">⌘K</span>
+                </div>
+
+                <!-- WORKSHOPS (LMS Native) -->
+                <a href="{{ url_for('workshops.list_workshops') }}"
+                    class="nav-item {% if request.endpoint and request.endpoint.startswith('workshops.') %}active{% endif %}"
+                    style="font-weight: 600;">
+                    <i class="ph ph-presentation-chart"></i>
+                    <span style="flex:1">Workshops</span>
+                </a>
+            </nav>
+
+            <!-- SIDEBAR FOOTER: User Profile & Actions -->
+            <div style="margin-top: auto; padding-top: 1rem; flex-shrink: 0;">
+
+                <!-- User Profile Summary -->
+                {% if current_user.is_authenticated %}
+                <a href="#" class="user-profile-mini"
+                    style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 8px; background: rgba(0,0,0,0.02); text-decoration: none; transition: background 0.2s;">
+                    <div
+                        style="width: 32px; height: 32px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.85rem;">
+                        {{ (current_user.first_name or 'U')[0] }}
+                    </div>
+                    <div style="flex: 1; overflow: hidden;">
+                        <div
+                            style="font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary);">
+                            {{ current_user.first_name }} {{ current_user.last_name }}
+                        </div>
+                        <div style="font-size: 0.7rem; color: var(--text-tertiary);">
+                            {{ (current_user.role or 'User')|capitalize }}
+                        </div>
+                    </div>
+                </a>
+                {% endif %}
+
+                <!-- Actions: Logout -->
+                <div style="display: flex; gap: 0.5rem;">
+                    <a href="{{ url_for('auth.logout') }}" class="nav-item-mini" title="Logout"
+                        style="flex: 1; cursor: pointer; border: none; background: transparent; padding: 0.5rem; display: flex; align-items: center; justify-content: center; color: var(--danger); transition: all 0.2s;">
+                        <i class="ph ph-sign-out" style="font-size: 1.1rem;"></i>
+                    </a>
+                </div>
+            </div>
+        </aside>
+
+
+
+        <!-- NOTIFICATION DRAWER (Floating Widget) -->
+        <div id="notif-drawer" class="notification-overlay" onclick="if(event.target === this) toggleNotifDrawer()"
+            style="position: fixed; inset: 0; background: transparent; z-index: 2500; display: none;">
+
+            <div class="notification-panel"
+                style="position: absolute; left: calc(var(--nav-width) + 16px); top: 16px; width: 380px; height: 600px; max-height: calc(100vh - 32px); background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 20px; box-shadow: 0 10px 40px -10px rgba(0,0,0,0.15); display: flex; flex-direction: column; overflow: hidden;">
+
+                <div class="drawer-header"
+                    style="padding: 1.5rem; border-bottom: 1px solid var(--border-light); display: flex; align-items: flex-start; justify-content: space-between; background: rgba(0,0,0,0.02);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <i class="ph ph-bell" style="font-size: 1.5rem; color: var(--accent);"></i>
+                        <div>
+                            <h3
+                                style="margin: 0; font-family: var(--font-heading); font-size: 1.1rem; color: var(--text-primary);">
+                                Notifications</h3>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <button onclick="markAllRead()"
+                            style="background: transparent; border: none; color: var(--text-tertiary); cursor: pointer; padding: 0.25rem;"
+                            title="Mark all as read">
+                            <i class="ph ph-check-circle" style="font-size: 1.2rem;"></i>
+                        </button>
+                        <button onclick="toggleNotifDrawer()"
+                            style="background: transparent; border: none; color: var(--text-tertiary); cursor: pointer; padding: 0.25rem;">
+                            <i class="ph ph-x" style="font-size: 1.2rem;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="drawer-tabs"
+                    style="display: flex; border-bottom: 1px solid var(--border-light); padding: 0 1.5rem;">
+                    <div class="drawer-tab active" onclick="switchNotifTab('new', this)"
+                        style="padding: 1rem; cursor: pointer; font-size: 0.85rem; font-weight: 500; border-bottom: 2px solid var(--accent); color: var(--text-primary);">
+                        New</div>
+                    <div class="drawer-tab" onclick="switchNotifTab('checked', this)"
+                        style="padding: 1rem; cursor: pointer; font-size: 0.85rem; font-weight: 500; color: var(--text-tertiary); border-bottom: 2px solid transparent;">
+                        Checked</div>
+                </div>
+
+                <div id="notif-content" class="drawer-content" style="flex: 1; overflow-y: auto; padding: 0;">
+                    <!-- Notifications will be injected here -->
+                    <div
+                        style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; color: var(--text-tertiary);">
+                        <div style="margin-bottom: 1rem; opacity: 0.5;">
+                            <i class="ph ph-bell-slash" style="font-size: 2rem;"></i>
+                        </div>
+                        <p style="margin: 0; font-size: 0.9rem;">No new notifications</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PULSE COMMAND CENTER (Search Modal) -->
+        <!-- PULSE COMMAND CENTER (Search Modal) -->
+        <div id="pulse-overlay" onclick="if(event.target === this) openSearchModal()"
+            style="position: fixed; inset: 0; background: transparent; z-index: 2000; display: none; flex-direction: column; justify-content: flex-end; align-items: flex-end; padding: 0 2rem 7rem 0;">
+
+            <div class="pulse-window" id="pulse-window"
+                style="width: 380px; max-width: 90vw; height: 600px; max-height: 80vh; display: flex; flex-direction: column;">
+
+                <!-- HEADER -->
+                <div class="pulse-header">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <i class="ph ph-chat-circle-text" style="color: var(--accent); font-size: 1.25rem;"></i>
+                        <span style="font-weight: 600;">Pulse AI Assistant</span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-tertiary); cursor: pointer;"
+                        onclick="PulseApp.toggle()">ESC to close</div>
+                </div>
+
+                <!-- BODY (Scrollable Area) -->
+                <div id="pulse-body"
+                    style="flex: 1; overflow-y: auto; padding-bottom: 1rem; position: relative; display: flex; flex-direction: column;">
+
+                    <!-- EMPTY STATE -->
+                    <div id="pulse-empty-state"
+                        style="padding: 2rem; text-align: center; color: var(--text-tertiary); margin-top: auto; margin-bottom: auto;">
+                        <div style="margin-bottom: 1rem; opacity: 0.5;">
+                            <i class="ph ph-chat-centered-text" style="font-size: 2.5rem;"></i>
+                        </div>
+                        <p style="font-size: 0.9rem;">Start a conversation with your AI assistant.</p>
+                        <p style="font-size: 0.75rem; margin-top: 5px; opacity: 0.7;">Ask about revenue, trainers, or
+                            clients.</p>
+                    </div>
+
+                    <!-- MESSAGES CONTAINER -->
+                    <div id="pulse-content" class="pulse-content" style="display: none; padding-bottom: 0;">
+                        <!-- Chat messages will appear here -->
+                    </div>
+                </div>
+
+                <!-- FOOTER (Input Area) -->
+                <div class="pulse-footer"
+                    style="background: var(--bg-surface); border-top: 1px solid var(--border-light); padding: 1rem;">
+                    <div class="pulse-input-wrapper">
+                        <i class="ph ph-sparkle" style="color: var(--accent);"></i>
+                        <textarea id="pulse-input" class="pulse-input" placeholder="Message Pulse AI..." rows="1"
+                            autocomplete="off"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUICK SEARCH MODAL (Auto-complete) -->
+        <div id="quick-search-overlay" onclick="if(event.target === this) toggleQuickSearch()"
+            style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 2500; display: none; align-items: flex-start; justify-content: center; padding-top: 15vh;">
+
+            <div id="quick-search-window"
+                style="width: 650px; background: var(--qs-bg); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); color: var(--qs-text); border: 1px solid var(--qs-border);">
+
+                <!-- Search Box -->
+                <div
+                    style="display: flex; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--qs-border);">
+                    <i class="ph ph-magnifying-glass" style="font-size: 1.5rem; color: var(--qs-meta);"></i>
+                    <input type="text" id="quick-search-input" placeholder="Search for clients, invoices, trainers..."
+                        style="flex: 1; border: none; outline: none; padding: 0 1rem; font-size: 1.1rem; color: var(--qs-text); background: transparent;"
+                        autocomplete="off">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <i class="ph ph-microphone"
+                            style="font-size: 1.4rem; color: var(--accent); cursor: pointer;"></i>
+                        <span
+                            style="background: var(--qs-footer); color: var(--qs-sub); font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; border: 1px solid var(--qs-border);">ESC</span>
+                    </div>
+                </div>
+
+                <!-- Results Area -->
+                <div id="quick-search-results" style="max-height: 450px; overflow-y: auto; padding: 0.5rem 0;">
+                    <div style="padding: 2rem; text-align: center; color: var(--qs-meta);">
+                        <p style="font-size: 0.9rem;">Start typing to search across the platform...</p>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div
+                    style="padding: 0.75rem 1.5rem; background: var(--qs-footer); border-top: 1px solid var(--qs-border); display: flex; gap: 1.5rem; color: var(--qs-sub); font-size: 0.75rem;">
+                    <div style="display: flex; align-items: center; gap: 0.4rem;">
+                        <span
+                            style="background: var(--qs-kbd-bg); border: 1px solid var(--qs-kbd-border); padding: 1px 4px; border-radius: 3px; color: var(--qs-text);">↑↓</span>
+                        to navigate
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.4rem;">
+                        <span
+                            style="background: var(--qs-kbd-bg); border: 1px solid var(--qs-kbd-border); padding: 1px 4px; border-radius: 3px; color: var(--qs-text);">Enter</span>
+                        to select
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            .search-result-item:hover,
+            .search-result-item.active {
+                background: var(--qs-hover) !important;
+            }
+
+            .search-result-item.active .ph-caret-right {
+                color: var(--accent) !important;
+            }
+
+            .search-result-item .category-tag {
+                font-size: 0.65rem;
+                font-weight: 700;
+                padding: 1px 4px;
+                border-radius: 3px;
+                background: var(--qs-border);
+                color: var(--qs-sub);
+                margin-right: 0.5rem;
+            }
+        </style>
+
+        <!-- CONTENT -->
+        <main class="layout-content">
+            <div class="container">
+                <!-- Flash Messages (Toast Style) -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                <div id="flash-toast-container"
+                    style="position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); z-index: 3000; display: flex; flex-direction: column; gap: 0.5rem; min-width: 300px; max-width: 90vw; pointer-events: none;">
+                    {% if messages %}
+                    {% for category, message in messages %}
+                    {% set icon = 'check-circle' if category == 'success' else 'warning-circle' %}
+
+                    <div class="flash-toast flash-toast-{{ category }}" role="alert"
+                        style="padding: 0.75rem 1rem; border-radius: 8px; font-weight: 500; font-size: 0.9rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); animation: slideDown 0.3s ease-out forwards; pointer-events: auto;">
+                        <i class="ph ph-{{ icon }}" style="font-size: 1.25rem; flex-shrink: 0;"></i>
+                        <div style="flex: 1;">{{ message }}</div>
+                        <button onclick="this.parentElement.remove()"
+                            style="background: transparent; border: none; color: currentColor; opacity: 0.6; cursor: pointer; padding: 0;">
+                            <i class="ph ph-x"></i>
+                        </button>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+                {% endwith %}
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const toasts = document.querySelectorAll('.flash-toast');
+                        toasts.forEach(toast => {
+                            setTimeout(() => {
+                                toast.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                                toast.style.opacity = '0';
+                                toast.style.transform = 'translateY(-20px)';
+                                setTimeout(() => toast.remove(), 500);
+                            }, 5000);
+                        });
+                    });
+
+                    // Universal Toast Function for JS calls
+                    window.showToast = function (message, category = 'info') {
+                        const container = document.getElementById('flash-toast-container');
+                        if (!container) return;
+
+                        const isSuccess = category === 'success';
+                        const bgColor = isSuccess ? '#f0fdf4' : '#fef2f2';
+                        const textColor = isSuccess ? '#166534' : '#991b1b';
+                        const borderColor = isSuccess ? '#bbf7d0' : '#fecaca';
+                        const iconClass = isSuccess ? 'ph-check-circle' : 'ph-warning-circle';
+
+                        const toast = document.createElement('div');
+                        toast.className = 'flash-toast';
+                        toast.setAttribute('role', 'alert');
+                        toast.style.cssText = `background: ${bgColor}; color: ${textColor}; border: 1px solid ${borderColor}; padding: 0.75rem 1rem; border-radius: 8px; font-weight: 500; font-size: 0.9rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); animation: slideDown 0.3s ease-out forwards; pointer-events: auto;`;
+
+                        toast.innerHTML = `
+                            <i class="ph ${iconClass}" style="font-size: 1.25rem; flex-shrink: 0;"></i>
+                            <div style="flex: 1;">${message}</div>
+                            <button onclick="this.parentElement.remove()" style="background: transparent; border: none; color: currentColor; opacity: 0.6; cursor: pointer; padding: 0;">
+                                <i class="ph ph-x"></i>
+                            </button>
+                        `;
+
+                        container.appendChild(toast);
+
+                        // Auto-remove
+                        setTimeout(() => {
+                            toast.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                            toast.style.opacity = '0';
+                            toast.style.transform = 'translateY(-20px)';
+                            setTimeout(() => toast.remove(), 500);
+                        }, 5000);
+                    };
+                </script>
+                <style>
+                    @keyframes slideDown {
+                        from {
+                            opacity: 0;
+                            transform: translateY(-20px);
+                        }
+
+                        to {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                    }
+
+                    /* ── Global page enter/exit transitions ─────────── */
+                    @keyframes pageEnter {
+                        from {
+                            opacity: 0;
+                            transform: translateY(10px);
+                        }
+
+                        to {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                    }
+
+                    @keyframes pageExit {
+                        from {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+
+                        to {
+                            opacity: 0;
+                            transform: translateY(-8px);
+                        }
+                    }
+
+                    #page-transition {
+                        animation: pageEnter 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+                        will-change: opacity, transform;
+                    }
+
+                    #page-transition.is-leaving {
+                        animation: pageExit 0.22s ease-in both;
+                        pointer-events: none;
+                    }
+                </style>
+                <script>
+                    // Smooth exit transition when navigating away
+                    (function () {
+                        const wrapper = document.getElementById('page-transition');
+                        if (!wrapper) return;
+
+                        function triggerExit(href, newTab) {
+                            if (newTab || !href || href.startsWith('#') ||
+                                href.startsWith('javascript') || href.startsWith('mailto')) return false;
+
+                            wrapper.classList.add('is-leaving');
+                            setTimeout(() => { window.location.href = href; }, 220);
+                            return true;
+                        }
+
+                        document.addEventListener('click', function (e) {
+                            const link = e.target.closest('a[href]');
+                            if (!link) return;
+                            const href = link.getAttribute('href');
+                            const newTab = link.target === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey;
+                            const isSameOrigin = href.startsWith('/') || href.startsWith(window.location.origin);
+                            const isApiCall = href.includes('/api/') || link.hasAttribute('download');
+                            if (!newTab && isSameOrigin && !isApiCall) {
+                                if (triggerExit(href, false)) {
+                                    e.preventDefault();
+                                }
+                            }
+                        });
+                    })();
+                </script>
+
+
+                <div id="page-transition">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Chart defaults for light mode -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof Chart !== 'undefined') {
+                Chart.defaults.color = '#64748b';
+                Chart.defaults.borderColor = 'rgba(0,0,0,0.05)';
+            }
+        });
+    </script>
+
+    <script>
+        // --- MENU TRANSITION & EXPANSION LOGIC ---
+        // Handled server-side via Jinja 'open' attribute on <details> tags.
+        // No client-side auto-expansion needed, preventing layout flicker.
+
+        // --- Pulse & Notification Logic ---
+        const PulseApp = {
+            isOpen: false,
+            overlay: document.getElementById('pulse-overlay'),
+            input: document.getElementById('pulse-input'),
+            content: document.getElementById('pulse-content'),
+            emptyState: document.getElementById('pulse-empty-state'),
+            scrollBody: document.getElementById('pulse-body'),
+
+            toggle() {
+                const bubble = document.getElementById('pulse-bubble');
+                this.isOpen = !this.isOpen;
+                this.overlay.style.display = this.isOpen ? 'flex' : 'none';
+                if (this.isOpen) {
+                    this.input.focus();
+                    document.getElementById('pulse-window').classList.add('active');
+                    if (bubble) {
+                        bubble.classList.add('jumping');
+                        setTimeout(() => bubble.classList.remove('jumping'), 1200);
+                    }
+                    this.scrollToBottom();
+                } else {
+                    document.getElementById('pulse-window').classList.remove('active');
+                }
+            },
+
+            reset() {
+                this.input.value = '';
+                this.input.style.height = 'auto';
+                this.content.innerHTML = '';
+                this.content.style.display = 'none';
+                this.emptyState.style.display = 'block';
+            },
+
+            scrollToBottom() {
+                // Use an animation loop to handle CSS transitions (input shrinking) and layout paints
+                const start = Date.now();
+                const duration = 400; // Run slightly longer than the 0.2s CSS transition
+
+                const animate = () => {
+                    if (this.scrollBody) {
+                        this.scrollBody.scrollTop = this.scrollBody.scrollHeight;
+                    }
+                    if (Date.now() - start < duration) { requestAnimationFrame(animate); }
+                }; requestAnimationFrame(animate);
+            },
+            appendMessage(role, text) {
+                const msgDiv = document.createElement('div'); msgDiv.className = `pulse-chat-message
+        ${role}`; msgDiv.innerHTML = ` <div class="pulse-bubble-content ${role}">
+        ${text}
+        </div>
+        `;
+                this.content.appendChild(msgDiv);
+                this.scrollToBottom();
+                return msgDiv;
+            },
+
+            showTyping() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'pulse-chat-message ai pulse-typing-wrapper';
+                typingDiv.id = 'pulse-typing-indicator';
+                typingDiv.innerHTML = `
+        <div class="pulse-bubble-content ai"
+            style="min-width: 60px; display: flex; align-items: center; justify-content: center; gap: 4px;">
+            <div class="dot"
+                style="width: 6px; height: 6px; background: var(--text-tertiary); border-radius: 50%; opacity: 0.6; animation: typing-dot 1s infinite ease-in-out;">
+            </div>
+            <div class="dot"
+                style="width: 6px; height: 6px; background: var(--text-tertiary); border-radius: 50%; opacity: 0.6; animation: typing-dot 1s infinite ease-in-out 0.2s;">
+            </div>
+            <div class="dot"
+                style="width: 6px; height: 6px; background: var(--text-tertiary); border-radius: 50%; opacity: 0.6; animation: typing-dot 1s infinite ease-in-out 0.4s;">
+            </div>
+        </div>
+        `;
+                this.content.appendChild(typingDiv);
+                this.scrollToBottom();
+            },
+
+            hideTyping() {
+                const typing = document.getElementById('pulse-typing-indicator');
+                if (typing) typing.remove();
+            },
+
+            async execute() {
+                const query = this.input.value.trim();
+                if (!query) return;
+
+                // UI Updates
+                this.emptyState.style.display = 'none';
+                this.content.style.display = 'block';
+                this.input.value = '';
+                this.input.style.height = 'auto';
+
+                // 1. User Message
+                this.appendMessage('user', query);
+
+                // 2. Typing Indicator
+                this.showTyping();
+
+                // Pulse Execute (Disabled in LMS Standalone)
+                setTimeout(() => {
+                    this.hideTyping();
+                    this.appendMessage('ai', "I'm currently in standalone mode. Pulse CRM insights are unavailable.");
+                    this.scrollToBottom();
+                }, 600);
+            }
+        };
+
+        window.PulseApp = PulseApp;
+
+        // Global Key Listeners
+        document.addEventListener('keydown', (e) => {
+            // Cmd+K or Ctrl+K for Pulse
+            if ((e.metaKey || (e.ctrlKey && !e.metaKey)) && e.key === 'k') {
+                e.preventDefault();
+                PulseApp.toggle();
+            }
+
+            // ESC to close all
+            if (e.key === 'Escape') {
+                if (PulseApp.isOpen) PulseApp.toggle();
+                if (QuickSearchApp.isOpen) toggleQuickSearch();
+                if (document.getElementById('notif-drawer').classList.contains('open')) toggleNotifDrawer();
+            }
+        });
+
+        // --- QUICK SEARCH LOGIC ---
+        const QuickSearchApp = {
+            overlay: document.getElementById('quick-search-overlay'),
+            input: document.getElementById('quick-search-input'),
+            resultsArea: document.getElementById('quick-search-results'),
+            isOpen: false,
+            activeIndex: -1,
+            currentResults: [],
+
+            toggle() {
+                this.isOpen = !this.isOpen;
+                this.overlay.style.display = this.isOpen ? 'flex' : 'none';
+                if (this.isOpen) {
+                    this.input.focus();
+                    this.input.value = '';
+                    this.renderInitial();
+                } else {
+                    this.activeIndex = -1;
+                    this.currentResults = [];
+                }
+            },
+
+            renderInitial() {
+                this.resultsArea.innerHTML = `
+        <div style="padding: 2rem; text-align: center; color: var(--qs-meta);">
+            <p style="font-size: 0.9rem;">Search for clients, invoices, trainers, or vault documents...</p>
+        </div>`;
+            },
+
+            async performSearch() {
+                const q = this.input.value.trim();
+                if (q.length < 2) { this.renderInitial(); this.currentResults = []; return; } try {
+                    const response = await
+                        fetch(`/api/search/suggestions?q=${encodeURIComponent(q)}`); this.currentResults = await response.json();
+                    this.activeIndex = -1; this.renderResults();
+                } catch (e) { console.error("Search failed", e); }
+            },
+            renderResults() {
+                if (this.currentResults.length === 0) {
+                    this.resultsArea.innerHTML = ` <div
+            style="padding: 2rem; text-align: center; color: var(--qs-meta);">
+            <p style="font-size: 0.9rem;">No results found for "${this.input.value}"</p>
+            </div>`;
+                    return;
+                }
+
+                this.resultsArea.innerHTML = this.currentResults.map((res, index) => {
+                    const typeTag = res.sub.split(' • ')[0];
+                    const subInfo = res.sub.split(' • ').slice(1).join(' • ');
+
+                    return `
+            <div class="search-result-item ${index === this.activeIndex ? 'active' : ''}"
+                onclick="window.location.href='${res.url}'"
+                style="display: flex; align-items: center; gap: 1rem; padding: 0.85rem 1.5rem; cursor: pointer; border-bottom: 1px solid var(--qs-border); transition: background 0.2s;">
+                <div
+                    style="width: 42px; height: 42px; background: var(--qs-footer); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--qs-sub); border: 1px solid var(--qs-border);">
+                    <i class="ph ${res.icon}" style="font-size: 1.25rem;"></i>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; color: var(--qs-text); font-size: 1rem;">${res.label}</div>
+                    <div style="display: flex; align-items: center; margin-top: 3px;">
+                        <span class="category-tag">${typeTag}</span>
+                        <span style="font-size: 0.75rem; color: var(--qs-sub);">${subInfo}</span>
+                    </div>
+                </div>
+                <i class="ph ph-caret-right" style="color: var(--qs-meta); font-size: 1rem;"></i>
+            </div>`;
+                }).join('');
+            }
+        };
+
+        function toggleQuickSearch() {
+            QuickSearchApp.toggle();
+        }
+
+        QuickSearchApp.input.addEventListener('input', () => QuickSearchApp.performSearch());
+        QuickSearchApp.input.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                QuickSearchApp.activeIndex = (QuickSearchApp.activeIndex + 1) % QuickSearchApp.currentResults.length;
+                QuickSearchApp.renderResults();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                QuickSearchApp.activeIndex = (QuickSearchApp.activeIndex - 1 + QuickSearchApp.currentResults.length) %
+                    QuickSearchApp.currentResults.length;
+                QuickSearchApp.renderResults();
+            } else if (e.key === 'Enter') {
+                if (QuickSearchApp.activeIndex >= 0) {
+                    window.location.href = QuickSearchApp.currentResults[QuickSearchApp.activeIndex].url;
+                }
+            }
+        });
+
+        // Pulse Input Listener
+        PulseApp.input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                PulseApp.execute();
+            }
+        });
+
+        // Auto-resize textarea
+        PulseApp.input.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        // --- Notification Drawer Logic ---
+        let isNotifOpen = false;
+        let allNotifications = [];
+        let currentTab = 'new';
+        const notifDrawer = document.getElementById('notif-drawer');
+        const notifContent = document.getElementById('notif-content');
+        const notifBadge = document.getElementById('sidebar-notif-badge');
+
+        function toggleNotifDrawer() {
+            isNotifOpen = !isNotifOpen;
+            notifDrawer.classList.toggle('open');
+            notifDrawer.style.display = isNotifOpen ? 'block' : 'none';
+            if (isNotifOpen) fetchNotifications();
+        }
+
+        async function fetchNotifications() {
+            try {
+                const response = await fetch('/api/notifications');
+                const data = await response.json();
+                allNotifications = data.notifications || [];
+                renderNotifications();
+                updateBadge(data.stats);
+            } catch (error) {
+                console.error('Failed to fetch notifications');
+            }
+        }
+
+        function renderNotifications() {
+            const notifications = allNotifications || [];
+            // Filter based on current tab
+            const filtered = notifications.filter(n =>
+                currentTab === 'new' ? !n.is_read : n.is_read
+            );
+
+            if (filtered.length === 0) {
+                notifContent.innerHTML = `
+            <div
+                style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem 2rem; text-align: center;">
+                <div
+                    style="width: 64px; height: 64px; background: var(--bg-app); border: 2px solid var(--border-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem;">
+                    <i class="ph ph-check-circle" style="font-size: 2rem; color: var(--text-tertiary);"></i>
+                </div>
+                <p style="margin: 0; font-size: 1rem; color: var(--text-tertiary); font-weight: 500;">You're all caught
+                    up!</p>
+                <p style="margin-top: 10px; font-size: 10px; color: #ef4444; font-family: monospace;">
+                    DEBUG: User {{ current_user.id }} | Total: ${window.allNotifications ?
+                        window.allNotifications.length : 'null'} | Tab: ${currentTab}
+                </p>
+            </div>
+            `;
+                return;
+            }
+
+            notifContent.innerHTML = filtered.map(n => `
+            <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="${n.link ? `location.href='${n.link}'` : ''}">
+                <i class="ph ${getUrgencyIcon(n.urgency)}"
+                    style="font-size: 1.25rem; color: ${getUrgencyColor(n.urgency)}; flex-shrink: 0;"></i>
+                <div class="notif-content">
+                    <div class="notif-title">${n.title}</div>
+                    <div class="notif-msg">${n.body}</div>
+                    <div class="notif-time">${n.urgency.toUpperCase()} • ${n.time_ago}</div>
+                </div>
+                ${!n.is_read ? `
+                <button class="notif-check-btn" onclick="event.stopPropagation(); markRead(${n.id}, this)"
+                    title="Mark as read">
+                    <i class="ph ph-check" style="font-size: 0.875rem;"></i>
+                </button>
+                ` : ''}
+            </div>
+            `).join('');
+        }
+
+        function getUrgencyIcon(urgency) {
+            switch (urgency) {
+                case 'urgent': return 'ph-warning-circle';
+                case 'stagnant': return 'ph-clock';
+                case 'success': return 'ph-check-circle';
+                default: return 'ph-info';
+            }
+        }
+
+        function getUrgencyColor(urgency) {
+            switch (urgency) {
+                case 'urgent': return '#ef4444';
+                case 'stagnant': return '#f59e0b';
+                case 'success': return '#10b981';
+                default: return 'var(--accent)';
+            }
+        }
+
+        async function markRead(id, el) {
+            try {
+                await fetch(`/api/notifications/${id}/read`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+                });
+                // Refresh to move item to correct tab
+                await fetchNotifications();
+                updateBadgeCount();
+            } catch (e) {
+                console.error('Failed to mark as read:', e);
+            }
+        }
+
+        async function markAllRead() {
+            try {
+                await fetch('/api/notifications/read-all', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': '{{ csrf_token() }}' }
+                });
+                fetchNotifications();
+            } catch (e) { }
+        }
+
+        async function updateBadgeCount() {
+            // Disabled in LMS Standalone
+            return;
+        }
+
+        function updateBadge(stats) {
+            const unreadCount = (window.allNotifications || []).filter(n => !n.is_read).length;
+            if (notifBadge) {
+                if (unreadCount > 0) {
+                    notifBadge.innerText = unreadCount > 99 ? "99+" : unreadCount;
+                    notifBadge.style.display = "flex";
+                    notifBadge.classList.add("active");
+                } else {
+                    notifBadge.style.display = "none";
+                    notifBadge.classList.remove("active");
+                }
+            }
+            const pb = document.getElementById("pulse-bubble");
+            if (pb) {
+                if (unreadCount > 0) pb.classList.add("glowing");
+                else pb.classList.remove("glowing");
+            }
+        }
+
+        // Initial check
+        updateBadgeCount();
+        // Poll for notifications every 60s
+        setInterval(updateBadgeCount, 60000);
+
+        function openSearchModal() {
+            PulseApp.toggle();
+        }
+
+
+        function switchNotifTab(filter, el) {
+            // Remove active state from all tabs
+            document.querySelectorAll('.drawer-tab').forEach(t => {
+                t.classList.remove('active');
+                t.style.borderBottom = '2px solid transparent';
+                t.style.color = 'var(--text-tertiary)';
+                t.style.fontWeight = '500';
+            });
+
+            // Add active state to clicked tab
+            el.classList.add('active');
+            el.style.borderBottom = '2px solid var(--accent)';
+            el.style.color = 'var(--text-primary)';
+            el.style.fontWeight = '600';
+            currentTab = filter;
+            renderNotifications();
+
+        }
+
+        // Mobile Sidebar Toggle
+        function toggleMobileSidebar() {
+            document.querySelector('.layout-sidebar').classList.toggle('active');
+            document.querySelector('.sidebar-overlay').classList.toggle('active');
+        }
+    </script>
+
+    <!-- Session Inactivity Warning Modal -->
+    {% if current_user.is_authenticated %}
+    <div id="session-timeout-modal"
+        style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(15,23,42,0.8); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:1.5rem;">
+        <div
+            style="background:var(--bg-surface); padding:2rem; border-radius:20px; width:100%; max-width:400px; text-align:center; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); border: 1px solid var(--border-light);">
+            <div
+                style="width:64px; height:64px; background:rgba(245,158,11,0.1); color:#f59e0b; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 1.5rem;">
+                <i class="ph ph-clock-countdown" style="font-size:2.2rem;"></i>
+            </div>
+            <h3 style="margin-bottom:0.75rem; font-family:var(--font-heading); font-size: 1.25rem;">Session
+                Expiring
+            </h3>
+            <p style="color:var(--text-secondary); margin-bottom:2rem; font-size:0.95rem; line-height: 1.5;">You
+                have
+                been inactive for a while. For your security, you will be logged out in <b id="timeout-countdown">60</b>
+                seconds.</p>
+            <div style="display:flex; gap:0.75rem;">
+                <button onclick="location.href=this.dataset.href;" data-href="{{ url_for('auth.logout') }}"
+                    style="flex:1; padding:0.8rem; border-radius:12px; border:1px solid var(--border-light); background:transparent; color:var(--text-primary); cursor:pointer; font-weight:600; font-size: 0.9rem; transition: all 0.2s;">Logout</button>
+                <button onclick="SessionManager.extend()"
+                    style="flex:1; padding:0.8rem; border-radius:12px; border:none; background:var(--accent); color:white; cursor:pointer; font-weight:600; font-size: 0.9rem; transition: all 0.2s;">Continue
+                    session</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SessionManager = {
+            init() {
+                // Session timeout disabled
+            },
+            extend() {
+                // No-op
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            SessionManager.init();
+        });
+    </script>
+    {% endif %}
+
+    <!-- Interactive Pulse Bubble -->
+    <div class="pulse-bubble" id="pulse-bubble" onclick="openSearchModal()">
+        <i class="ph-fill ph-sparkle" style="font-size: 1.8rem;"></i>
+    </div>
+    <!-- Pulse AI & Mentions -->
+    <script src="{{ url_for('static', filename='js/super-mention.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Pulse Command Center @super initialization
+            if (document.getElementById('pulse-input')) {
+                setupSuperMentionDetector('pulse-input', 'global', 0);
+            }
+        });
+    </script>
+
+    <!-- ═══ UNIVERSAL FLOATABLE MODAL SYSTEM ═══════════════════════════ -->
+    <style>
+        /* Draggable header cursor for any modal */
+        .floatable-handle {
+            cursor: grab !important;
+            user-select: none;
+        }
+
+        .floatable-handle:active {
+            cursor: grabbing !important;
+        }
+
+        /* When a dialog is floating, remove the native centering */
+        dialog.is-floating {
+            position: fixed !important;
+            margin: 0 !important;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        dialog.is-floating::backdrop {
+            background: transparent;
+        }
+
+        /* Floating div modals */
+        .modal-float-wrapper.is-floating {
+            position: fixed !important;
+            z-index: 8000 !important;
+            box-shadow: 0 32px 64px rgba(0, 0, 0, 0.22) !important;
+        }
+
+        /* Drag in progress — disable selection everywhere */
+        body.dragging-modal * {
+            user-select: none !important;
+            pointer-events: none !important;
+        }
+
+        body.dragging-modal .floatable-handle {
+            pointer-events: auto !important;
+        }
+    </style>
+
+    <script>
+        (function () {
+            'use strict';
+
+            /* ── helpers ─────────────────────────────── */
+            function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
+
+            /**
+             * Make `el` draggable by its `handle` element.
+             * `el` must already be position:fixed (or we set it).
+             */
+            function makeDraggable(el, handle) {
+                if (el.__floatBound) return;
+                el.__floatBound = true;
+
+                handle.classList.add('floatable-handle');
+
+                let startX, startY, startL, startT;
+
+                handle.addEventListener('mousedown', function (e) {
+                    // Only primary button
+                    if (e.button !== 0) return;
+
+                    // First drag: snap to fixed centre if not yet floating
+                    if (!el.classList.contains('is-floating')) {
+                        const r = el.getBoundingClientRect();
+                        el.style.left = r.left + 'px';
+                        el.style.top = r.top + 'px';
+                        el.classList.add('is-floating');
+                    }
+
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    startL = parseInt(el.style.left) || 0;
+                    startT = parseInt(el.style.top) || 0;
+
+                    document.body.classList.add('dragging-modal');
+
+                    function onMove(ev) {
+                        const dx = ev.clientX - startX;
+                        const dy = ev.clientY - startY;
+                        const maxL = window.innerWidth - el.offsetWidth;
+                        const maxT = window.innerHeight - el.offsetHeight;
+                        el.style.left = clamp(startL + dx, 0, maxL) + 'px';
+                        el.style.top = clamp(startT + dy, 0, maxT) + 'px';
+                    }
+
+                    function onUp() {
+                        document.body.classList.remove('dragging-modal');
+                        document.removeEventListener('mousemove', onMove);
+                        document.removeEventListener('mouseup', onUp);
+                    }
+
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onUp);
+                    e.preventDefault();
+                });
+            }
+
+            /* ── wire up a modal element ─────────────────── */
+            function wireModal(el) {
+                // Find the best "header" within the modal to use as drag handle
+                const handle =
+                    el.querySelector('.modal-header') ||
+                    el.querySelector('[class*="header"]') ||
+                    el.querySelector('[class*="title"]') ||
+                    el.querySelector('h2, h3, h4') ||
+                    el.firstElementChild;                    // fallback: whole top element
+
+                if (!handle) return;
+                makeDraggable(el, handle);
+            }
+
+            /* ── <dialog> elements ───────────────────────── */
+            function processDialogs() {
+                document.querySelectorAll('dialog').forEach(d => {
+                    // Observe for when it opens (showModal / show)
+                    if (d.__floatObserved) return;
+                    d.__floatObserved = true;
+
+                    const mo = new MutationObserver(() => {
+                        if (d.open) wireModal(d);
+                    });
+                    mo.observe(d, { attributes: true, attributeFilter: ['open'] });
+
+                    // Already open?
+                    if (d.open) wireModal(d);
+                });
+            }
+
+            /* ── div-based modals (bootstrap / custom) ───── */
+            function processDivModals() {
+                // Selector covers common patterns in this app
+                const sel = [
+                    '.modal-backdrop ~ .modal .modal-dialog',
+                    '.modal.show .modal-dialog',
+                    '[id$="-modal"]:not(dialog)',
+                    '[class*="modal-wrapper"]:not(dialog)',
+                    '.task-modal-overlay > div',
+                    '.phub-modal',
+                ].join(',');
+
+                document.querySelectorAll(sel).forEach(el => {
+                    if (el.__floatBound) return;
+                    const style = window.getComputedStyle(el);
+                    // Only process if visible and positioned
+                    if (style.display !== 'none') wireModal(el);
+                });
+            }
+
+            /* ── observe DOM for dynamically added modals ── */
+            const observer = new MutationObserver(function (mutations) {
+                processDialogs();
+                processDivModals();
+            });
+
+            document.addEventListener('DOMContentLoaded', function () {
+                processDialogs();
+                processDivModals();
+                observer.observe(document.body, { childList: true, subtree: true });
+            });
+
+            // Expose for manual wiring if needed
+            window.makeModalFloatable = wireModal;
+        })();
+    </script>
+    <!-- ════════════════════════════════════════════════════════════════ -->
+
+</body>
+
+
+</html>

@@ -1,0 +1,160 @@
+{% extends "client/base.html" %}
+{% block title %}Company Profile — 3EK{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="lp-panel"
+    style="padding:2rem; margin-bottom:2rem; background:linear-gradient(135deg, var(--surface), rgba(0,209,178,0.06)); border:1px solid rgba(0,209,178,0.15);">
+    <div style="display:flex; align-items:center; gap:1rem;">
+        <div class="lp-avatar"
+            style="width:60px; height:60px; font-size:1.5rem; flex-shrink:0; background:linear-gradient(135deg, var(--teal), var(--indigo));">
+            {{ client.name[0] | upper if client and client.name else 'C' }}
+        </div>
+        <div>
+            <div class="lp-portal-pill"
+                style="margin-bottom:0.4rem; display:inline-flex; align-items:center; gap:0.4rem;"><i
+                    class="ph ph-buildings"></i> Corporate Partner</div>
+            <h1 style="font-size:1.6rem; font-weight:800; color:var(--text); margin:0;">{{ client.name if client else
+                'Your Company' }}</h1>
+            {% if client and client.industry %}<p
+                style="color:var(--text-muted); font-size:0.88rem; margin:0.2rem 0 0;">{{ client.industry }}</p>{% endif
+            %}
+        </div>
+        <span style="margin-left:auto;" class="lp-pill lp-pill-success">Verified Partner</span>
+    </div>
+</div>
+
+<div class="lp-grid-2col" style="gap:1.5rem;">
+    <!-- Left: Company Info -->
+    <div>
+        <div class="lp-panel" style="padding:1.75rem; margin-bottom:1.5rem;">
+            <div
+                style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-muted); margin-bottom:1.25rem; font-weight:600;">
+                Company Details</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem;">
+                {% if client %}
+                <div>
+                    <div
+                        style="font-size:0.7rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.25rem;">
+                        Company Name</div>
+                    <div style="font-weight:700; color:var(--text);">{{ client.name or '—' }}</div>
+                </div>
+                <div>
+                    <div
+                        style="font-size:0.7rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.25rem;">
+                        Industry</div>
+                    <div style="font-weight:600; color:var(--text);">{{ client.industry or '—' }}</div>
+                </div>
+                {% if client.phone %}
+                <div>
+                    <div
+                        style="font-size:0.7rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.25rem;">
+                        Phone</div>
+                    <div style="font-weight:600;">{{ client.phone }}</div>
+                </div>
+                {% endif %}
+                {% if client.website %}
+                <div>
+                    <div
+                        style="font-size:0.7rem; text-transform:uppercase; color:var(--text-muted); margin-bottom:0.25rem;">
+                        Website</div>
+                    <a href="{{ client.website }}" target="_blank"
+                        style="color:var(--teal); font-weight:600; font-size:0.88rem; text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem;">
+                        <i class="ph ph-globe"></i> Visit →
+                    </a>
+                </div>
+                {% endif %}
+                {% else %}
+                <div style="grid-column:span 2; color:var(--text-muted);">Company profile not available.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Contact Person -->
+        <div class="lp-panel" style="padding:1.75rem;">
+            <div
+                style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-muted); margin-bottom:1.25rem; font-weight:600;">
+                Your Portal Account</div>
+            <div style="display:flex; align-items:center; gap:1rem;">
+                <div class="lp-avatar" style="width:44px; height:44px; background:var(--indigo); flex-shrink:0;">
+                    {{ contact.first_name[0] | upper if contact and contact.first_name else 'C' }}
+                </div>
+                <div>
+                    <div style="font-weight:700; color:var(--text);">{{ (contact.first_name or '') + ' ' +
+                        (contact.last_name or '') | trim or 'Contact User' }}</div>
+                    <div style="font-size:0.82rem; color:var(--text-muted);">{{ contact.email }}</div>
+                    {% if contact.job_title %}<div
+                        style="font-size:0.8rem; color:var(--text-muted); margin-top:0.15rem;">{{ contact.job_title }}
+                    </div>{% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Account Manager + Actions -->
+    <div>
+        {% if account_manager %}
+        <div class="lp-panel"
+            style="padding:1.75rem; margin-bottom:1.5rem; background:linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(0,209,178,0.05) 100%); border:1px solid rgba(99,102,241,0.2);">
+            <div
+                style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--indigo); margin-bottom:1.25rem; font-weight:700;">
+                Your 3EK Account Manager</div>
+            <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.25rem;">
+                <div class="lp-avatar"
+                    style="width:48px; height:48px; font-size:1.2rem; background:linear-gradient(135deg, var(--indigo), var(--teal)); flex-shrink:0;">
+                    {{ account_manager.name[0] | upper }}
+                </div>
+                <div>
+                    <div style="font-weight:700; font-size:1rem; color:var(--text);">{{ account_manager.name }}</div>
+                    <div style="font-size:0.82rem; color:var(--text-muted);">Account Manager · 3EK</div>
+                </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:0.6rem;">
+                <a href="mailto:{{ account_manager.email }}"
+                    style="display:inline-flex; align-items:center; gap:0.4rem; font-size:0.85rem; color:var(--teal); text-decoration:none; font-weight:500;">
+                    <i class="ph ph-envelope"></i> {{ account_manager.email }}
+                </a>
+                {% if account_manager.mobile %}
+                <a href="tel:{{ account_manager.mobile }}"
+                    style="display:inline-flex; align-items:center; gap:0.4rem; font-size:0.85rem; color:var(--text); text-decoration:none;">
+                    <i class="ph ph-phone"></i> {{ account_manager.mobile }}
+                </a>
+                {% endif %}
+            </div>
+            <div style="margin-top:1.25rem;">
+                <a href="mailto:{{ account_manager.email }}?subject=Training Inquiry — {{ client.name if client else 'Our Company' }}"
+                    class="lp-btn lp-btn-primary"
+                    style="width:100%; display:flex; align-items:center; justify-content:center; gap:0.5rem; font-size:0.85rem;">
+                    <i class="ph ph-chat-dots"></i> Send a Message
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Quick Actions -->
+        <div class="lp-panel" style="padding:1.5rem;">
+            <div
+                style="font-size:0.7rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-muted); margin-bottom:1rem; font-weight:600;">
+                Quick Actions</div>
+            <div style="display:flex; flex-direction:column; gap:0.6rem;">
+                <a href="{{ url_for('client_portal.discover') }}" class="lp-btn lp-btn-secondary"
+                    style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem;">
+                    <i class="ph ph-magnifying-glass"></i> Discover Workshops
+                </a>
+                <a href="{{ url_for('client_portal.open_requests') }}" class="lp-btn lp-btn-secondary"
+                    style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem;">
+                    <i class="ph ph-clipboard-text"></i> View Open Requests
+                </a>
+                <a href="mailto:training@3ek.in?subject=New Training Requirement" class="lp-btn lp-btn-secondary"
+                    style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem;">
+                    <i class="ph ph-plus"></i> Submit New Requirement
+                </a>
+                <a href="{{ url_for('auth.logout') }}"
+                    style="display:flex; align-items:center; gap:0.5rem; font-size:0.85rem; color:var(--danger); font-weight:500; text-decoration:none; padding:0.6rem 0; margin-top:0.5rem;">
+                    <i class="ph ph-sign-out"></i> Sign Out
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,170 @@
+{% extends "learner/base.html" %}
+{% block title %}My Dashboard — 3EK{% endblock %}
+
+{% block content %}
+
+<!-- Hero banner -->
+<div class="lp-panel" style="display:flex; align-items:center; justify-content:space-between; padding: 2rem 2.5rem;">
+    <div>
+        <div class="lp-portal-pill"
+            style="margin-bottom: 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem;">
+            <i class="ph ph-graduation-cap"></i> Learning Dashboard
+        </div>
+        <h1 style="font-size:1.75rem; font-weight:800; color:var(--text); margin-bottom:0.3rem;">
+            Welcome back, <span style="color:var(--teal);">{{ learner.name.split()[0] }}</span>
+        </h1>
+        <p style="font-size:0.9rem; color:var(--text-muted);">Track your workshops, certificates, and learning progress.
+        </p>
+    </div>
+    <div style="font-size:3.5rem; opacity:0.15;">🎓</div>
+</div>
+
+<!-- Stats -->
+<div class="lp-stats">
+    <div class="lp-stat">
+        <div class="lp-stat-icon"><i class="ph ph-calendar-check"></i></div>
+        <div>
+            <div class="lp-stat-val">{{ upcoming | length }}</div>
+            <div class="lp-stat-label">Upcoming Workshops</div>
+        </div>
+    </div>
+    <div class="lp-stat">
+        <div class="lp-stat-icon" style="background:#f0fdf4; color:#15803d;"><i class="ph ph-check-circle"></i></div>
+        <div>
+            <div class="lp-stat-val">{{ past | length }}</div>
+            <div class="lp-stat-label">Completed</div>
+        </div>
+    </div>
+    <div class="lp-stat">
+        <div class="lp-stat-icon" style="background:#fffbeb; color:#b45309;"><i class="ph ph-certificate"></i></div>
+        <div>
+            <div class="lp-stat-val">{{ certificates | length }}</div>
+            <div class="lp-stat-label">Certificates Earned</div>
+        </div>
+    </div>
+</div>
+
+<!-- Two-column content -->
+<div class="lp-grid-2col">
+
+    <!-- Left: Workshop lists -->
+    <div>
+        <!-- Upcoming -->
+        <div style="margin-bottom: 2rem;">
+            <div class="lp-heading">
+                <i class="ph ph-rocket-launch"></i>
+                Upcoming <span class="accent">Workshops</span>
+            </div>
+            <div class="lp-ws-list">
+                {% if upcoming %}
+                {% for reg in upcoming %}
+                <a href="{{ url_for('learner_portal.workshop_detail', workshop_id=reg.workshop.id) }}"
+                    class="lp-ws-card">
+                    <div class="lp-date-box">
+                        <div class="lp-month">{{ reg.workshop.start_date.strftime('%b') }}</div>
+                        <div class="lp-day">{{ reg.workshop.start_date.strftime('%d') }}</div>
+                    </div>
+                    <div class="lp-ws-info">
+                        <div class="lp-ws-title">{{ reg.workshop.title }}</div>
+                        <div class="lp-ws-meta">
+                            <span><i class="ph ph-clock"></i> {{ reg.workshop.mode | title }}</span>
+                            {% if reg.workshop.venue %}<span><i class="ph ph-map-pin"></i> {{ reg.workshop.venue
+                                }}</span>{% endif %}
+                        </div>
+                    </div>
+                    <span class="lp-pill lp-pill-{{ reg.status }}">{{ reg.status | title }}</span>
+                </a>
+                {% endfor %}
+                {% else %}
+                <div class="lp-empty">
+                    <i class="ph ph-calendar-x"></i>
+                    No upcoming workshops.<br>Check back soon!
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Past -->
+        {% if past %}
+        <div>
+            <div class="lp-heading">
+                <i class="ph ph-clock-clockwise"></i>
+                Past <span class="accent">Workshops</span>
+            </div>
+            <div class="lp-ws-list">
+                {% for reg in past %}
+                <a href="{{ url_for('learner_portal.workshop_detail', workshop_id=reg.workshop.id) }}"
+                    class="lp-ws-card" style="opacity:0.85;">
+                    <div class="lp-date-box" style="background:var(--zinc-100); border-color:var(--zinc-200);">
+                        <div class="lp-month" style="color:var(--text-muted);">{{ reg.workshop.start_date.strftime('%b')
+                            }}</div>
+                        <div class="lp-day" style="font-size:1.2rem;">{{ reg.workshop.start_date.strftime('%d') }}</div>
+                    </div>
+                    <div class="lp-ws-info">
+                        <div class="lp-ws-title">{{ reg.workshop.title }}</div>
+                        <div class="lp-ws-meta">
+                            <span>{{ reg.workshop.start_date.strftime('%d %b %Y') }}</span>
+                            <span>{{ reg.workshop.mode | title }}</span>
+                        </div>
+                    </div>
+                    <span class="lp-pill lp-pill-{{ reg.status }}">{{ reg.status | title }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Right: Sidebar card -->
+    <div>
+        <!-- Certificates card -->
+        <div class="lp-panel" style="padding: 1.5rem;">
+            <div class="lp-panel-label">Certificates Earned</div>
+            {% if certificates %}
+            {% for cert in certificates %}
+            <div
+                style="display:flex; align-items:center; gap:0.75rem; padding:0.65rem 0; border-bottom:1px solid var(--zinc-100);">
+                <div
+                    style="width:36px; height:36px; background:var(--teal-light); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:1rem; color:var(--teal-dark);">
+                    <i class="ph ph-certificate"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.82rem; font-weight:600;">{{ cert.workshop.title | truncate(30) }}</div>
+                    <div style="font-size:0.72rem; color:var(--text-muted);">{{ cert.issued_at.strftime('%d %b %Y') }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            <a href="{{ url_for('learner_portal.certificates') }}" class="lp-btn-primary" style="margin-top: 1rem;">
+                View All Certificates →
+            </a>
+            {% else %}
+            <div style="text-align:center; padding:1.25rem 0; color:var(--text-muted); font-size:0.82rem;">
+                <i class="ph ph-certificate" style="font-size:1.75rem; display:block; margin-bottom:0.5rem;"></i>
+                No certificates yet
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Profile card -->
+        <div class="lp-panel">
+            <div class="lp-panel-label">My Profile</div>
+            {% for label, val, icon in [
+            ('Company', learner.company or '—', 'buildings'),
+            ('Job Title', learner.job_title or '—', 'briefcase'),
+            ('Phone', learner.phone or '—', 'phone'),
+            ] %}
+            <div
+                style="display:flex; align-items:center; gap:0.6rem; font-size:0.8rem; color:var(--text-muted); margin-bottom:0.6rem;">
+                <i class="ph ph-{{ icon }}" style="font-size:0.9rem; width:16px;"></i>
+                <span>{{ val }}</span>
+            </div>
+            {% endfor %}
+            <a href="{{ url_for('learner_portal.profile') }}" class="lp-btn-outline" style="margin-top: 0.75rem;">
+                Edit Profile
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
