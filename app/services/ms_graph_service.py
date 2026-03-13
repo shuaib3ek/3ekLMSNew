@@ -111,14 +111,66 @@ class MSGraphService:
         return response.json()
 
     # ---------------------------------------------------------
+    # Online Meetings
+    # ---------------------------------------------------------
+
+    def create_online_meeting(self, subject: str, start_dt: datetime, end_dt: datetime) -> dict:
+        """
+        Creates a Microsoft Teams online meeting using the Calendar Event workaround.
+        This often works better with App-Only permissions than the direct onlineMeetings API.
+        Returns a dict containing 'joinWebUrl'.
+        """
+        sender = os.getenv('MS_SENDER_EMAIL')
+        if not sender:
+            logger.error('[MSGraph] MS_SENDER_EMAIL not configured. Cannot create meeting.')
+            return {}
+
+        try:
+            headers = self._get_headers()
+            payload = {
+                "subject": subject,
+                "start": {
+                    "dateTime": start_dt.isoformat(),
+                    "timeZone": "UTC"
+                },
+                "end": {
+                    "dateTime": end_dt.isoformat(),
+                    "timeZone": "UTC"
+                },
+                "isOnlineMeeting": True,
+                "onlineMeetingProvider": "teamsForBusiness"
+            }
+            logger.debug(f'[MSGraph] Calendar Event Payload: {payload}')
+            url = f"{self.base_url}/users/{sender}/calendar/events"
+            response = requests.post(url, headers=headers, json=payload)
+            
+            if response.ok:
+                data = response.json()
+                # The join link is nested in onlineMeeting object for calendar events
+                join_url = data.get('onlineMeeting', {}).get('joinUrl')
+                if join_url:
+                    return {'joinWebUrl': join_url}
+                else:
+                    logger.warning(f'[MSGraph] Calendar event created but no joinUrl found: {data}')
+                    return {}
+            else:
+                logger.error(f'[MSGraph] create_online_meeting (Calendar API) failed ({response.status_code}): {response.text}')
+                return {}
+        except Exception as e:
+            logger.error(f'[MSGraph] create_online_meeting exception: {e}')
+            return {}
+
+    # ---------------------------------------------------------
     # Email Sending (App-Only, via sender mailbox)
     # ---------------------------------------------------------
 
     def send_email(self, to_email: str, subject: str, html_body: str,
-                   cc_email: str = None, sender_email: str = None) -> bool:
+                   cc_email: str = None, sender_email: str = None,
+                   attachments: list = None) -> bool:
         """
         Send an HTML email using app-only credentials.
         Requires MS_SENDER_EMAIL env var (or pass sender_email explicitly).
+        attachments: List of dicts -> {'name': 'file.ics', 'content_bytes': 'base64str', 'content_type': 'text/calendar'}
         Returns True on success, False on failure.
         """
         sender = sender_email or os.getenv('MS_SENDER_EMAIL')
@@ -143,13 +195,26 @@ class MSGraphService:
                     for addr in cc_email.split(';') if addr.strip()
                 ]
 
+            message_payload = {
+                'subject': subject,
+                'body': {'contentType': 'HTML', 'content': html_body},
+                'toRecipients': to_recipients,
+                'ccRecipients': cc_recipients,
+            }
+
+            if attachments:
+                api_attachments = []
+                for att in attachments:
+                    api_attachments.append({
+                        '@odata.type': '#microsoft.graph.fileAttachment',
+                        'name': att['name'],
+                        'contentBytes': att['content_bytes'],
+                        'contentType': att.get('content_type', 'application/octet-stream')
+                    })
+                message_payload['attachments'] = api_attachments
+
             payload = {
-                'message': {
-                    'subject': subject,
-                    'body': {'contentType': 'HTML', 'content': html_body},
-                    'toRecipients': to_recipients,
-                    'ccRecipients': cc_recipients,
-                },
+                'message': message_payload,
                 'saveToSentItems': 'true'
             }
 

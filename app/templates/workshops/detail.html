@@ -45,14 +45,9 @@
             <a href="{{ url_for('workshops.send_invite', workshop_id=workshop.id) }}" class="btn btn-outline btn-sm">
                 <i class="ph ph-envelope"></i> Send Invitation
             </a>
-            <form method="POST" action="{{ url_for('workshops.send_joining_details', workshop_id=workshop.id) }}"
-                style="display: inline;"
-                onsubmit="return confirm('Send joining link and credentials to all paid participants?')">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-primary btn-sm">
-                    <i class="ph ph-paper-plane"></i> Send Joining Details
-                </button>
-            </form>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openJoiningModal()">
+                <i class="ph ph-paper-plane"></i> Send Joining Details
+            </button>
             <form method="POST" action="{{ url_for('workshops.change_status', workshop_id=workshop.id) }}"
                 style="display: inline;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -115,6 +110,21 @@
                             Duration</div>
                         <div style="font-weight: 600;">{{ workshop.duration_display }}</div>
                     </div>
+                    {% endif %}
+                    {% if workshop.mode == 'hybrid' or workshop.mode == 'online' %}
+                    {% if workshop.meeting_link %}
+                    <div style="grid-column: 1 / -1;">
+                        <div
+                            style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.3rem;">
+                            Meeting Link</div>
+                        <div>
+                            <a href="{{ workshop.meeting_link }}" target="_blank" class="btn btn-sm btn-outline"
+                                style="border-color: var(--primary-color); color: var(--primary-color); text-transform: none; justify-content: flex-start; max-width: max-content;">
+                                <i class="ph ph-video-camera"></i> Join Teams Meeting
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
                     {% endif %}
                 </div>
                 {% if workshop.status == 'published' %}
@@ -339,7 +349,7 @@
                         <div
                             style="flex: 2; border-left: 1px solid var(--border-light); padding-left: 1rem; margin-left: 1rem;">
                             <div
-                                style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                                 <i class="ph ph-sparkle" style="color: var(--primary-color);"></i> {{ s.ai_summary }}
                             </div>
                             {% if s.ai_points %}
@@ -640,4 +650,127 @@
         }
     });
 </script>
+
+<!-- Joining Details Modal -->
+<dialog id="joining-details-modal" class="modal-std">
+    <div class="modal-header">
+        <h3><i class="ph ph-paper-plane"></i> Send Joining Details</h3>
+        <button class="close-btn" onclick="document.getElementById('joining-details-modal').close()">
+            <i class="ph ph-x"></i>
+        </button>
+    </div>
+    <form method="POST" action="{{ url_for('workshops.send_joining_details', workshop_id=workshop.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+            <p style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                Send joining instructions to all confirmed participants for <strong>{{ workshop.title }}</strong>.
+            </p>
+
+            {% if workshop.mode == 'hybrid' or workshop.mode == 'online' %}
+            <div class="form-group">
+                <label class="form-label">Meeting Link (Zoom/Teams/Google Meet)</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="url" name="meeting_link" id="modal_meeting_link" class="form-control"
+                        placeholder="https://..." value="{{ workshop.meeting_link or '' }}" required style="flex: 1;" {%
+                        if workshop.meeting_link %}readonly{% endif %}>
+                    {% if not workshop.meeting_link %}
+                    <button type="button" class="btn btn-outline btn-sm" id="btn-generate-meeting"
+                        onclick="generateMeetingLink()" style="white-space: nowrap;">
+                        <i class="ph ph-sparkle"></i> Generate Teams
+                    </button>
+                    {% endif %}
+                </div>
+                <small style="display: block; margin-top: 0.25rem; color: var(--text-tertiary);">
+                    A calendar invite (.ics) will be generated and attached.
+                </small>
+            </div>
+            {% else %}
+            <div class="form-group">
+                <label class="form-label">Venue / Location</label>
+                <input type="text" name="venue" class="form-control" placeholder="e.g. 3EK Office, Bengaluru"
+                    value="{{ workshop.venue or '' }}" required>
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label class="form-label">Additional Instructions (Optional)</label>
+                <textarea name="extra_notes" class="form-control" rows="3"
+                    placeholder="e.g. Please bring your laptops..."></textarea>
+            </div>
+
+            <div
+                style="background: rgba(0,0,0,0.02); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-light);">
+                <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                    RECIPIENTS</div>
+                <div style="font-size: 0.9rem; color: var(--text-primary);">
+                    <i class="ph ph-users"></i> {{ workshop.registrations|selectattr('status', 'equalto',
+                    'paid')|list|length }} Paid Participants
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-outline btn-sm"
+                onclick="document.getElementById('joining-details-modal').close()">Cancel</button>
+            <button type="submit" class="btn btn-primary btn-sm">
+                <i class="ph ph-paper-plane"></i> Send Now
+            </button>
+        </div>
+    </form>
+</dialog>
+
+<script>
+    function openJoiningModal() {
+        document.getElementById('joining-details-modal').showModal();
+    }
+
+    async function generateMeetingLink() {
+        const btn = document.getElementById('btn-generate-meeting');
+        const input = document.getElementById('modal_meeting_link');
+        const originalHtml = btn.innerHTML;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph ph-spinner-gap spinning"></i> Generating...';
+
+        try {
+            const response = await fetch("{{ url_for('workshops.generate_meeting', workshop_id=workshop.id) }}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': "{{ csrf_token() }}"
+                }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                input.value = data.join_url;
+                btn.innerHTML = '<i class="ph ph-check"></i> Generated!';
+                // Disable input and button to prevent regeneration
+                input.readOnly = true;
+                showToast('Meeting link generated successfully! (Refresh page to see it in details)', 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+                showToast(data.error || 'Failed to generate meeting link.', 'danger');
+            }
+        } catch (err) {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+            showToast('Network error while generating meeting link.', 'danger');
+        }
+    }
+</script>
+
+<style>
+    .spinning {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
 {% endblock %}

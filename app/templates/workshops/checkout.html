@@ -157,22 +157,35 @@
         </div>
     </div>
 
-    <!-- Razorpay Checkput Script -->
+    <!-- Hidden form to process payment locally and avoid HTTPS -> HTTP POST origin blocking -->
+    <form id="razorpay-callback-form" method="POST" action="{{ url_for('workshops.payment_callback') }}" style="display: none;">
+        <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
+        <input type="hidden" name="razorpay_order_id" id="razorpay_order_id">
+        <input type="hidden" name="razorpay_signature" id="razorpay_signature">
+    </form>
+
+    <!-- Razorpay Checkout Script -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
         var options = {
             "key": "{{ key_id }}",
-            "amount": "{{ amount }}", // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
+            "amount": {{ amount }}, 
             "currency": "{{ currency }}",
             "name": "3 Essential Keys",
             "description": "Registration for {{ registration.workshop.title|replace('\"','\\\"') }}",
-            "image": "https://app1.3ek.in/static/images/logo.png",
             "order_id": "{{ order_id }}",
-            "callback_url": "{{ url_for('workshops.payment_callback', _external=True) }}",
+            "handler": function (response){
+                document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
+                document.getElementById('razorpay_order_id').value = response.razorpay_order_id;
+                document.getElementById('razorpay_signature').value = response.razorpay_signature;
+                document.getElementById('razorpay-callback-form').submit();
+            },
             "prefill": {
                 "name": "{{ registration.name|replace('\"','\\\"') }}",
-                "email": "{{ registration.email|replace('\"','\\\"') }}",
-                "contact": "{{ registration.phone|default('', true)|replace('\"','\\\"') }}"
+                "email": "{{ registration.email|replace('\"','\\\"') }}"
+                {% if registration.phone %}
+                ,"contact": "{{ registration.phone|replace('\"','\\\"') }}"
+                {% endif %}
             },
             "notes": {
                 "registration_token": "{{ registration.confirmation_token }}"

@@ -10,6 +10,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from .core.extensions import db, csrf, login_manager
 from flask_wtf.csrf import CSRFError
 from config import Config
+from .core import shadow_models # Register shadow tables
 
 
 def create_app(config_class=Config):
@@ -96,6 +97,7 @@ def create_app(config_class=Config):
     # Public registration & confirmation are CSRF-exempt (no browser session)
     csrf.exempt('workshops.register_public')
     csrf.exempt('workshops.confirm_registration')
+    csrf.exempt('workshops.payment_callback')
 
     # Learner REST API (JWT-authenticated, no CSRF)
     from .api.learner_routes import learner_bp
@@ -130,13 +132,32 @@ def create_app(config_class=Config):
     app.register_blueprint(website_bp, url_prefix='/pulse-api')
     csrf.exempt(website_bp)
 
+    # Admin Enterprise Portal (Metrics, Routing)
+    from .admin import admin_bp
+    app.register_blueprint(admin_bp, url_prefix='/admin')
+
+    # Training Management (Historical Pulse Data)
+    from .training_management import training_bp
+    app.register_blueprint(training_bp, url_prefix='/training_management')
+
+    # Learners (Global Roster)
+    from .learners import learners_bp
+    app.register_blueprint(learners_bp, url_prefix='/learners')
+
     # ── Health Check ─────────────────────────────────────────────────────────
 
     @app.route('/')
     def index():
         from flask_login import current_user
         if current_user.is_authenticated:
-            return redirect(url_for('workshops.list_workshops'))
+            if current_user.role in ['admin', 'super_admin']:
+                return redirect(url_for('admin.dashboard'))
+            elif current_user.role == 'trainer':
+                return redirect(url_for('trainer_portal.dashboard'))
+            elif current_user.role == 'client':
+                return redirect(url_for('client_portal.dashboard'))
+            else:
+                return redirect(url_for('learner.dashboard'))
         return redirect(url_for('auth.login'))
 
     @app.route('/health')

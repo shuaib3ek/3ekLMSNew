@@ -12,6 +12,7 @@ from flask import render_template, request, redirect, url_for, flash, current_ap
 from flask_login import login_user, logout_user, login_required
 from . import auth_bp
 from .models import StaffUser
+from app.crm_client import client as crm_client
 
 
 # ─── Admin Login (Password via CRM) ──────────────────────────────────────────
@@ -32,26 +33,14 @@ def login():
         token = current_app.config.get('CRM_SERVICE_TOKEN', '')
 
         if role == 'admin':
-            try:
-                current_app.logger.info(f"Auth attempt for {email} via CRM")
-                r = http_requests.post(
-                    f'{base}/api/v1/crm/auth/verify',
-                    json={'email': email, 'password': password},
-                    headers={'X-Service-Token': token, 'Content-Type': 'application/json'},
-                    timeout=5
-                )
-                data = r.json()
-                if r.ok and data.get('valid') and data.get('user'):
-                    user_data = data.get('user')
-                    staff_user = StaffUser(user_data)
-                    login_user(staff_user)
-                    flash('Logged in successfully.', 'success')
-                    return redirect(url_for('workshops.list_workshops'))
-                else:
-                    flash('Invalid credentials or CRM access denied.', 'danger')
-            except Exception as e:
-                current_app.logger.error(f'[LMS Auth] Gateway error: {e}')
-                flash('Failed to reach authentication gateway.', 'danger')
+            user_data = crm_client.verify_staff_password(email, password)
+            if user_data:
+                staff_user = StaffUser(user_data)
+                login_user(staff_user)
+                flash('Logged in successfully.', 'success')
+                return redirect(url_for('workshops.list_workshops'))
+            else:
+                flash('Invalid credentials or CRM access denied.', 'danger')
         else:
             # ── Trainer / Client / Learner (Demo Password Mode) ──
             # Accept a default master password for these roles
@@ -97,8 +86,7 @@ def login():
             elif role == 'client':
                 try:
                     # First: try real CRM Contact password (Werkzeug hash)
-                    from app.crm_client.client import verify_contact_password
-                    contact_data = verify_contact_password(email, password)
+                    contact_data = crm_client.verify_contact_password(email, password)
                     if contact_data:
                         email_valid = True
                         name_parts = contact_data.get('name', 'Client').split(' ', 1)

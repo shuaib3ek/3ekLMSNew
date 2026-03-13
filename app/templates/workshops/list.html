@@ -14,13 +14,13 @@
         </a>
         {% endif %}
     </div>
-
     <!-- Status Filter Tabs -->
-    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto;">
         {% for tab in [('all', 'All'), ('draft', 'Draft'), ('published', 'Published'), ('completed', 'Completed'),
         ('cancelled', 'Cancelled')] %}
         <a href="{{ url_for('workshops.list_workshops', status=tab[0]) }}"
-            class="btn btn-sm {% if status_filter == tab[0] %}btn-primary{% else %}btn-outline{% endif %}">
+            class="btn btn-sm {% if status_filter == tab[0] %}btn-primary{% else %}btn-outline{% endif %}"
+            style="flex: 1; text-align: center; justify-content: center; min-width: 120px;">
             {{ tab[1] }}
         </a>
         {% endfor %}
@@ -36,104 +36,79 @@
         {% endif %}
     </div>
     {% else %}
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.5rem;">
-        {% for w in workshops %}
-        <div class="card"
-            style="display: flex; flex-direction: column; overflow: hidden; transition: transform 0.2s, box-shadow 0.2s;"
-            onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='var(--shadow-lg)'"
-            onmouseout="this.style.transform='';this.style.boxShadow=''">
-
-            <!-- Banner -->
-            {% if w.banner_image_url %}
-            <div style="height: 160px; overflow: hidden; background: var(--bg-surface-hover);">
-                <img src="{{ w.banner_image_url }}" alt="{{ w.title }}"
-                    style="width: 100%; height: 100%; object-fit: cover;">
-            </div>
-            {% else %}
-            <div
-                style="height: 120px; background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); display: flex; align-items: center; justify-content: center;">
-                <i class="ph ph-presentation-chart" style="font-size: 3rem; color: rgba(255,255,255,0.2);"></i>
-            </div>
-            {% endif %}
-
-            <div style="padding: 1.25rem; flex: 1; display: flex; flex-direction: column;">
-                <!-- Status + Category -->
-                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                    <span
-                        class="badge {% if w.status == 'published' %}badge-success{% elif w.status == 'draft' %}badge-warning{% elif w.status == 'completed' %}badge-info{% else %}badge-danger{% endif %}">
-                        {{ w.status|title }}
-                    </span>
-                    <span
-                        style="font-size: 0.75rem; color: var(--text-secondary); background: var(--bg-surface-hover); padding: 0.2rem 0.6rem; border-radius: 99px;">
-                        {{ w.category }}
-                    </span>
-                    {% if w.is_public %}
-                    <span title="Visible on 3ek.in" style="font-size: 0.75rem; color: var(--success-color);"><i
-                            class="ph ph-globe-simple"></i></span>
-                    {% endif %}
-                </div>
-
-                <h3 style="margin: 0 0 0.25rem; font-size: 1.05rem; font-weight: 600; line-height: 1.3;">
-                    <a href="{{ url_for('workshops.detail_workshop', workshop_id=w.id) }}"
-                        style="color: var(--text-primary); text-decoration: none;">
-                        {{ w.title }}
-                    </a>
-                </h3>
-                {% if w.subtitle %}
-                <p style="margin: 0 0 0.75rem; color: var(--text-secondary); font-size: 0.85rem;">{{ w.subtitle }}</p>
-                {% endif %}
-
-                <!-- Date + Mode -->
-                <div
-                    style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.82rem; color: var(--text-secondary);">
-                    <span><i class="ph ph-calendar-blank"></i> {{ w.start_date.strftime('%d %b %Y') }}{% if w.end_date
-                        != w.start_date %} – {{ w.end_date.strftime('%d %b') }}{% endif %}</span>
-                    <span><i
-                            class="ph ph-{% if w.mode == 'online' %}video-camera{% elif w.mode == 'in_person' %}map-pin{% else %}arrows-out{% endif %}"></i>
-                        {{ w.mode|replace('_',' ')|title }}</span>
-                    {% if w.duration_display %}
-                    <span><i class="ph ph-clock"></i> {{ w.duration_display }}</span>
-                    {% endif %}
-                </div>
-
-                <!-- Seats Progress -->
-                <div style="margin-bottom: 1rem;">
-                    <div
-                        style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.3rem;">
-                        <span>{{ w.seats_booked }} / {{ w.total_seats or '—' }} seats filled</span>
-                        <span>{% if w.is_full %}<span
-                                style="color: var(--danger-color); font-weight: 600;">FULL</span>{% else %}{{
-                            w.seats_available }} left{% endif %}</span>
-                    </div>
-                    {% if w.total_seats %}
-                    <div style="height: 4px; background: var(--border-light); border-radius: 99px; overflow: hidden;">
-                        <div
-                            style="height: 100%; width: {{ w.fill_percentage }}%; background: {% if w.fill_percentage > 80 %}var(--danger-color){% elif w.fill_percentage > 50 %}var(--warning-color){% else %}var(--success-color){% endif %}; border-radius: 99px; transition: width 0.3s;">
-                        </div>
-                    </div>
-                    {% endif %}
-                </div>
-
-                <!-- Fee + CTA -->
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto;">
-                    <div>
-                        {% if w.is_free %}
-                        <span style="font-weight: 700; color: var(--success-color);">Free</span>
-                        {% else %}
-                        <span style="font-weight: 700; font-size: 1rem;">₹{{ '{:,.0f}'.format(w.fee_per_person)
-                            }}</span>
-                        {% if w.early_bird_fee %}
-                        <span style="font-size: 0.75rem; color: var(--text-secondary); margin-left: 0.3rem;">/ Early
-                            Bird ₹{{ '{:,.0f}'.format(w.early_bird_fee) }}</span>
-                        {% endif %}
-                        {% endif %}
-                    </div>
-                    <a href="{{ url_for('workshops.detail_workshop', workshop_id=w.id) }}"
-                        class="btn btn-sm btn-outline">Manage →</a>
-                </div>
-            </div>
+    <div class="card" style="padding: 0; overflow: hidden;">
+        <div class="table-container" style="overflow-x: auto;">
+            <table class="table" style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="background: var(--bg-app); border-bottom: 1px solid var(--border-light);">
+                        <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Workshop</th>
+                        <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Date & Mode</th>
+                        <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Status</th>
+                        <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Enrollment</th>
+                        <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for w in workshops %}
+                    <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.15s;">
+                        <!-- Workshop Info -->
+                        <td style="padding: 1.25rem 1.5rem;">
+                            <a href="{{ url_for('workshops.detail_workshop', workshop_id=w.id) }}" style="color: var(--text-primary); text-decoration: none; font-weight: 600;">
+                                {{ w.title }}
+                            </a>
+                            {% if w.subtitle %}
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">{{ w.subtitle }}</div>
+                            {% endif %}
+                            <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 0.25rem;">{{ w.category }}</div>
+                        </td>
+                        <!-- Date & Mode -->
+                        <td style="padding: 1.25rem 1.5rem; color: var(--text-secondary); font-size: 0.9rem;">
+                            <div>
+                                <i class="ph ph-calendar-blank"></i> {{ w.start_date.strftime('%d %b %Y') }}
+                                {% if w.end_date != w.start_date %} – {{ w.end_date.strftime('%d %b') }}{% endif %}
+                            </div>
+                            <div style="margin-top: 0.25rem; font-size: 0.85rem;">
+                                <i class="ph ph-{% if w.mode == 'online' %}video-camera{% elif w.mode == 'in_person' %}map-pin{% else %}arrows-out{% endif %}"></i> {{ w.mode|replace('_',' ')|title }}
+                            </div>
+                        </td>
+                        <!-- Status -->
+                        <td style="padding: 1.25rem 1.5rem;">
+                             <span class="status-warm" style="font-size: 0.75rem; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid currentColor;">
+                                {{ w.status|title }}
+                            </span>
+                            {% if w.is_public %}
+                                <i class="ph ph-globe-simple" style="color: var(--success); margin-left: 0.5rem;" title="Publicly Visible"></i>
+                            {% endif %}
+                        </td>
+                        <!-- Enrollment -->
+                        <td style="padding: 1.25rem 1.5rem;">
+                            <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                                {{ w.seats_booked }} / {{ w.total_seats or '—' }} seats
+                            </div>
+                            {% if w.total_seats %}
+                            <div style="height: 4px; background: var(--border-light); border-radius: 99px; overflow: hidden; margin-top: 0.5rem; width: 100px;">
+                                {% set bg_color = 'var(--success)' %}
+                                {% if w.fill_percentage > 80 %}
+                                    {% set bg_color = 'var(--danger)' %}
+                                {% elif w.fill_percentage > 50 %}
+                                    {% set bg_color = 'var(--warning)' %}
+                                {% endif %}
+                                <div style="height: 100%; width: {{ w.fill_percentage }}%; background: {{ bg_color }}; border-radius: 99px;">
+                                </div>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <!-- Action -->
+                        <td style="padding: 1.25rem 1.5rem;">
+                            <a href="{{ url_for('workshops.detail_workshop', workshop_id=w.id) }}" class="btn btn-sm btn-outline">
+                                Manage →
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-        {% endfor %}
     </div>
     {% endif %}
 </div>

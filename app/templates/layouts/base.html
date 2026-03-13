@@ -31,24 +31,15 @@
         }
 
         .layout-sidebar {
-            background: #020617;
-            /* Slate 950 - Always Dark */
+            background: var(--bg-sidebar);
+            /* border-right: 1px solid var(--border-light); REMOVED for clean minimal transition */
             padding: 1.5rem 1rem;
             display: flex;
             flex-direction: column;
             gap: 1rem;
-            gap: 1rem;
             overflow: hidden;
             /* Pin bottom section */
             transition: all 0.3s ease;
-            color: #e2e8f0;
-
-            /* Variable Overrides for Dark Sidebar */
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --text-tertiary: #64748b;
-            --border-light: rgba(255, 255, 255, 0.1);
-            --bg-surface: #020617;
         }
 
         .layout-header {
@@ -64,7 +55,6 @@
         .layout-content {
             padding: 2rem;
             overflow-y: auto;
-            overflow-x: auto;
             position: relative;
         }
 
@@ -76,14 +66,13 @@
             padding: 0.4rem 0.6rem;
             border-radius: 6px;
             text-decoration: none;
-            color: #94a3b8;
-            /* Slate 400 - High legibility on dark */
+            color: var(--text-secondary);
             font-size: 0.75rem;
             /* Reduced base size */
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             margin-bottom: 2px;
-            opacity: 1;
+            opacity: 0.85;
             cursor: pointer;
             /* Reverted global uppercase */
         }
@@ -96,8 +85,8 @@
             text-transform: none;
             /* Removed CAPS */
             font-weight: 600;
-            color: #e2e8f0;
-            /* Slate 200 */
+            color: var(--text-primary);
+            /* Use theme variable */
             font-size: 0.8rem;
             /* Slightly larger than tiny */
             letter-spacing: 0.02em;
@@ -115,9 +104,9 @@
         }
 
         .nav-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: #ffffff;
-            /* Slate 50 */
+            background: var(--bg-app);
+            color: var(--text-primary);
+            opacity: 1;
         }
 
         .nav-item i {
@@ -125,35 +114,31 @@
             transition: transform 0.2s;
         }
 
-        /* ACTIVE STATE (Bold, Large & Teal Accent) */
+        /* ACTIVE STATE (Minimal No-Box) */
         .nav-item.active {
-            background: rgba(17, 157, 171, 0.12);
-            /* Stronger background emphasis */
-            color: #ffffff !important;
-            font-weight: 700 !important;
-            font-size: 1.1rem !important;
-            /* Emphasized size as requested */
+            background: transparent;
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 1.15rem;
+            /* Compact active state */
+            padding: 0.5rem 0.75rem;
             margin: 0.25rem 0;
             box-shadow: none;
+            /* Removed side box */
             opacity: 1;
-            transform: translateX(4px);
-            /* Slightly more prominent shift */
+            transform: translateX(2px);
         }
 
-        /* Parent Active State (Main menu bold & teal when child selected) */
+        /* Parent Active State (When child selected) */
         .nav-item.parent-active {
-            color: #ffffff !important;
+            color: var(--accent) !important;
             font-weight: 700 !important;
-            font-size: 1.1rem !important;
-            /* Match active item size */
-            opacity: 1 !important;
+            font-size: 1.15rem !important;
         }
 
-        .nav-item.active i,
-        .nav-item.parent-active i {
+        .nav-item.active i {
             font-size: 1.25rem;
-            color: #38bdf8;
-            /* Keep icon colored (Sky 400) for visual anchor */
+            color: var(--accent);
         }
 
         /* Nav Group (Accordion separation) */
@@ -186,7 +171,7 @@
         .nav-submenu-content {
             padding-left: 0.5rem;
             margin-top: 0.25rem;
-            border-left: 2px solid rgba(255, 255, 255, 0.1);
+            border-left: 2px solid var(--border-light);
             /* Stronger hierarchy line */
             margin-left: 1.1rem;
         }
@@ -202,15 +187,15 @@
         /* Active child styling fix within submenu */
         .nav-submenu-content .nav-item.active {
             box-shadow: none;
+            /* Remove left border shadow for submenu items */
             background: transparent;
-            color: var(--accent) !important;
+            color: var(--accent);
             border-left: none;
         }
 
         .nav-submenu-content .nav-item.active::before {
             content: "•";
-            color: #38bdf8;
-            /* Sky 400 */
+            color: var(--accent);
             font-weight: bold;
             display: inline-block;
             margin-right: -5px;
@@ -224,10 +209,9 @@
             /* border-bottom: 1px solid var(--border-light); REMOVED */
         }
 
-        /* Dark Mode Logo Inversion (Always active on dark sidebar) */
-        .layout-sidebar .logo-area img {
+        /* Dark Mode Logo Inversion */
+        [data-theme="dark"] .logo-area img {
             filter: brightness(0) invert(1);
-            opacity: 0.9;
         }
     </style>
     {% block extra_css %}{% endblock %}
@@ -259,37 +243,59 @@
                     style="height: 36px; display: block;">
             </div>
 
-            <nav class="nav-links" id="sidebar-nav" style="flex: 1; overflow-y: auto; min-height: 0;">
-                <!-- HQ (Always Open / Top Level) -->
-                <div class="nav-group" id="group-hq">
-                    <a href="{{ url_for('workshops.list_workshops') }}"
-                        class="nav-item {% if request.endpoint == 'workshops.list_workshops' %}active{% endif %}"
-                        style="display: flex; align-items: center; justify-content: space-between;">
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <i class="ph ph-squares-four"></i>
-                            <span>Dashboard</span>
-                        </div>
-                        <i class="ph ph-bell"
-                            onclick="event.preventDefault(); event.stopPropagation(); toggleNotifDrawer();"
-                            style="font-size: 1.2rem; cursor: pointer; position: relative; padding: 0.25rem;">
-                            <span class="notification-badge" id="sidebar-notif-badge"
-                                style="display: none; position: absolute; top: -2px; right: -2px; min-width: 16px; height: 16px; font-size: 0.65rem; padding: 0 4px; border-radius: 99px; background: var(--danger); color: white; align-items: center; justify-content: center; font-weight: 700; box-shadow: 0 0 0 2px var(--bg-surface);">0</span>
-                        </i>
-                    </a>
-                </div>
-                <!-- Quick Search Trigger -->
-                <div onclick="toggleQuickSearch()" class="nav-item" style="cursor: pointer; position: relative;">
-                    <i class="ph ph-magnifying-glass"></i>
-                    <span>Quick Search...</span>
-                    <span style="font-size: 0.7rem; color: var(--text-tertiary); margin-left: auto;">⌘K</span>
+            <nav class="nav-links" id="sidebar-nav" style="flex: 1; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 0.25rem;">
+                
+
+
+                <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); margin-bottom: 0.5rem; margin-top: 0.5rem; padding-left: 0.5rem; font-weight: 700;">
+                    Enterprise Modules
                 </div>
 
-                <!-- WORKSHOPS (LMS Native) -->
+                <!-- 1. Dashboard -->
+                <a href="{{ url_for('admin.dashboard') if current_user.is_authenticated and current_user.role in ['admin', 'super_admin'] else '#' }}"
+                    class="nav-item {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}"
+                    style="font-weight: 600;">
+                    <i class="ph ph-squares-four"></i>
+                    <span style="flex:1">Dashboard</span>
+                </a>
+
+                <!-- 2. Workshops -->
                 <a href="{{ url_for('workshops.list_workshops') }}"
                     class="nav-item {% if request.endpoint and request.endpoint.startswith('workshops.') %}active{% endif %}"
                     style="font-weight: 600;">
                     <i class="ph ph-presentation-chart"></i>
                     <span style="flex:1">Workshops</span>
+                </a>
+
+                <!-- 3. Training Management (External Pulse) -->
+                <a href="{{ url_for('training_management.list_pulse_programs') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('training_management.') %}active{% endif %}" style="font-weight: 600;" title="Managed via 3EK Pulse">
+                    <i class="ph ph-chalkboard-teacher"></i>
+                    <span style="flex:1">Training Management</span>
+                    <i class="ph ph-link" style="font-size: 0.8rem; color: var(--text-tertiary);"></i>
+                </a>
+
+                <!-- 4. Learners -->
+                <a href="{{ url_for('learners.list_learners') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('learners.') %}active{% endif %}" style="font-weight: 600;" title="Global Learner Roster">
+                    <i class="ph ph-users"></i>
+                    <span style="flex:1">Learners</span>
+                </a>
+
+                <div style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-tertiary); margin-bottom: 0.5rem; margin-top: 1.5rem; padding-left: 0.5rem; font-weight: 700;">
+                    Technical Scaffold
+                </div>
+
+                <!-- 5. Assessments -->
+                <a href="#" class="nav-item" style="font-weight: 600; opacity: 0.5; cursor: not-allowed;">
+                    <i class="ph ph-exam"></i>
+                    <span style="flex:1">Assessments</span>
+                    <span style="font-size: 0.6rem; background: var(--border-light); color: var(--text-primary); padding: 2px 6px; border-radius: 4px;">SOON</span>
+                </a>
+
+                <!-- 6. Labs -->
+                <a href="#" class="nav-item" style="font-weight: 600; opacity: 0.5; cursor: not-allowed;">
+                    <i class="ph ph-flask"></i>
+                    <span style="flex:1">Labs</span>
+                    <span style="font-size: 0.6rem; background: var(--border-light); color: var(--text-primary); padding: 2px 6px; border-radius: 4px;">SOON</span>
                 </a>
             </nav>
 
@@ -298,31 +304,28 @@
 
                 <!-- User Profile Summary -->
                 {% if current_user.is_authenticated %}
-                <a href="#" class="user-profile-mini"
-                    style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 8px; background: rgba(0,0,0,0.02); text-decoration: none; transition: background 0.2s;">
+                <div class="user-profile-mini"
+                    style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 8px; background: rgba(0,0,0,0.02);">
                     <div
                         style="width: 32px; height: 32px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.85rem;">
-                        {{ (current_user.first_name or 'U')[0] }}
+                        {{ (current_user.first_name or current_user.email or 'U')[0]|upper }}
                     </div>
                     <div style="flex: 1; overflow: hidden;">
                         <div
                             style="font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary);">
-                            {{ current_user.first_name }} {{ current_user.last_name }}
-                        </div>
-                        <div style="font-size: 0.7rem; color: var(--text-tertiary);">
-                            {{ (current_user.role or 'User')|capitalize }}
+                            {% if current_user.first_name %}
+                                {{ current_user.first_name }} {{ current_user.last_name or '' }}
+                            {% else %}
+                                {{ current_user.email or 'User' }}
+                            {% endif %}
                         </div>
                     </div>
-                </a>
-                {% endif %}
-
-                <!-- Actions: Logout -->
-                <div style="display: flex; gap: 0.5rem;">
-                    <a href="{{ url_for('auth.logout') }}" class="nav-item-mini" title="Logout"
-                        style="flex: 1; cursor: pointer; border: none; background: transparent; padding: 0.5rem; display: flex; align-items: center; justify-content: center; color: var(--danger); transition: all 0.2s;">
-                        <i class="ph ph-sign-out" style="font-size: 1.1rem;"></i>
+                    <a href="{{ url_for('auth.logout') }}" title="Logout"
+                        style="cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--danger); padding: 0.25rem;">
+                        <i class="ph ph-sign-out" style="font-size: 1.1rem;" title="Log out"></i>
                     </a>
                 </div>
+                {% endif %}
             </div>
         </aside>
 
@@ -432,72 +435,7 @@
             </div>
         </div>
 
-        <!-- QUICK SEARCH MODAL (Auto-complete) -->
-        <div id="quick-search-overlay" onclick="if(event.target === this) toggleQuickSearch()"
-            style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 2500; display: none; align-items: flex-start; justify-content: center; padding-top: 15vh;">
 
-            <div id="quick-search-window"
-                style="width: 650px; background: var(--qs-bg); border-radius: 16px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); color: var(--qs-text); border: 1px solid var(--qs-border);">
-
-                <!-- Search Box -->
-                <div
-                    style="display: flex; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--qs-border);">
-                    <i class="ph ph-magnifying-glass" style="font-size: 1.5rem; color: var(--qs-meta);"></i>
-                    <input type="text" id="quick-search-input" placeholder="Search for clients, invoices, trainers..."
-                        style="flex: 1; border: none; outline: none; padding: 0 1rem; font-size: 1.1rem; color: var(--qs-text); background: transparent;"
-                        autocomplete="off">
-                    <div style="display: flex; align-items: center; gap: 1rem;">
-                        <i class="ph ph-microphone"
-                            style="font-size: 1.4rem; color: var(--accent); cursor: pointer;"></i>
-                        <span
-                            style="background: var(--qs-footer); color: var(--qs-sub); font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; border: 1px solid var(--qs-border);">ESC</span>
-                    </div>
-                </div>
-
-                <!-- Results Area -->
-                <div id="quick-search-results" style="max-height: 450px; overflow-y: auto; padding: 0.5rem 0;">
-                    <div style="padding: 2rem; text-align: center; color: var(--qs-meta);">
-                        <p style="font-size: 0.9rem;">Start typing to search across the platform...</p>
-                    </div>
-                </div>
-
-                <!-- Footer -->
-                <div
-                    style="padding: 0.75rem 1.5rem; background: var(--qs-footer); border-top: 1px solid var(--qs-border); display: flex; gap: 1.5rem; color: var(--qs-sub); font-size: 0.75rem;">
-                    <div style="display: flex; align-items: center; gap: 0.4rem;">
-                        <span
-                            style="background: var(--qs-kbd-bg); border: 1px solid var(--qs-kbd-border); padding: 1px 4px; border-radius: 3px; color: var(--qs-text);">↑↓</span>
-                        to navigate
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 0.4rem;">
-                        <span
-                            style="background: var(--qs-kbd-bg); border: 1px solid var(--qs-kbd-border); padding: 1px 4px; border-radius: 3px; color: var(--qs-text);">Enter</span>
-                        to select
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <style>
-            .search-result-item:hover,
-            .search-result-item.active {
-                background: var(--qs-hover) !important;
-            }
-
-            .search-result-item.active .ph-caret-right {
-                color: var(--accent) !important;
-            }
-
-            .search-result-item .category-tag {
-                font-size: 0.65rem;
-                font-weight: 700;
-                padding: 1px 4px;
-                border-radius: 3px;
-                background: var(--qs-border);
-                color: var(--qs-sub);
-                margin-right: 0.5rem;
-            }
-        </style>
 
         <!-- CONTENT -->
         <main class="layout-content">
@@ -796,101 +734,7 @@
             // ESC to close all
             if (e.key === 'Escape') {
                 if (PulseApp.isOpen) PulseApp.toggle();
-                if (QuickSearchApp.isOpen) toggleQuickSearch();
                 if (document.getElementById('notif-drawer').classList.contains('open')) toggleNotifDrawer();
-            }
-        });
-
-        // --- QUICK SEARCH LOGIC ---
-        const QuickSearchApp = {
-            overlay: document.getElementById('quick-search-overlay'),
-            input: document.getElementById('quick-search-input'),
-            resultsArea: document.getElementById('quick-search-results'),
-            isOpen: false,
-            activeIndex: -1,
-            currentResults: [],
-
-            toggle() {
-                this.isOpen = !this.isOpen;
-                this.overlay.style.display = this.isOpen ? 'flex' : 'none';
-                if (this.isOpen) {
-                    this.input.focus();
-                    this.input.value = '';
-                    this.renderInitial();
-                } else {
-                    this.activeIndex = -1;
-                    this.currentResults = [];
-                }
-            },
-
-            renderInitial() {
-                this.resultsArea.innerHTML = `
-        <div style="padding: 2rem; text-align: center; color: var(--qs-meta);">
-            <p style="font-size: 0.9rem;">Search for clients, invoices, trainers, or vault documents...</p>
-        </div>`;
-            },
-
-            async performSearch() {
-                const q = this.input.value.trim();
-                if (q.length < 2) { this.renderInitial(); this.currentResults = []; return; } try {
-                    const response = await
-                        fetch(`/api/search/suggestions?q=${encodeURIComponent(q)}`); this.currentResults = await response.json();
-                    this.activeIndex = -1; this.renderResults();
-                } catch (e) { console.error("Search failed", e); }
-            },
-            renderResults() {
-                if (this.currentResults.length === 0) {
-                    this.resultsArea.innerHTML = ` <div
-            style="padding: 2rem; text-align: center; color: var(--qs-meta);">
-            <p style="font-size: 0.9rem;">No results found for "${this.input.value}"</p>
-            </div>`;
-                    return;
-                }
-
-                this.resultsArea.innerHTML = this.currentResults.map((res, index) => {
-                    const typeTag = res.sub.split(' • ')[0];
-                    const subInfo = res.sub.split(' • ').slice(1).join(' • ');
-
-                    return `
-            <div class="search-result-item ${index === this.activeIndex ? 'active' : ''}"
-                onclick="window.location.href='${res.url}'"
-                style="display: flex; align-items: center; gap: 1rem; padding: 0.85rem 1.5rem; cursor: pointer; border-bottom: 1px solid var(--qs-border); transition: background 0.2s;">
-                <div
-                    style="width: 42px; height: 42px; background: var(--qs-footer); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--qs-sub); border: 1px solid var(--qs-border);">
-                    <i class="ph ${res.icon}" style="font-size: 1.25rem;"></i>
-                </div>
-                <div style="flex: 1;">
-                    <div style="font-weight: 600; color: var(--qs-text); font-size: 1rem;">${res.label}</div>
-                    <div style="display: flex; align-items: center; margin-top: 3px;">
-                        <span class="category-tag">${typeTag}</span>
-                        <span style="font-size: 0.75rem; color: var(--qs-sub);">${subInfo}</span>
-                    </div>
-                </div>
-                <i class="ph ph-caret-right" style="color: var(--qs-meta); font-size: 1rem;"></i>
-            </div>`;
-                }).join('');
-            }
-        };
-
-        function toggleQuickSearch() {
-            QuickSearchApp.toggle();
-        }
-
-        QuickSearchApp.input.addEventListener('input', () => QuickSearchApp.performSearch());
-        QuickSearchApp.input.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                QuickSearchApp.activeIndex = (QuickSearchApp.activeIndex + 1) % QuickSearchApp.currentResults.length;
-                QuickSearchApp.renderResults();
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                QuickSearchApp.activeIndex = (QuickSearchApp.activeIndex - 1 + QuickSearchApp.currentResults.length) %
-                    QuickSearchApp.currentResults.length;
-                QuickSearchApp.renderResults();
-            } else if (e.key === 'Enter') {
-                if (QuickSearchApp.activeIndex >= 0) {
-                    window.location.href = QuickSearchApp.currentResults[QuickSearchApp.activeIndex].url;
-                }
             }
         });
 

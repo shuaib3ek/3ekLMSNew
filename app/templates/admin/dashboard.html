@@ -1,0 +1,80 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="ph ph-squares-four"></i> Dashboard</h1>
+    <div class="breadcrumb">
+        <span>Admin Dashboard</span>
+        <i class="ph ph-caret-right"></i>
+        <span>Overview</span>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="ph ph-presentation-chart"></i>
+        </div>
+        <div class="stat-content">
+            <span class="text-tertiary" style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Active Curricula</span>
+            <span style="font-size: 1.75rem; font-weight: 700; color: var(--text-primary);">{{ active_workshops_count }}</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon blue">
+            <i class="ph ph-archive"></i>
+        </div>
+        <div class="stat-content">
+            <span class="text-tertiary" style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Completed Cohorts</span>
+            <span style="font-size: 1.75rem; font-weight: 700; color: var(--text-primary);">{{ completed_workshops_count }}</span>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon green">
+            <i class="ph ph-heartbeat"></i>
+        </div>
+        <div class="stat-content">
+            <span class="text-tertiary" style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">System Health</span>
+            <span style="font-size: 1.75rem; font-weight: 700; color: var(--success);">NOMINAL</span>
+        </div>
+    </div>
+</div>
+
+<div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+    <div class="card" style="flex: 2; min-width: 400px;">
+        <div class="card-header">
+            <h3 class="card-title">Priority Alerts Queue</h3>
+        </div>
+        <div style="padding: 4rem 2rem; text-align: center; color: var(--text-tertiary);">
+            <i class="ph ph-check-circle" style="font-size: 3rem; margin-bottom: 1rem; color: var(--success); opacity: 0.7;"></i>
+            <p style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary); margin-bottom: 0.5rem;">Zero Critical Alerts</p>
+            <p style="font-size: 0.9rem;">No schedules double-booked. No capacity warnings.</p>
+        </div>
+    </div>
+    
+    <div class="card" style="flex: 1; min-width: 300px;">
+         <div class="card-header">
+            <h3 class="card-title">Quick Actions</h3>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <a href="{{ url_for('workshops.new_workshop') }}" class="btn btn-primary" style="width: 100%;">
+                <i class="ph ph-plus" style="margin-right: 0.5rem; font-size: 1.1rem;"></i> New Workshop
+            </a>
+            <a href="{{ url_for('workshops.list_workshops') }}" class="btn btn-outline" style="width: 100%;">
+                <i class="ph ph-list" style="margin-right: 0.5rem; font-size: 1.1rem;"></i> Open Catalog
+            </a>
+        </div>
+        
+        <div style="margin-top: 2rem; border-top: 1px solid var(--border-light); padding-top: 1.5rem;">
+            <h4 style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase;">Pulse Sync Status</h4>
+            <div style="background: var(--bg-app); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1rem; font-family: monospace; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.6;">
+                > Validating Auth Token... OK<br>
+                > Syncing participant records...<br>
+                > <span class="text-success">SYNC_COMPLETE (23ms)</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

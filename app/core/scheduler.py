@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask_apscheduler import APScheduler
 
 scheduler = APScheduler()
@@ -14,13 +15,12 @@ def init_scheduler(app):
     import os
     import sys
 
-    is_run_py = 'run.py' in sys.argv[0]
-    is_reloader_child = os.environ.get('WERKZEUG_RUN_MAIN') == 'true'
-
-    if is_run_py and not is_reloader_child:
-        print('LMS Scheduler: Skipping start in reloader main process.')
-    else:
+    # Only start scheduler once (handles Flask reloader)
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug:
         scheduler.start()
+        print('--- LMS Scheduler Started ---', flush=True)
+    else:
+        print('LMS Scheduler: Waiting for reloader child process...', flush=True)
 
     # MS Teams background task engine — every 2 minutes
     @scheduler.task('interval', id='lms_msteams_processor', minutes=2, misfire_grace_time=60)
@@ -28,10 +28,27 @@ def init_scheduler(app):
         with app.app_context():
             process_msteams_tasks()
 
-    # MS Teams subscription renewal — every 12 hours
-    @scheduler.task('interval', id='lms_msteams_renew', hours=12, misfire_grace_time=3600)
-    def job_msteams_renew():
+    # CRM Background Sync — every 24 hours
+    @scheduler.task('interval', id='lms_crm_daily_sweep', days=1, misfire_grace_time=3600)
+    def job_crm_daily_sweep():
+        from app.crm_client.sync_tasks import sync_all_crm_data
         with app.app_context():
-            renew_msteams_subscriptions()
+            sync_all_crm_data()
+
+    # Trigger initial sync on startup after a 5 second delay
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug:
+        import threading
+        import time
+        
+        def initial_sync_delayed():
+            time.sleep(5)
+            from app.crm_client.sync_tasks import sync_all_crm_data
+            with app.app_context():
+                try:
+                    sync_all_crm_data()
+                except Exception as e:
+                    print(f"[LMS] Initial Sync Failed: {e}", flush=True)
+
+        threading.Thread(target=initial_sync_delayed, daemon=True).start()
 
     print('--- LMS Scheduler Initialised (Timezone: Asia/Kolkata) ---')

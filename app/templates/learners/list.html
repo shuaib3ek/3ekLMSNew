@@ -1,0 +1,77 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <div>
+        <h1 class="page-title"><i class="ph ph-users"></i> Global Learner Roster</h1>
+        <div class="breadcrumb" style="margin-top: 0.5rem;">
+            <span>All Active Participants</span>
+        </div>
+    </div>
+    <div class="btn btn-outline" style="display: flex; gap: 0.5rem; align-items: center;">
+        <i class="ph ph-funnel"></i> Filter
+    </div>
+</div>
+
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div class="table-container" style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr style="background: var(--bg-app); border-bottom: 1px solid var(--border-light);">
+                    <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Identity</th>
+                    <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Corporate / Role</th>
+                    <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Active Pipeline</th>
+                    <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if learners %}
+                    {% for learner in learners %}
+                    <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.15s;">
+                        <td style="padding: 1.25rem 1.5rem;">
+                            <div style="font-weight: 600; color: var(--text-primary); font-size: 1rem;">{{ learner.name }}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-tertiary); margin-top: 0.25rem;">{{ learner.email }}</div>
+                        </td>
+                        <td style="padding: 1.25rem 1.5rem;">
+                            <div style="font-weight: 500; color: var(--text-secondary); font-size: 0.9rem;">{{ learner.company or 'Individual' }}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-tertiary); margin-top: 0.25rem;">{{ learner.job_title or '--' }}</div>
+                        </td>
+                        <td style="padding: 1.25rem 1.5rem;">
+                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                {% for reg in learner.registrations[:2] %}
+                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; border: 1px solid var(--border-light); padding: 6px 10px; font-size: 0.85rem; border-radius: 6px; background: var(--bg-surface);">
+                                        <span style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;" title="{{ reg.workshop.title }}">{{ reg.workshop.title }}</span>
+                                        <span class="status-{% if reg.status == 'confirmed' %}success{% elif reg.status == 'pending' %}warning{% else %}cold{% endif %}" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 600; padding: 2px 6px; border-radius: 4px; border: 1px solid currentColor;">
+                                            {{ reg.status }}
+                                        </span>
+                                    </div>
+                                {% endfor %}
+                                {% if learner.registrations|length > 2 %}
+                                    <div style="font-size: 0.8rem; color: var(--text-tertiary); font-weight: 500; margin-top: 0.25rem;">+ {{ learner.registrations|length - 2 }} more sessions</div>
+                                {% endif %}
+                                {% if not learner.registrations %}
+                                    <span style="font-size: 0.85rem; color: var(--text-tertiary);">No active workshops</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td style="padding: 1.25rem 1.5rem; text-align: right;">
+                            <button class="btn btn-sm btn-outline">
+                                View Profile
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="4" style="padding: 4rem; text-align: center; color: var(--text-tertiary);">
+                            <i class="ph ph-users" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                            <p style="font-size: 1.1rem; font-weight: 600; color: var(--text-secondary);">No learners found.</p>
+                            <p style="font-size: 0.9rem;">The system database is currently empty.</p>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

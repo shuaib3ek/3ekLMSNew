@@ -113,29 +113,7 @@
             </div>
         </div>
 
-        <!-- SECTION 4: Logistics -->
-        <div class="form-section-title">4. Mode & Logistics</div>
-        <div class="form-row three-col">
-            <div class="form-group">
-                <label class="form-label">Delivery Mode</label>
-                <select name="mode" class="form-control" id="mode_select">
-                    {% for m in [('online','Online / Virtual'), ('in_person','In-Person'), ('hybrid','Hybrid')] %}
-                    <option value="{{ m[0] }}" {% if workshop and workshop.mode==m[0] %}selected{% endif %}>{{ m[1] }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Venue / Location</label>
-                <input type="text" name="venue" class="form-control" id="venue_input"
-                    placeholder="e.g. Bengaluru + Online — Zoom" value="{{ workshop.venue or '' if workshop else '' }}">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Meeting Link (Online)</label>
-                <input type="url" name="meeting_link" class="form-control" placeholder="https://zoom.us/j/..."
-                    value="{{ workshop.meeting_link or '' if workshop else '' }}">
-            </div>
-        </div>
+        <!-- Logistics and Media visibility removed per user request. These will be managed later. -->
 
         <!-- SECTION 5: Capacity & Pricing -->
         <div class="form-section-title">5. Capacity & Pricing</div>
@@ -166,20 +144,6 @@
             </div>
         </div>
 
-        <!-- SECTION 6: Media -->
-        <div class="form-section-title">6. Media & Visibility</div>
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Banner Image URL</label>
-                <input type="url" name="banner_image_url" class="form-control" placeholder="https://..."
-                    value="{{ workshop.banner_image_url or '' if workshop else '' }}">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Brochure PDF URL</label>
-                <input type="url" name="brochure_url" class="form-control" placeholder="https://..."
-                    value="{{ workshop.brochure_url or '' if workshop else '' }}">
-            </div>
-        </div>
         {% if workshop %}
         <div class="form-row">
             <div class="form-group" style="display: flex; align-items: center; gap: 0.75rem;">

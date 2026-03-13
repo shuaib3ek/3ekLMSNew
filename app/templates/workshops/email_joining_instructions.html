@@ -55,6 +55,14 @@
         </table>
     </div>
 
+    {% if extra_notes %}
+    <div
+        style="margin-top: 25px; padding: 15px; background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; margin-bottom: 20px;">
+        <h4 style="color: #92400e; margin-top: 0; margin-bottom: 8px;">Organizer Note:</h4>
+        <p style="color: #b45309; margin: 0; font-size: 0.95rem;">{{ extra_notes }}</p>
+    </div>
+    {% endif %}
+
     <div style="margin-top: 25px;">
         <h4 style="color: #1e293b; margin-bottom: 10px;">Important Notes:</h4>
         <ul style="padding-left: 20px; color: #475569;">
@@ -65,7 +73,8 @@
     </div>
 
     <p style="margin-top: 30px;">If you have any questions or face technical issues while joining, please contact us at
-        <a href="mailto:support@3ek.in">support@3ek.in</a>.</p>
+        <a href="mailto:support@3ek.in">support@3ek.in</a>.
+    </p>
 
     <p>Best Regards,<br><strong>3EK Team</strong></p>
 </div>

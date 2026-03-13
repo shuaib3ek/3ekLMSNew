@@ -4,6 +4,7 @@ LMS-owned. No imports from 3EK-Pulse (CRM).
 Trainer/Contact resolution uses crm_client HTTP calls.
 """
 import os
+import requests
 import json
 import re
 import uuid
@@ -22,7 +23,7 @@ from .models import (
     Workshop, WorkshopTrainer, WorkshopSession,
     WorkshopRegistration, WorkshopEmailLog, WorkshopDocument, Learner
 )
-from app.core.extensions import db
+from app.core.extensions import db, csrf
 from app.crm_client import get_trainer, list_trainers, get_contact, list_contacts
 from app.services.ai_workshop_service import generate_workshop_content, extract_text_from_file
 
@@ -195,16 +196,21 @@ def edit_workshop(workshop_id):
         workshop.end_time = request.form.get('end_time', '05:00 PM IST')
         workshop.duration_display = request.form.get('duration_display', '')
         workshop.registration_deadline = datetime.strptime(reg_deadline_str, '%Y-%m-%d').date() if reg_deadline_str else None
-        workshop.mode = request.form.get('mode', 'online')
-        workshop.venue = request.form.get('venue', '')
-        workshop.meeting_link = request.form.get('meeting_link', '')
+        if 'mode' in request.form:
+            workshop.mode = request.form.get('mode')
+        if 'venue' in request.form:
+            workshop.venue = request.form.get('venue')
+        if 'meeting_link' in request.form:
+            workshop.meeting_link = request.form.get('meeting_link')
         workshop.total_seats = int(request.form.get('total_seats') or 30)
         workshop.fee_per_person = float(fee)
         workshop.is_free = (float(fee) == 0)
         workshop.early_bird_fee = float(early_bird_fee) if early_bird_fee else None
         workshop.early_bird_deadline = datetime.strptime(early_bird_deadline_str, '%Y-%m-%d').date() if early_bird_deadline_str else None
-        workshop.banner_image_url = request.form.get('banner_image_url', '')
-        workshop.brochure_url = request.form.get('brochure_url', '')
+        if 'banner_image_url' in request.form:
+            workshop.banner_image_url = request.form.get('banner_image_url')
+        if 'brochure_url' in request.form:
+            workshop.brochure_url = request.form.get('brochure_url')
         workshop.is_public = bool(request.form.get('is_public'))
         workshop.featured = bool(request.form.get('featured'))
 
@@ -219,6 +225,55 @@ def edit_workshop(workshop_id):
 
 
 # ─── Status Change ────────────────────────────────────────────────────────────
+
+@workshops_bp.route('/<int:workshop_id>/generate-meeting', methods=['POST'])
+@login_required
+def generate_meeting(workshop_id):
+    _admin_required()
+    workshop = Workshop.query.get_or_404(workshop_id)
+    
+    if workshop.mode not in ['online', 'hybrid']:
+        return jsonify({'error': 'Meeting generation is only for online/hybrid workshops.'}), 400
+
+    if workshop.meeting_link:
+        return jsonify({
+            'success': True,
+            'join_url': workshop.meeting_link,
+            'message': 'Meeting already generated.'
+        })
+
+    from app.services.ms_graph_service import MSGraphService
+    graph = MSGraphService()
+    
+    # Calculate start and end datetimes
+    try:
+        # Expected formats: '09:00 AM IST' or '17:00'
+        def parse_time_str(ts):
+            parts = ts.split(' ')
+            if len(parts) >= 2 and parts[1].upper() in ['AM', 'PM']:
+                return datetime.strptime(f"{parts[0]} {parts[1]}", '%I:%M %p').time()
+            return datetime.strptime(parts[0], '%H:%M').time()
+
+        start_dt = datetime.combine(workshop.start_date, parse_time_str(workshop.start_time))
+        end_dt = datetime.combine(workshop.end_date, parse_time_str(workshop.end_time))
+    except Exception as e:
+        return jsonify({'error': f'Failed to parse workshop times: {e}'}), 400
+
+    meeting = graph.create_online_meeting(workshop.title, start_dt, end_dt)
+    
+    if meeting and 'joinWebUrl' in meeting:
+        workshop.meeting_link = meeting['joinWebUrl']
+        db.session.commit()
+        return jsonify({
+            'success': True,
+            'join_url': meeting['joinWebUrl']
+        })
+    else:
+        return jsonify({
+            'error': 'Failed to generate meeting link via MS Graph.',
+            'hint': 'Check MS Graph logs or ensure MS_SENDER_EMAIL has a valid license.'
+        }), 500
+
 
 @workshops_bp.route('/<int:workshop_id>/status', methods=['GET', 'POST'])
 @login_required
@@ -530,7 +585,7 @@ def _sync_sessions(workshop, form):
 
 def _send_confirmation_email(workshop, registration):
     try:
-        from app.services.ms_graph import MSGraphService
+        from app.services.ms_graph_service import MSGraphService
         graph = MSGraphService()
         subject = f'Registration Received: {workshop.title}'
         html_body = render_template(
@@ -543,6 +598,20 @@ def _send_confirmation_email(workshop, registration):
             graph.send_email(ms_token, registration.email, subject, html_body, is_html=True)
     except Exception as e:
         current_app.logger.error(f'[LMS] Confirmation email failed: {e}')
+
+
+def _send_payment_receipt_email(workshop, registration):
+    try:
+        from app.services.ms_graph_service import MSGraphService
+        graph = MSGraphService()
+        subject = f'Payment Receipt: {workshop.title}'
+        html_body = render_template(
+            'workshops/email_payment_received.html',
+            workshop=workshop, registration=registration, now=datetime.utcnow()
+        )
+        graph.send_email(registration.email, subject, html_body)
+    except Exception as e:
+        current_app.logger.error(f'[LMS] Payment receipt email failed: {e}')
 
 
 # ─── Document Management ──────────────────────────────────────────────────────
@@ -709,8 +778,114 @@ def send_invite(workshop_id):
 def send_joining_details(workshop_id):
     _admin_required()
     workshop = Workshop.query.get_or_404(workshop_id)
-    # Placeholder for joining details logic
-    flash(f'Joining details sent to all participants for "{workshop.title}".', 'success')
+    
+    # Process modal data
+    meeting_link = request.form.get('meeting_link')
+    venue = request.form.get('venue')
+    extra_notes = request.form.get('extra_notes', '')
+
+    if workshop.mode == 'online' and meeting_link:
+        workshop.meeting_link = meeting_link
+    elif workshop.mode != 'online' and venue:
+        workshop.venue = venue
+    
+    db.session.commit()
+    
+    # Fetch confirmed participants
+    participants = [r for r in workshop.registrations if r.status == 'confirmed' or r.payment_status == 'paid']
+    
+    if not participants:
+        flash('No confirmed participants found to send details to.', 'warning')
+        return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
+
+    from app.services.ms_graph_service import MSGraphService
+    import base64
+    from datetime import timedelta
+    
+    graph = MSGraphService()
+    
+    # Generate Calendar Invite (.ics) if online
+    attachments = []
+    if workshop.mode == 'online' and workshop.meeting_link:
+        try:
+            # Basic manual ICS generation to avoid dependency issues
+            start_dt = datetime.combine(workshop.start_date, datetime.strptime(workshop.start_time.split(' ')[0], '%H:%M').time())
+            # Simple assumption: Workshop ends at end_time on end_date
+            end_dt = datetime.combine(workshop.end_date, datetime.strptime(workshop.end_time.split(' ')[0], '%H:%M').time())
+            
+            ics_content = [
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                "PRODID:-//3EK LMS//Workshop Calendar//EN",
+                "BEGIN:VEVENT",
+                f"SUMMARY:{workshop.title}",
+                f"DTSTART:{start_dt.strftime('%Y%m%dT%H%M%S')}",
+                f"DTEND:{end_dt.strftime('%Y%m%dT%H%M%S')}",
+                f"LOCATION:{workshop.meeting_link}",
+                f"DESCRIPTION:Workshop: {workshop.title}\\nLink: {workshop.meeting_link}\\n\\n{extra_notes}",
+                "STATUS:CONFIRMED",
+                "SEQUENCE:0",
+                "BEGIN:VALARM",
+                "TRIGGER:-PT15M",
+                "ACTION:DISPLAY",
+                "DESCRIPTION:Reminder",
+                "END:VALARM",
+                "END:VEVENT",
+                "END:VCALENDAR"
+            ]
+            ics_text = "\r\n".join(ics_content)
+            attachments.append({
+                'name': 'invite.ics',
+                'content_bytes': base64.b64encode(ics_text.encode('utf-8')).decode('utf-8'),
+                'content_type': 'text/calendar'
+            })
+        except Exception as e:
+            current_app.logger.error(f"[LMS] Failed to generate ICS: {e}")
+
+    # Create email log
+    log = WorkshopEmailLog(
+        workshop_id=workshop.id,
+        email_type='joining_instructions',
+        subject=f"Joining Instructions: {workshop.title}",
+        recipient_count=0,
+        sent_at=datetime.utcnow(),
+        crm_sent_by_id=current_user.id
+    )
+    db.session.add(log)
+
+    count = 0
+    errors = 0
+    for p in participants:
+        try:
+            subject = f"Joining Instructions: {workshop.title}"
+            html_body = render_template(
+                'workshops/email_joining_instructions.html',
+                workshop=workshop,
+                recipient=p,
+                extra_notes=extra_notes,
+                now=datetime.utcnow()
+            )
+            # Send with attachments
+            sent = graph.send_email(p.email, subject, html_body, attachments=attachments)
+            if sent:
+                count += 1
+            else:
+                errors += 1
+        except Exception as e:
+            errors += 1
+            current_app.logger.error(f"[LMS] Failed to send joining details to {p.email}: {e}")
+
+    log.recipient_count = count
+    if errors:
+        log.notes = f"Failed to send to {errors} recipients."
+    
+    db.session.commit()
+    
+    if errors:
+        flash(f'Sent {count} joining instructions. {errors} failed.', 'warning')
+    else:
+        flash(f'Successfully sent joining instructions to {count} participants.', 'success')
+        
     return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
 
 
@@ -729,8 +904,30 @@ def invite_lms(workshop_id, reg_id):
 def send_payment_link_email(workshop_id, reg_id):
     _admin_required()
     reg = WorkshopRegistration.query.get_or_404(reg_id)
-    # Placeholder for payment link logic
-    flash(f'Payment reminder sent to {reg.name}.', 'success')
+    
+    if reg.payment_status == 'paid':
+        flash('This registration is already paid.', 'warning')
+        return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
+        
+    payment_link = url_for('workshops.payment_checkout', token=reg.confirmation_token, _external=True)
+    
+    try:
+        from app.services.ms_graph_service import MSGraphService
+        graph = MSGraphService()
+        subject = f'Complete your Registration: {reg.workshop.title}'
+        html_body = render_template(
+            'workshops/email_payment_link.html',
+            workshop=reg.workshop,
+            recipient=reg,
+            payment_link=payment_link,
+            now=datetime.utcnow()
+        )
+        graph.send_email(reg.email, subject, html_body)
+        flash(f'Payment reminder sent to {reg.name}.', 'success')
+    except Exception as e:
+        current_app.logger.error(f"[LMS] Failed to send payment reminder to {reg.email}: {e}")
+        flash(f'Failed to send payment reminder to {reg.name}. Check logs.', 'danger')
+        
     return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
 
 
@@ -760,5 +957,101 @@ def session_compliance(session_id):
 @workshops_bp.route('/checkout/<token>')
 def payment_checkout(token):
     reg = WorkshopRegistration.query.filter_by(confirmation_token=token).first_or_404()
-    # Placeholder for checkout page
-    return f"Checkout page for {reg.workshop.title} (Token: {token})"
+    
+    if reg.payment_status == 'paid':
+        flash('Payment already completed for this registration.', 'info')
+        return render_template('workshops/register_confirmed.html', registration=reg, workshop=reg.workshop)
+        
+    amount = int(reg.workshop.fee_per_person * 100) # Amount in paise
+    currency = "INR"
+    
+    # Initialize Razorpay Client
+    rzp_key_id = current_app.config.get('RAZORPAY_KEY_ID')
+    rzp_key_secret = current_app.config.get('RAZORPAY_KEY_SECRET')
+    
+    if not rzp_key_id or not rzp_key_secret:
+        return "Payment gateway is not fully configured.", 500
+        
+    import razorpay
+    client = razorpay.Client(auth=(rzp_key_id, rzp_key_secret))
+    
+    try:
+        # Create Razorpay Order if not exists
+        if not reg.razorpay_order_id:
+            order_data = {
+                "amount": amount,
+                "currency": currency,
+                "receipt": f"receipt_{reg.id}",
+                "notes": {"registration_token": reg.confirmation_token}
+            }
+            order = client.order.create(data=order_data)
+            reg.razorpay_order_id = order['id']
+            db.session.commit()
+    except Exception as e:
+        current_app.logger.error(f"[LMS] Razorpay Order Error: {e}")
+        return "Error creating payment order. Please try again later.", 500
+        
+    return render_template(
+        'workshops/checkout.html',
+        registration=reg,
+        key_id=rzp_key_id,
+        amount=amount,
+        currency=currency,
+        order_id=reg.razorpay_order_id
+    )
+
+@workshops_bp.route('/payment-callback', methods=['POST'])
+@csrf.exempt
+def payment_callback():
+    razorpay_payment_id = request.form.get('razorpay_payment_id')
+    razorpay_order_id = request.form.get('razorpay_order_id')
+    razorpay_signature = request.form.get('razorpay_signature')
+    
+    if not (razorpay_payment_id and razorpay_order_id and razorpay_signature):
+        return abort(400, "Missing payment details.")
+        
+    reg = WorkshopRegistration.query.filter_by(razorpay_order_id=razorpay_order_id).first()
+    if not reg:
+        return abort(404, "Order not found.")
+        
+    rzp_key_id = current_app.config.get('RAZORPAY_KEY_ID')
+    rzp_key_secret = current_app.config.get('RAZORPAY_KEY_SECRET')
+    
+    import razorpay
+    client = razorpay.Client(auth=(rzp_key_id, rzp_key_secret))
+    
+    try:
+        params_dict = {
+            'razorpay_order_id': razorpay_order_id,
+            'razorpay_payment_id': razorpay_payment_id,
+            'razorpay_signature': razorpay_signature
+        }
+        client.utility.verify_payment_signature(params_dict)
+        
+        # Payment is verified
+        reg.payment_status = 'paid'
+        reg.status = 'confirmed'
+        reg.razorpay_payment_id = razorpay_payment_id
+        
+        # Track the actual amount paid
+        try:
+            payment = client.payment.fetch(razorpay_payment_id)
+            reg.amount_paid = float(payment['amount']) / 100
+        except Exception as e:
+            current_app.logger.warning(f"[LMS] Could not fetch payment amount from Razorpay: {e}")
+            # Fallback to workshop fee if fetch fails
+            reg.amount_paid = float(reg.workshop.fee_per_person or 0)
+
+        db.session.commit()
+        
+        # Send receipt email
+        _send_payment_receipt_email(reg.workshop, reg)
+        
+        return render_template('workshops/register_success.html', registration=reg, workshop=reg.workshop)
+        
+    except razorpay.errors.SignatureVerificationError:
+        current_app.logger.error(f"[LMS] Razorpay Signature mismatch for order {razorpay_order_id}")
+        return abort(400, "Payment verification failed.")
+    except Exception as e:
+        current_app.logger.error(f"[LMS] Razorpay Callback Error: {e}")
+        return abort(500, "An error occurred handling payment callback.")

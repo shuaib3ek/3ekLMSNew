@@ -1,0 +1,59 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <div>
+        <h1 class="page-title"><i class="ph ph-briefcase"></i> External Training</h1>
+        <div class="breadcrumb" style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span style="display: inline-block; width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></span>
+            <span style="font-weight: 600; font-size: 0.8rem; color: var(--success);">LIVE STREAM FROM 3EK-PULSE</span>
+        </div>
+    </div>
+    <a href="{{ config.CRM_API_URL }}/ops" target="_blank" class="btn btn-outline">
+        NATIVE PULSE DASHBOARD <i class="ph ph-arrow-up-right"></i>
+    </a>
+</div>
+
+<div class="card" style="padding: 0; overflow: hidden;">
+    <div class="table-container" style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead>
+                <tr style="background: var(--bg-app); border-bottom: 1px solid var(--border-light);">
+                    <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Program Name</th>
+                    <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Client / Cohort</th>
+                    <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Status</th>
+                    <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if programs %}
+                    {% for p in programs %}
+                    <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.15s;">
+                        <td style="padding: 1.25rem 1.5rem; font-weight: 600; color: var(--text-primary);">{{ p.topic }}</td>
+                        <td style="padding: 1.25rem 1.5rem; color: var(--text-secondary); font-size: 0.9rem;">{{ p.client_name or 'Unknown Client' }}</td>
+                        <td style="padding: 1.25rem 1.5rem;">
+                            <span class="status-warm" style="font-size: 0.75rem; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid currentColor;">
+                                {{ p.status }}
+                            </span>
+                        </td>
+                        <td style="padding: 1.25rem 1.5rem;">
+                            <a href="{{ config.CRM_API_URL }}/ops/inquiries/{{ p.inquiry_id }}" target="_blank" class="btn btn-sm btn-outline">
+                                View Details <i class="ph ph-arrow-up-right"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="4" style="padding: 4rem; text-align: center; color: var(--text-tertiary);">
+                            <i class="ph ph-folder-dashed" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                            <p style="font-size: 1.1rem; font-weight: 600; color: var(--text-secondary);">No historical programs detected.</p>
+                            <p style="font-size: 0.9rem;">Pulse sync might be offline or no data exists yet.</p>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
