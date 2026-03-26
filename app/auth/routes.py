@@ -44,7 +44,7 @@ def login():
         else:
             # ── Trainer / Client / Learner (Demo Password Mode) ──
             # Accept a default master password for these roles
-            if password not in ('password', '3ek2026', 'Password123!', '123456'):
+            if password not in ('password', '3ek2026', 'Password123!', '123456', '3eks@learn'):
                 flash('Invalid password. Hint: Try "3ek2026".', 'danger')
                 return redirect(url_for('auth.login', role=role))
 

@@ -32,14 +32,30 @@
                         <td style="padding: 1.25rem 1.5rem; font-weight: 600; color: var(--text-primary);">{{ p.topic }}</td>
                         <td style="padding: 1.25rem 1.5rem; color: var(--text-secondary); font-size: 0.9rem;">{{ p.client_name or 'Unknown Client' }}</td>
                         <td style="padding: 1.25rem 1.5rem;">
-                            <span class="status-warm" style="font-size: 0.75rem; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid currentColor;">
-                                {{ p.status }}
-                            </span>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span class="status-warm" style="font-size: 0.75rem; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid currentColor;">
+                                    {{ p.status }}
+                                </span>
+                                {% if p.is_lms_managed %}
+                                    <span class="badge" style="background: var(--pulse-teal-light); color: var(--pulse-teal-dark); border: 1px solid var(--pulse-teal); font-size: 0.65rem; padding: 2px 6px;">
+                                        PULSE MANAGED
+                                    </span>
+                                {% endif %}
+                            </div>
                         </td>
                         <td style="padding: 1.25rem 1.5rem;">
-                            <a href="{{ config.CRM_API_URL }}/ops/inquiries/{{ p.inquiry_id }}" target="_blank" class="btn btn-sm btn-outline">
-                                View Details <i class="ph ph-arrow-up-right"></i>
-                            </a>
+                            <div style="display: flex; gap: 0.5rem;">
+                                {% if p.is_lms_managed %}
+                                    <a href="{{ url_for('workshops.detail', workshop_id=p.lms_workshop_id) }}" class="btn btn-sm btn-primary">
+                                        LMS Workspace <i class="ph ph-arrow-right"></i>
+                                    </a>
+                                {% else %}
+                                    <a href="{{ url_for('training_management.program_detail', crm_engagement_id=p.id) }}" class="btn btn-sm btn-primary">
+                                        View Program <i class="ph ph-arrow-right"></i>
+                                    </a>
+                                {% endif %}
+
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}

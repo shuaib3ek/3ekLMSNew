@@ -144,6 +144,15 @@ def create_app(config_class=Config):
     from .learners import learners_bp
     app.register_blueprint(learners_bp, url_prefix='/learners')
 
+    # Assessments Module (New)
+    from .assessments import assessments_bp
+    app.register_blueprint(assessments_bp, url_prefix='/assessments')
+
+    # Labs Module (New)
+    from .labs import labs_bp
+    app.register_blueprint(labs_bp, url_prefix='/labs')
+
+
     # ── Health Check ─────────────────────────────────────────────────────────
 
     @app.route('/')

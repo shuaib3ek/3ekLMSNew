@@ -65,6 +65,19 @@ def list_workshops():
     return render_template('workshops/list.html', workshops=workshops, status_filter=status_filter)
 
 
+@workshops_bp.route('/sync-crm', methods=['POST'])
+@login_required
+def sync_crm():
+    _admin_required()
+    try:
+        list_trainers(status='active')
+        list_contacts()
+        flash('Successfully synced trainers and contacts from CRM.', 'success')
+    except Exception as e:
+        flash(f'CRM sync failed: {e}', 'danger')
+    return redirect(url_for('workshops.list_workshops'))
+
+
 # ─── Create ───────────────────────────────────────────────────────────────────
 
 @workshops_bp.route('/new', methods=['GET', 'POST'])
@@ -149,13 +162,31 @@ def detail_workshop(workshop_id):
             now=datetime.utcnow()
         )
 
-    # Trainers from CRM via HTTP
-    all_trainers = list_trainers(status='active')
+    # Trainers & Contacts from CRM via HTTP
+    # We include 'active' and 'vetted' trainers
+    active_ts = list_trainers(status='active')
+    vetted_ts = list_trainers(status='vetted')
+    
+    # Merge and deduplicate by CRM ID. 
+    # Add status indicator to name if not active
+    trainer_map = {}
+    for t in active_ts:
+        trainer_map[t['id']] = t
+        
+    for t in vetted_ts:
+        if t['id'] not in trainer_map:
+            t['name'] = f"{t['name']} (Vetted)"
+            trainer_map[t['id']] = t
+            
+    all_trainers = sorted(trainer_map.values(), key=lambda x: x['name'])
+    
+    all_contacts = list_contacts()
     assigned_trainer_ids = {wt.crm_trainer_id for wt in workshop.trainers}
     return render_template(
         'workshops/detail.html',
         workshop=workshop,
         all_trainers=all_trainers,
+        all_contacts=all_contacts,
         assigned_trainer_ids=assigned_trainer_ids,
     )
 
@@ -581,6 +612,79 @@ def _sync_sessions(workshop, form):
         db.session.add(session)
 
 
+@workshops_bp.route('/<int:workshop_id>/bulk-enroll', methods=['POST'])
+@login_required
+def bulk_enroll_roster(workshop_id):
+    if current_user.role not in ['admin', 'super_admin']:
+        abort(403)
+        
+    workshop = Workshop.query.get_or_404(workshop_id)
+    if not workshop.is_lms_managed:
+        flash('Bulk enrollment is only available for LMS-managed programs.', 'warning')
+        return redirect(url_for('workshops.detail', workshop_id=workshop_id))
+
+    file = request.files.get('roster_csv')
+    if not file or not file.filename.endswith('.csv'):
+        flash('Please upload a valid CSV file.', 'danger')
+        return redirect(url_for('workshops.detail', workshop_id=workshop_id))
+
+    import csv
+    import io
+    from app.learners.models import Learner
+    
+    stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+    csv_input = csv.DictReader(stream)
+    
+    added_count = 0
+    errors = []
+    
+    for row in csv_input:
+        email = row.get('Email', '').strip().lower()
+        name = row.get('Name', '').strip()
+        
+        if not email or not name:
+            continue
+            
+        try:
+            # 1. Ensure Learner profile exists
+            learner = Learner.query.filter_by(email=email).first()
+            if not learner:
+                learner = Learner(
+                    email=email,
+                    name=name,
+                    company=row.get('Company', '').strip(),
+                    job_title=row.get('Title', '').strip()
+                )
+                db.session.add(learner)
+                db.session.flush()
+
+            # 2. Add to Workshop if not already there
+            existing = WorkshopRegistration.query.filter_by(workshop_id=workshop.id, email=email).first()
+            if not existing:
+                reg = WorkshopRegistration(
+                    workshop_id=workshop.id,
+                    learner_id=learner.id,
+                    name=name,
+                    email=email,
+                    status='confirmed',
+                    payment_status='free',
+                    source='bulk_import'
+                )
+                db.session.add(reg)
+                added_count += 1
+        except Exception as e:
+            errors.append(f"Error adding {email}: {str(e)}")
+
+    db.session.commit()
+    
+    if errors:
+        flash(f"Imported {added_count} participants with {len(errors)} errors.", 'warning')
+    else:
+        flash(f"Successfully imported {added_count} participants.", 'success')
+        
+    return redirect(url_for('workshops.detail', workshop_id=workshop_id))
+
+
 # ─── Email Helpers ────────────────────────────────────────────────────────────
 
 def _send_confirmation_email(workshop, registration):
@@ -694,13 +798,16 @@ def send_invite(workshop_id):
         recipients = []
 
         if filter_type == 'all_active':
-            recipients = [{'id': c['id'], 'name': c['name'], 'email': c['email']} for c in contacts if c.get('email')]
+            for c in contacts:
+                if c.get('email'):
+                    name_parts = c['name'].strip().split(' ', 1)
+                    recipients.append({'id': c['id'], 'name': c['name'], 'first_name': name_parts[0], 'email': c['email']})
         elif filter_type == 'contacts':
             selected_ids = request.form.getlist('contact_ids')
-            recipients = []
             for c in contacts:
                 if str(c['id']) in selected_ids and c.get('email'):
-                    recipients.append({'id': c['id'], 'name': c['name'], 'email': c['email']})
+                    name_parts = c['name'].strip().split(' ', 1)
+                    recipients.append({'id': c['id'], 'name': c['name'], 'first_name': name_parts[0], 'email': c['email']})
         elif filter_type == 'custom':
             custom_list = request.form.get('custom_emails', '').split('\n')
             for line in custom_list:
@@ -711,7 +818,8 @@ def send_invite(workshop_id):
                 else:
                     email, name = line, 'Colleague'
                 if email and '@' in email:
-                    recipients.append({'id': None, 'name': name, 'email': email})
+                    name_parts = name.strip().split(' ', 1)
+                    recipients.append({'id': None, 'name': name, 'first_name': name_parts[0], 'email': email})
 
         if preview_only:
             return jsonify({
@@ -746,7 +854,10 @@ def send_invite(workshop_id):
                     email_type=email_type,
                     now=datetime.utcnow()
                 )
-                sent = graph.send_email(r['email'], subject, html_body)
+                sent = graph.send_email(
+                    r['email'], subject, html_body,
+                    sender_email=current_user.email
+                )
                 if sent:
                     count += 1
                 else:

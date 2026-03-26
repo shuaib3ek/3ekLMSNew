@@ -21,6 +21,7 @@
 
 <!-- Stats -->
 <div class="lp-stats">
+    {% if upcoming %}
     <div class="lp-stat">
         <div class="lp-stat-icon"><i class="ph ph-calendar-check"></i></div>
         <div>
@@ -28,6 +29,8 @@
             <div class="lp-stat-label">Upcoming Workshops</div>
         </div>
     </div>
+    {% endif %}
+    {% if past %}
     <div class="lp-stat">
         <div class="lp-stat-icon" style="background:#f0fdf4; color:#15803d;"><i class="ph ph-check-circle"></i></div>
         <div>
@@ -35,6 +38,8 @@
             <div class="lp-stat-label">Completed</div>
         </div>
     </div>
+    {% endif %}
+    {% if certificates %}
     <div class="lp-stat">
         <div class="lp-stat-icon" style="background:#fffbeb; color:#b45309;"><i class="ph ph-certificate"></i></div>
         <div>
@@ -42,6 +47,7 @@
             <div class="lp-stat-label">Certificates Earned</div>
         </div>
     </div>
+    {% endif %}
 </div>
 
 <!-- Two-column content -->
@@ -50,13 +56,13 @@
     <!-- Left: Workshop lists -->
     <div>
         <!-- Upcoming -->
+        {% if upcoming %}
         <div style="margin-bottom: 2rem;">
             <div class="lp-heading">
                 <i class="ph ph-rocket-launch"></i>
                 Upcoming <span class="accent">Workshops</span>
             </div>
             <div class="lp-ws-list">
-                {% if upcoming %}
                 {% for reg in upcoming %}
                 <a href="{{ url_for('learner_portal.workshop_detail', workshop_id=reg.workshop.id) }}"
                     class="lp-ws-card">
@@ -75,14 +81,9 @@
                     <span class="lp-pill lp-pill-{{ reg.status }}">{{ reg.status | title }}</span>
                 </a>
                 {% endfor %}
-                {% else %}
-                <div class="lp-empty">
-                    <i class="ph ph-calendar-x"></i>
-                    No upcoming workshops.<br>Check back soon!
-                </div>
-                {% endif %}
             </div>
         </div>
+        {% endif %}
 
         <!-- Past -->
         {% if past %}
@@ -113,14 +114,100 @@
             </div>
         </div>
         {% endif %}
+
+        <!-- Program Assignments (Labs & Assessments) -->
+        {% if program_assignments %}
+        <div style="margin-top: 2.5rem;">
+            <div class="lp-heading">
+                <i class="ph ph-lightning"></i>
+                Program <span class="accent">Assignments</span>
+            </div>
+
+            {% for pa in program_assignments %}
+                <!-- Labs -->
+                {% if pa.labs %}
+                <div style="margin-bottom: 2rem;">
+                    <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.45rem;">
+                        <i class="ph ph-desktop" style="color: var(--teal);"></i> Virtual Labs
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        {% for lab_assign in pa.labs %}
+                        <div class="lp-ws-card" style="cursor: default; padding: 1.1rem 1.25rem;">
+                            <div class="lp-date-box" style="background: var(--teal-light); border-color: var(--teal-border); width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                                <i class="ph-bold ph-terminal-window" style="font-size: 1.5rem; color: var(--teal-dark);"></i>
+                            </div>
+                            <div class="lp-ws-info">
+                                <div class="lp-ws-title">{{ lab_assign.lab.title }}</div>
+                                <div class="lp-ws-meta">
+                                    <span class="lp-pill lp-pill-{{ lab_assign.computed_status }}">{{ lab_assign.computed_status | title }}</span>
+                                    {% if lab_assign.lab.access_end %}
+                                    <span><i class="ph ph-clock-countdown"></i> Ends {{ lab_assign.lab.access_end.strftime('%d %b') }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if lab_assign.computed_status == 'active' %}
+                            <a href="{{ lab_assign.lab.lab_url }}" target="_blank" class="lp-btn-primary" style="padding: 0.5rem 1rem; font-size: 0.8rem; border-radius: 6px;">
+                                Launch <i class="ph ph-arrow-square-out"></i>
+                            </a>
+                            {% else %}
+                            <button class="lp-btn-outline" disabled style="padding: 0.5rem 1rem; font-size: 0.8rem; border-radius: 6px; opacity: 0.5;">
+                                Unavailable
+                            </button>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Assessments -->
+                {% if pa.assessments %}
+                <div style="margin-bottom: 2rem;">
+                    <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.45rem;">
+                        <i class="ph ph-exam" style="color: var(--teal);"></i> Assessments
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        {% for ass_assign in pa.assessments %}
+                        <div class="lp-ws-card" style="cursor: default; padding: 1.1rem 1.25rem;">
+                            <div class="lp-date-box" style="background: #fdf2f8; border-color: #fbcfe8; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
+                                <i class="ph-bold ph-file-text" style="font-size: 1.5rem; color: #db2777;"></i>
+                            </div>
+                            <div class="lp-ws-info">
+                                <div class="lp-ws-title">{{ ass_assign.assessment.title }}</div>
+                                <div class="lp-ws-meta">
+                                    <span class="lp-pill lp-pill-{{ ass_assign.status }}">{{ ass_assign.status | title }}</span>
+                                    <span><i class="ph ph-file"></i> {{ ass_assign.assessment.assessment_type | title }}</span>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <a href="{{ ass_assign.assessment.file_url }}" target="_blank" class="lp-btn-outline" style="padding: 0.5rem 1rem; font-size: 0.8rem; border-radius: 6px;">
+                                    View
+                                </a>
+                                {% if ass_assign.status == 'pending' %}
+                                <form method="POST" action="{{ url_for('learner_portal.submit_assessment', assignment_id=ass_assign.id) }}" style="margin: 0;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="lp-btn-primary" style="padding: 0.5rem 1rem; font-size: 0.8rem; border-radius: 6px;">
+                                        Submit
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
     </div>
 
     <!-- Right: Sidebar card -->
     <div>
         <!-- Certificates card -->
+        {% if certificates %}
         <div class="lp-panel" style="padding: 1.5rem;">
             <div class="lp-panel-label">Certificates Earned</div>
-            {% if certificates %}
             {% for cert in certificates %}
             <div
                 style="display:flex; align-items:center; gap:0.75rem; padding:0.65rem 0; border-bottom:1px solid var(--zinc-100);">
@@ -138,13 +225,8 @@
             <a href="{{ url_for('learner_portal.certificates') }}" class="lp-btn-primary" style="margin-top: 1rem;">
                 View All Certificates →
             </a>
-            {% else %}
-            <div style="text-align:center; padding:1.25rem 0; color:var(--text-muted); font-size:0.82rem;">
-                <i class="ph ph-certificate" style="font-size:1.75rem; display:block; margin-bottom:0.5rem;"></i>
-                No certificates yet
-            </div>
-            {% endif %}
         </div>
+        {% endif %}
 
         <!-- Profile card -->
         <div class="lp-panel">

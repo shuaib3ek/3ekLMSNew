@@ -76,6 +76,11 @@ class Workshop(db.Model):
 
     internal_notes = db.Column(db.Text)
 
+    # ── Enhancement Takeover Flags (Phase 3.0) ────────────────────────────────
+    is_lms_managed = db.Column(db.Boolean, default=False)
+    admin_ready = db.Column(db.Boolean, default=False)
+    crm_engagement_id = db.Column(db.Integer, index=True, nullable=True) # Pulse trigger
+
     # Relationships (LMS-internal only)
     trainers = db.relationship('WorkshopTrainer', back_populates='workshop', cascade='all, delete-orphan')
     sessions = db.relationship('WorkshopSession', back_populates='workshop', cascade='all, delete-orphan',
@@ -137,6 +142,38 @@ class Workshop(db.Model):
         except RuntimeError:
             base = 'https://www.3ek.in'
         return f'{base}/workshops/{self.slug}'
+
+    def sync_from_crm(self):
+        """Updates local metadata from Pulse CRM live data."""
+        if not self.crm_engagement_id:
+            return False
+
+        from app.crm_client import client as crm
+        data = crm.get_program_detail(self.crm_engagement_id)
+        if not data:
+            return False
+
+        # Update core metadata only if it's managed
+        if self.is_lms_managed:
+            self.title = data.get('topic', self.title)
+
+        # Always sync Dates if crm_engagement_id exists
+        start_str = data.get('start_date')
+        end_str = data.get('end_date')
+
+        from datetime import datetime
+        if start_str:
+            try:
+                self.start_date = datetime.strptime(start_str, '%Y-%m-%d').date()
+            except Exception:
+                pass
+        if end_str:
+            try:
+                self.end_date = datetime.strptime(end_str, '%Y-%m-%d').date()
+            except Exception:
+                pass
+
+        return True
 
 
 class WorkshopTrainer(db.Model):
@@ -261,6 +298,10 @@ class Learner(db.Model):
     name = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
     phone = db.Column(db.String(50))
+
+    # ── Predefined Auth (Phase 3.0) ──────────────────────────────────────────
+    username = db.Column(db.String(100), unique=True, nullable=True)
+    password_hash = db.Column(db.String(255), nullable=True)
     company = db.Column(db.String(255))
     job_title = db.Column(db.String(255))
 
@@ -479,3 +520,28 @@ class Certificate(db.Model):
 
     def __repr__(self):
         return f'<Certificate {self.certificate_number}>'
+
+
+class WorkshopActivityLog(db.Model):
+    """
+    Granular log of participant activity within a workshop.
+    Tracks sessions, labs, and quest completions.
+    """
+    __tablename__ = 'workshop_activity_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    workshop_id = db.Column(db.Integer, db.ForeignKey('workshops.id'), nullable=False)
+    learner_id = db.Column(db.Integer, db.ForeignKey('learners.id'), nullable=False)
+    registration_id = db.Column(db.Integer, db.ForeignKey('workshop_registrations.id'), nullable=False)
+    
+    activity_type = db.Column(db.String(50), nullable=False) # login, logout, lab_start, lab_end, quest_complete
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    duration_seconds = db.Column(db.Integer, default=0)
+    metadata_json = db.Column(db.JSON) # Additional context
+
+    workshop = db.relationship('Workshop')
+    learner = db.relationship('Learner')
+    registration = db.relationship('WorkshopRegistration')
+
+    def __repr__(self):
+        return f'<WorkshopActivityLog {self.learner_id} - {self.activity_type}>'

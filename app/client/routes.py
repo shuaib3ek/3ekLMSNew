@@ -133,6 +133,21 @@ def program_detail(engagement_id):
     if not program:
         abort(404)
 
+    # ── Enhancement: Selective Takeover Sync (Phase 3.0) ─────────────────────
+    from app.workshops.models import Workshop
+    from app.core.extensions import db
+    
+    workshop = Workshop.query.filter_by(crm_engagement_id=engagement_id).first()
+    if workshop:
+        # Trigger real-time sync of dates/times from CRM
+        workshop.sync_from_crm()
+        db.session.commit()
+        
+        # Enrich the program dict with LMS-managed status for the UI
+        program['is_lms_managed'] = workshop.is_lms_managed
+        program['admin_ready'] = workshop.admin_ready
+        program['workshop_id'] = workshop.id
+
     return render_template('client/program_detail.html', program=program)
 
 

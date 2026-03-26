@@ -238,9 +238,12 @@ body {
     border-radius: 20px; white-space: nowrap; border: 1px solid;
 }
 .lp-pill-confirmed { background: #f0fdf4; border-color: #bbf7d0; color: var(--success); }
+.lp-pill-active    { background: #f0fdf4; border-color: #bbf7d0; color: var(--success); }
 .lp-pill-pending   { background: #fffbeb; border-color: #fde68a; color: var(--warning); }
 .lp-pill-attended  { background: var(--teal-light); border-color: var(--teal-border); color: var(--teal-dark); }
+.lp-pill-submitted { background: var(--teal-light); border-color: var(--teal-border); color: var(--teal-dark); }
 .lp-pill-cancelled { background: #fef2f2; border-color: #fecaca; color: var(--danger); }
+.lp-pill-expired   { background: #fef2f2; border-color: #fecaca; color: var(--danger); }
 
 /* ── Panel card ──────────────────────────────────────────────────────────── */
 .lp-panel {

@@ -12,11 +12,11 @@ def sync_all_crm_data():
     """
     current_app.logger.info("[LMS Sync] Starting Daily CRM Background Sweep...")
     
-    # 1. Sync Trainers
+    # 1. Sync Trainers (Active & Vetted)
     try:
-        trainers = crm_client.list_trainers(status='active')
-        # list_trainers already calls update_shadow_trainer for each item internally
-        current_app.logger.info(f"[LMS Sync] Synced {len(trainers)} trainers.")
+        active_t = crm_client.list_trainers(status='active')
+        vetted_t = crm_client.list_trainers(status='vetted')
+        current_app.logger.info(f"[LMS Sync] Synced {len(active_t)} active and {len(vetted_t)} vetted trainers.")
     except Exception as e:
         current_app.logger.error(f"[LMS Sync] Trainer sync failed: {e}")
 

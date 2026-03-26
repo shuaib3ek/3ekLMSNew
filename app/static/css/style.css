@@ -37,7 +37,10 @@
     --info: #3b82f6;
     /* Blue 500 */
 
-    /* Pulse Colors */
+    /* Pulse CRM Design Tokens (Phase 3.0) */
+    --pulse-teal: #2dd4bf; 
+    --pulse-teal-dark: #0f766e;
+    --pulse-teal-light: #f0fdfa;
     --pulse-bg: #020617;
     --pulse-icon: #ffffff;
     --pulse-glow: rgba(17, 157, 171, 0.4);
@@ -1126,6 +1129,7 @@ select.form-control {
 }
 
 /* Modal Styles */
+.modal,
 .modal-overlay {
     display: none;
     position: fixed;
@@ -1133,23 +1137,25 @@ select.form-control {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(15, 23, 42, 0.6); /* Slightly darker slate-ish overlay */
     z-index: 1000;
     justify-content: center;
     align-items: center;
-    backdrop-filter: blur(2px);
+    backdrop-filter: blur(6px);
+    padding: 1rem;
 }
 
 .modal-content {
     background-color: var(--bg-surface);
-    padding: 2rem;
+    padding: 2.5rem;
     border-radius: var(--radius-lg);
     width: 100%;
     max-width: 500px;
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     position: relative;
     max-height: 90vh;
     overflow-y: auto;
+    border: 1px solid var(--border-light);
 }
 
 .modal-header {
@@ -2740,4 +2746,71 @@ select.form-control {
 
 .sidebar-overlay {
     display: none;
+}
+/* --- PULSE EXCEL-STYLE TABLES (Phase 3.0) --- */
+.excel-table-container {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+.excel-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    color: #1e293b;
+}
+
+.excel-table th {
+    background: #f8fafc;
+    border-bottom: 2px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.025em;
+    color: #475569;
+}
+
+.excel-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+    border-right: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.excel-table tr:hover {
+    background: #f0f9ff;
+}
+
+.excel-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Pulse Workspace Banner */
+.pulse-banner {
+    background: linear-gradient(135deg, var(--pulse-bg) 0%, #1e293b 100%);
+    color: #ffffff;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--pulse-teal);
+    box-shadow: 0 4px 12px rgba(45, 212, 191, 0.1);
+}
+
+.pulse-badge {
+    background: var(--pulse-teal);
+    color: #020617;
+    font-weight: 800;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
 }

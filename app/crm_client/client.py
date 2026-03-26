@@ -151,12 +151,23 @@ def list_contacts() -> list:
         r = requests.get(f'{_base()}/api/v1/crm/contacts', headers=_headers(), timeout=2)
         if r.ok:
             data = r.json().get('data', [])
-            for c in data:
-                update_shadow_contact(c)
+            current_app.logger.warning(f"[LMS] CRM API list_contacts SUCCESS: fetched {len(data)} contacts")
+            try:
+                # Attempt shadow sync, but don't let it block the live data return
+                for c in data:
+                    try:
+                        update_shadow_contact(c)
+                    except Exception as loop_e:
+                        current_app.logger.error(f"[LMS] Per-contact shadow sync error for {c.get('email', 'unknown')}: {loop_e}")
+            except Exception as sync_e:
+                current_app.logger.error(f"[LMS] Major shadow sync error for contacts: {sync_e}")
             return data
-    except Exception:
-        pass
+        else:
+            current_app.logger.warning(f"[LMS] CRM API list_contacts non-ok response ({r.status_code}): {r.text}")
+    except Exception as e:
+        current_app.logger.warning(f"[LMS] CRM API list_contacts critical failure: {e}")
     
+    # Fallback to local cache if API is UNREACHABLE or returns Error
     contacts = ShadowContact.query.all()
     return [{
         'id': c.crm_contact_id,
@@ -231,11 +242,20 @@ def list_trainers(status: str = 'active') -> list:
         )
         if r.ok:
             data = r.json().get('data', [])
-            for t in data:
-                update_shadow_trainer(t)
+            current_app.logger.warning(f"[LMS] CRM API list_trainers SUCCESS: fetched {len(data)} trainers (status: {status})")
+            try:
+                for t in data:
+                    try:
+                        update_shadow_trainer(t)
+                    except Exception as loop_e:
+                        current_app.logger.error(f"[LMS] Per-trainer shadow sync error for {t.get('name', 'unknown')}: {loop_e}")
+            except Exception as sync_e:
+                 current_app.logger.error(f"[LMS] Major shadow sync error for trainers: {sync_e}")
             return data
-    except Exception:
-        pass
+        else:
+            current_app.logger.warning(f"[LMS] CRM API list_trainers non-ok response ({r.status_code}): {r.text}")
+    except Exception as e:
+        current_app.logger.warning(f"[LMS] CRM API list_trainers critical failure: {e}")
 
     trainers = ShadowTrainer.query.all()
     return [{
@@ -298,8 +318,30 @@ def fetch_pulse_programs() -> list:
         if r.ok:
             return r.json().get('data', [])
     except Exception as e:
-        current_app.logger.warning(f"[Pulse Integration] Failed to fetch historical programs: {e}")
-    
-    # If Pulse is offline, return an empty list for the read-only view.
+        current_app.logger.error(f"[LMS] Failed to fetch programs: {e}")
     return []
 
+def fetch_pulse_program_detail(program_id: int) -> dict | None:
+    """
+    Retrieves a single program detail from 3ek-pulse.
+    """
+    try:
+        r = requests.get(f'{_base()}/api/v1/crm/programs/{program_id}', headers=_headers(), timeout=2)
+        if r.ok:
+            data = r.json().get('data')
+            if data:
+                # The detail API currently omits client_name, enrich it from the list API if needed
+                if not data.get('client_name'):
+                    for p in fetch_pulse_programs():
+                        if p.get('id') == program_id:
+                            data['client_name'] = p.get('client_name')
+                            break
+            return data
+    except Exception as e:
+        current_app.logger.error(f"[LMS] Failed to fetch program {program_id}: {e}")
+    
+    # Fallback to fetching all and filtering if individual endpoint doesn't exist
+    for p in fetch_pulse_programs():
+        if p.get('id') == program_id:
+            return p
+    return None

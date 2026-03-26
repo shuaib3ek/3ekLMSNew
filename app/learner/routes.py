@@ -57,12 +57,17 @@ def dashboard():
 
     certificates = Certificate.query.filter_by(learner_id=learner.id).all()
 
+    # ── Phase 3: Program Assignments (Labs & Assessments) ──
+    from app.training_management.models import ProgramParticipant
+    program_assignments = ProgramParticipant.query.filter_by(learner_id=learner.id).all()
+
     return render_template(
         'learner/dashboard.html',
         learner=learner,
         upcoming=upcoming,
         past=past,
         certificates=certificates,
+        program_assignments=program_assignments
     )
 
 
@@ -153,3 +158,26 @@ def profile():
         return redirect(url_for('learner_portal.profile'))
 
     return render_template('learner/profile.html', learner=learner)
+
+
+@learner_portal_bp.route('/assessment/submit/<int:assignment_id>', methods=['POST'])
+@learner_required
+def submit_assessment(assignment_id):
+    from app.assessments.models import AssessmentAssignment
+    assignment = AssessmentAssignment.query.get_or_404(assignment_id)
+    
+    # Security Check: Ensure assignment belongs to this learner
+    from app.training_management.models import ProgramParticipant
+    participant = ProgramParticipant.query.get(assignment.participant_id)
+    if not participant or participant.learner_id != current_user.id:
+        abort(403)
+        
+    assignment.status = 'submitted'
+    try:
+        db.session.commit()
+        flash(f'Assessment submitted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error submitting assessment: {str(e)}', 'danger')
+        
+    return redirect(url_for('learner_portal.dashboard'))

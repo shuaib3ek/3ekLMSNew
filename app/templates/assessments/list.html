@@ -1,0 +1,58 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 2rem;">
+    <h1 class="page-title"><i class="ph ph-exam"></i> Assessments Management</h1>
+    <p style="color: var(--text-secondary); margin-top: 0.5rem;">Manage assessments for your training programs.</p>
+</div>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 style="margin: 0;">Programs with Assessments Enabled</h3>
+    </div>
+
+    {% if programs %}
+    <div class="table-container">
+        <table class="table" style="width: 100%; text-align: left;">
+            <thead>
+                <tr>
+                    <th>CRM ID</th>
+                    <th>Program Title</th>
+                    <th>Client / Org</th>
+                    <th>Dates</th>
+                    <th style="text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in programs %}
+                <tr>
+                    <td style="font-family: monospace; color: var(--text-secondary);">#{{ p.id }}</td>
+                    <td style="font-weight: 500;">{{ p.topic }}</td>
+                    <td>{{ p.client_name or '-' }}</td>
+                    <td style="color: var(--text-secondary); font-size: 0.9rem;">
+                        {{ p.start_date }} {% if p.end_date %}<br>to {{ p.end_date }}{% endif %}
+                    </td>
+                    <td style="text-align: right;">
+                        <a href="{{ url_for('assessments.detail', crm_engagement_id=p.id) }}" class="btn btn-sm btn-primary">
+                            Manage Assessments <i class="ph ph-arrow-right"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding: 3rem; text-align: center; border: 1px dashed var(--border-light); border-radius: 8px;">
+        <i class="ph ph-exam" style="font-size: 2.5rem; color: var(--text-tertiary); margin-bottom: 1rem;"></i>
+        <h4 style="margin: 0 0 0.5rem;">No programs found</h4>
+        <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem;">
+            You need to enable the Assessments module for a program in the Training Management module first.
+        </p>
+        <a href="{{ url_for('training_management.list_pulse_programs') }}" class="btn btn-primary">
+            Go to Training Management
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

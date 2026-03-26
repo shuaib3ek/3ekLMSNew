@@ -94,7 +94,7 @@
                 <!-- Greeting -->
                 <p class="greeting"
                     style="font-size: 16px; color: #334155; line-height: 1.6; margin-bottom: 24px; margin-top: 0;">
-                    Dear <strong>{{ recipient.get('first_name', 'Learning Professional') }}</strong>,
+                    Hi <strong>{{ recipient.get('first_name', recipient.get('name', 'there')) }}</strong>,
                     <br><br>
                     We are organizing an upcoming workshop and would love for you to share this opportunity with your
                     team. This hands-on, highly interactive experience is designed specifically to elevate professional

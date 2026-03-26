@@ -285,17 +285,15 @@
                 </div>
 
                 <!-- 5. Assessments -->
-                <a href="#" class="nav-item" style="font-weight: 600; opacity: 0.5; cursor: not-allowed;">
+                <a href="{{ url_for('assessments.list_assessments') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('assessments.') %}active{% endif %}" style="font-weight: 600;">
                     <i class="ph ph-exam"></i>
                     <span style="flex:1">Assessments</span>
-                    <span style="font-size: 0.6rem; background: var(--border-light); color: var(--text-primary); padding: 2px 6px; border-radius: 4px;">SOON</span>
                 </a>
 
                 <!-- 6. Labs -->
-                <a href="#" class="nav-item" style="font-weight: 600; opacity: 0.5; cursor: not-allowed;">
-                    <i class="ph ph-flask"></i>
+                <a href="{{ url_for('labs.list_labs') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('labs.') %}active{% endif %}" style="font-weight: 600;">
+                    <i class="ph ph-desktop"></i>
                     <span style="flex:1">Labs</span>
-                    <span style="font-size: 0.6rem; background: var(--border-light); color: var(--text-primary); padding: 2px 6px; border-radius: 4px;">SOON</span>
                 </a>
             </nav>
 
