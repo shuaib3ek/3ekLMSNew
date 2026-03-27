@@ -522,6 +522,36 @@ class Certificate(db.Model):
         return f'<Certificate {self.certificate_number}>'
 
 
+class WorkshopInviteContact(db.Model):
+    """
+    Tracks exactly which CRM contacts were emailed for a specific workshop.
+    One row per contact per workshop — upserted on each blast.
+    """
+    __tablename__ = 'workshop_invite_contacts'
+
+    id = db.Column(db.Integer, primary_key=True)
+    workshop_id = db.Column(db.Integer, db.ForeignKey('workshops.id'), nullable=False)
+
+    crm_contact_id = db.Column(db.Integer, nullable=True)   # soft CRM ref
+
+    # Denormalized for resilience (CRM contact may change)
+    name = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+
+    status = db.Column(db.String(20), default='sent')  # sent | failed
+    sent_at = db.Column(db.DateTime, default=datetime.utcnow)
+    email_type = db.Column(db.String(30), default='invitation')  # invitation | reminder
+
+    workshop = db.relationship('Workshop', backref=db.backref('invite_contacts', lazy='dynamic'))
+
+    __table_args__ = (
+        db.UniqueConstraint('workshop_id', 'crm_contact_id', 'email_type', name='uq_workshop_contact_type'),
+    )
+
+    def __repr__(self):
+        return f'<WorkshopInviteContact {self.email} → workshop {self.workshop_id}>'
+
+
 class WorkshopActivityLog(db.Model):
     """
     Granular log of participant activity within a workshop.

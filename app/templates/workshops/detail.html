@@ -315,8 +315,59 @@
                 </div>
             </div>
 
+            <!-- Invite Tracker Card -->
+            <div class="card" style="padding: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3 class="card-title-modern" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0;">INVITE TRACKER</h3>
+                    <a href="{{ url_for('workshops.send_invite', workshop_id=workshop.id) }}" class="btn btn-sm action-btn-dark" style="font-size: 0.75rem; padding: 0.3rem 0.75rem;">
+                        <i class="ph ph-paper-plane-tilt"></i> Send
+                    </a>
+                </div>
+                {% set sent_contacts = workshop.invite_contacts.filter_by(status='sent').all() %}
+                {% set failed_contacts = workshop.invite_contacts.filter_by(status='failed').all() %}
+                {% set sent_count = sent_contacts | length %}
+                {% set failed_count = failed_contacts | length %}
+                <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                    <div style="text-align: center; flex: 1; background: #f0fdf4; border-radius: 8px; padding: 0.6rem;">
+                        <div style="font-size: 1.4rem; font-weight: 800; color: #16a34a;">{{ sent_count }}</div>
+                        <div style="font-size: 0.7rem; color: #166534; text-transform: uppercase; letter-spacing: 0.04em;">Emailed</div>
+                    </div>
+                    <div style="text-align: center; flex: 1; background: #f8fafc; border-radius: 8px; padding: 0.6rem;">
+                        <div style="font-size: 1.4rem; font-weight: 800; color: #475569;">{{ workshop.seats_booked }}</div>
+                        <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Registered</div>
+                    </div>
+                    {% if failed_count > 0 %}
+                    <div style="text-align: center; flex: 1; background: #fff7ed; border-radius: 8px; padding: 0.6rem;">
+                        <div style="font-size: 1.4rem; font-weight: 800; color: #c2410c;">{{ failed_count }}</div>
+                        <div style="font-size: 0.7rem; color: #9a3412; text-transform: uppercase; letter-spacing: 0.04em;">Failed</div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if sent_contacts %}
+                <details>
+                    <summary style="cursor: pointer; font-size: 0.8rem; color: var(--soft-gray); font-weight: 600;">View emailed contacts ({{ sent_count }})</summary>
+                    <div style="margin-top: 0.75rem; max-height: 200px; overflow-y: auto;">
+                        {% for ic in sent_contacts[:15] %}
+                        <div style="padding: 0.4rem 0; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; display: flex; justify-content: space-between;">
+                            <div style="font-weight: 600; color: var(--dark-navy);">{{ ic.name }}</div>
+                            <div style="color: var(--soft-gray);">{{ ic.sent_at.strftime('%d %b') if ic.sent_at else '' }}</div>
+                        </div>
+                        {% endfor %}
+                        {% if sent_count > 15 %}
+                        <div style="font-size: 0.75rem; color: var(--soft-gray); padding-top: 0.5rem; text-align: center;">
+                            + {{ sent_count - 15 }} more...
+                        </div>
+                        {% endif %}
+                    </div>
+                </details>
+                {% else %}
+                <p style="font-size: 0.82rem; color: var(--soft-gray); margin: 0;">No invitations sent yet.</p>
+                {% endif %}
+            </div>
+
             <!-- Email History Card -->
             <div class="card" style="padding: 1.25rem;">
+
                 <h3 class="card-title-modern" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">EMAIL HISTORY</h3>
                 {% if workshop.email_logs %}
                     {% for log in workshop.email_logs|sort(attribute='sent_at', reverse=True) %}

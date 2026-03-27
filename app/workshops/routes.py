@@ -790,24 +790,34 @@ def send_invite(workshop_id):
     workshop = Workshop.query.get_or_404(workshop_id)
     contacts = list_contacts()
 
+    # Load already-sent contact IDs for this workshop (for colour indicators)
+    from app.workshops.models import WorkshopInviteContact
+    already_sent = WorkshopInviteContact.query.filter_by(
+        workshop_id=workshop_id, email_type='invitation'
+    ).all()
+    already_sent_ids = {str(row.crm_contact_id) for row in already_sent if row.crm_contact_id}
+
     if request.method == 'POST':
-        filter_type = request.form.get('filter_type')
+        filter_type = request.form.get('filter_type', 'contacts')
         email_type = request.form.get('email_type', 'individual')
         preview_only = request.form.get('preview_only') == 'true'
 
         recipients = []
 
-        if filter_type == 'all_active':
-            for c in contacts:
-                if c.get('email'):
-                    name_parts = c['name'].strip().split(' ', 1)
-                    recipients.append({'id': c['id'], 'name': c['name'], 'first_name': name_parts[0], 'email': c['email']})
-        elif filter_type == 'contacts':
-            selected_ids = request.form.getlist('contact_ids')
-            for c in contacts:
-                if str(c['id']) in selected_ids and c.get('email'):
-                    name_parts = c['name'].strip().split(' ', 1)
-                    recipients.append({'id': c['id'], 'name': c['name'], 'first_name': name_parts[0], 'email': c['email']})
+        # Unified mode: contact_ids[] = whatever remained selected (all minus deselected)
+        if filter_type in ('contacts', 'all_active'):
+            selected_ids = set(request.form.getlist('contact_ids'))
+            if not selected_ids and filter_type == 'all_active':
+                # Legacy fallback: all active
+                for c in contacts:
+                    if c.get('email'):
+                        name_parts = c['name'].strip().split(' ', 1)
+                        recipients.append({'id': c['id'], 'name': c['name'], 'first_name': name_parts[0], 'email': c['email']})
+            else:
+                for c in contacts:
+                    if str(c['id']) in selected_ids and c.get('email'):
+                        name_parts = c['name'].strip().split(' ', 1)
+                        recipients.append({'id': c['id'], 'name': c['name'], 'first_name': name_parts[0], 'email': c['email']})
         elif filter_type == 'custom':
             custom_list = request.form.get('custom_emails', '').split('\n')
             for line in custom_list:
@@ -845,6 +855,7 @@ def send_invite(workshop_id):
         db.session.add(log)
 
         for r in recipients:
+            send_status = 'failed'
             try:
                 subject = f"Invitation: {workshop.title}"
                 html_body = render_template(
@@ -860,12 +871,33 @@ def send_invite(workshop_id):
                 )
                 if sent:
                     count += 1
+                    send_status = 'sent'
                 else:
                     errors += 1
                     current_app.logger.warning(f"[LMS] Email not sent to {r['email']} — check MS Graph config.")
             except Exception as e:
                 errors += 1
                 current_app.logger.error(f"[LMS] Exception sending invite to {r['email']}: {e}")
+
+            # Upsert per-contact tracking row
+            if r.get('id'):  # Only track CRM contacts (not custom emails)
+                existing = WorkshopInviteContact.query.filter_by(
+                    workshop_id=workshop.id,
+                    crm_contact_id=r['id'],
+                    email_type='invitation'
+                ).first()
+                if existing:
+                    existing.status = send_status
+                    existing.sent_at = datetime.utcnow()
+                else:
+                    db.session.add(WorkshopInviteContact(
+                        workshop_id=workshop.id,
+                        crm_contact_id=r['id'],
+                        name=r['name'],
+                        email=r['email'],
+                        status=send_status,
+                        email_type='invitation'
+                    ))
 
         # Update log with final counts
         log.recipient_count = count
@@ -881,7 +913,7 @@ def send_invite(workshop_id):
             
         return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
 
-    return render_template('workshops/send_invite.html', workshop=workshop, contacts=contacts)
+    return render_template('workshops/send_invite.html', workshop=workshop, contacts=contacts, already_sent_ids=already_sent_ids)
 
 
 @workshops_bp.route('/<int:workshop_id>/send-joining-details', methods=['POST'])
