@@ -22,8 +22,7 @@
     </div>
 
     <!-- Email Preview Card -->
-    <div class="card"
-        style="padding: 1.25rem; margin-bottom: 1.5rem; background: var(--bg-surface-hover); border: 1px solid var(--border-light);">
+    <div class="card" style="padding: 1.25rem; margin-bottom: 1.5rem; background: var(--bg-surface-hover); border: 1px solid var(--border-light);">
         <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 200px;">
                 <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.25rem;">Subject Line</div>
@@ -65,35 +64,31 @@
 
         <!-- Section 2: Recipients -->
         <div class="form-section-title">2. Select Recipients</div>
-        <div style="margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
-            <div style="font-size: 0.85rem; color: var(--text-secondary);">
-                <strong id="selected-count">{{ contacts | selectattr('email') | list | length }}</strong> contacts selected.
-                <span id="already-sent-info" style="margin-left: 0.5rem;">
-                    <span style="color: #22c55e; font-weight: 600;">
-                        {{ already_sent_ids | length }}
-                    </span> already emailed for this workshop.
-                </span>
-            </div>
-            <div style="display: flex; gap: 0.5rem;">
-                <button type="button" class="btn btn-sm btn-outline" onclick="selectAll()">Select All</button>
-                <button type="button" class="btn btn-sm btn-outline" onclick="deselectAll()">Deselect All</button>
-                <button type="button" class="btn btn-sm btn-outline" onclick="deselectAlreadySent()">Deselect Already Emailed</button>
-            </div>
+
+        <!-- Loading state shown while contacts are fetched -->
+        <div id="contacts-loading" style="padding: 1rem; background: #f8fafc; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 1rem; font-size: 0.88rem; color: var(--text-secondary);">
+            <i class="ph ph-spinner-gap"></i> Loading contacts from CRM cache...
         </div>
 
-        <!-- TomSelect Multi Picker (all contacts pre-selected) -->
-        <div style="margin-bottom: 1.5rem;">
-            <select id="contacts_filter" name="contact_ids" multiple class="form-control" style="width: 100%;">
-                {% for contact in contacts %}
-                {% if contact.email %}
-                <option value="{{ contact.id }}"
-                    data-sent="{{ 'true' if contact.id|string in already_sent_ids else 'false' }}"
-                    selected>
-                    {{ contact.name }}{% if contact.company %} ({{ contact.company }}){% endif %}
-                </option>
-                {% endif %}
-                {% endfor %}
-            </select>
+        <div id="contacts-ready" style="display: none;">
+            <div style="margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                    <strong id="selected-count">0</strong> contacts selected.
+                    <span id="already-sent-info" style="margin-left: 0.5rem; color: #22c55e; font-weight: 600;">
+                        {{ already_sent_ids | length }} already emailed.
+                    </span>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" class="btn btn-sm btn-outline" onclick="selectAll()">Select All</button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="deselectAll()">Deselect All</button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="deselectAlreadySent()">Deselect Already Emailed</button>
+                </div>
+            </div>
+
+            <!-- TomSelect — options populated via JS after async fetch -->
+            <div style="margin-bottom: 1.5rem;">
+                <select id="contacts_filter" name="contact_ids" multiple class="form-control" style="width: 100%;"></select>
+            </div>
         </div>
 
         <!-- Custom Email Toggle -->
@@ -107,9 +102,6 @@
                 </div>
                 <textarea name="custom_emails" id="custom_emails" class="form-control" rows="4"
                     placeholder="john@acme.com, John Smith&#10;jane@beta.com"></textarea>
-                <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.35rem;">
-                    These will be sent in addition to the selected contacts above.
-                </div>
             </div>
         </details>
 
@@ -133,39 +125,67 @@
 </div>
 
 <script>
-    // Already-sent IDs from backend (for colour coding and quick-deselect)
+    // Already-sent contact IDs for this workshop (from server, fast DB query)
     const alreadySentIds = new Set([{{ already_sent_ids | map('int') | list | join(', ') }}]);
 
     let tomSelectInstance;
 
-    document.addEventListener("DOMContentLoaded", function () {
-        tomSelectInstance = new TomSelect('#contacts_filter', {
-            plugins: ['remove_button'],
-            placeholder: 'Search contacts...',
-            maxItems: null,
-            maxOptions: 5000,
-            searchField: ['text'],
-            render: {
-                item: function(data, escape) {
-                    const isSent = alreadySentIds.has(parseInt(data.value));
-                    const color = isSent ? '#22c55e' : '#94a3b8';
-                    return `<div class="item" style="border-left: 3px solid ${color}; padding-left: 6px;">
-                        ${escape(data.text)}
-                    </div>`;
+    async function loadContactsAndInit() {
+        try {
+            const res = await fetch('/api/v1/lms/contacts');
+            if (!res.ok) throw new Error('Failed to load contacts');
+            const data = await res.json();
+            const contacts = data.data || [];
+
+            // Hide loading, show UI
+            document.getElementById('contacts-loading').style.display = 'none';
+            document.getElementById('contacts-ready').style.display = 'block';
+
+            // Build select options
+            const select = document.getElementById('contacts_filter');
+            contacts.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name + (c.company ? ` (${c.company})` : '');
+                opt.dataset.sent = alreadySentIds.has(parseInt(c.id)) ? 'true' : 'false';
+                opt.selected = true;  // Pre-select all
+                select.appendChild(opt);
+            });
+
+            // Init TomSelect
+            tomSelectInstance = new TomSelect('#contacts_filter', {
+                plugins: ['remove_button'],
+                placeholder: 'Search contacts...',
+                maxItems: null,
+                maxOptions: 5000,
+                searchField: ['text'],
+                render: {
+                    item: function(data, escape) {
+                        const isSent = alreadySentIds.has(parseInt(data.value));
+                        const color = isSent ? '#22c55e' : '#94a3b8';
+                        return `<div class="item" style="border-left: 3px solid ${color}; padding-left: 6px;">${escape(data.text)}</div>`;
+                    },
+                    option: function(data, escape) {
+                        const isSent = alreadySentIds.has(parseInt(data.value));
+                        const badge = isSent
+                            ? `<span style="font-size:0.7rem;background:#dcfce7;color:#16a34a;border-radius:4px;padding:1px 6px;margin-left:6px;">emailed</span>`
+                            : '';
+                        return `<div>${escape(data.text)}${badge}</div>`;
+                    }
                 },
-                option: function(data, escape) {
-                    const isSent = alreadySentIds.has(parseInt(data.value));
-                    const badge = isSent
-                        ? `<span style="font-size:0.7rem; background:#dcfce7; color:#16a34a; border-radius:4px; padding:1px 6px; margin-left:6px;">emailed</span>`
-                        : '';
-                    return `<div>${escape(data.text)}${badge}</div>`;
-                }
-            },
-            onItemAdd: updateCount,
-            onItemRemove: updateCount
-        });
-        updateCount();
-    });
+                onItemAdd: updateCount,
+                onItemRemove: updateCount
+            });
+
+            // Select all
+            tomSelectInstance.setValue(contacts.map(c => String(c.id)));
+            updateCount();
+
+        } catch (err) {
+            document.getElementById('contacts-loading').innerHTML =
+                `<span style="color:red;">⚠ Could not load contacts. ${err.message}</span>`;
+        }
+    }
 
     function updateCount() {
         const count = tomSelectInstance ? tomSelectInstance.items.length : 0;
@@ -194,20 +214,20 @@
         const form = document.getElementById('invite_form');
         const data = new FormData(form);
         data.append('preview_only', 'true');
-
         const preview = document.getElementById('count_preview');
-        preview.innerHTML = '<i class="ph ph-spinner"></i> Loading...';
-
+        preview.innerHTML = '<i class="ph ph-spinner-gap"></i> Loading...';
         try {
             const response = await fetch(window.location.href, { method: 'POST', body: data });
             const result = await response.json();
             preview.innerHTML = `
                 <strong style="font-size: 1rem; color: var(--text-primary);">${result.count} recipients</strong> will receive this invitation.<br>
-                <span style="font-size: 0.8rem;">Sample: ${result.sample.map(r => `${r.name} &lt;${r.email}&gt;`).join(', ')}</span>
-            `;
+                <span style="font-size: 0.8rem;">Sample: ${result.sample.map(r => `${r.name} &lt;${r.email}&gt;`).join(', ')}</span>`;
         } catch (e) {
             preview.innerHTML = 'Could not fetch recipient preview.';
         }
     }
+
+    // Load contacts async on page ready
+    document.addEventListener('DOMContentLoaded', loadContactsAndInit);
 </script>
 {% endblock %}

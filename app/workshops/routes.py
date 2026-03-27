@@ -788,7 +788,6 @@ def delete_workshop(workshop_id):
 def send_invite(workshop_id):
     _admin_required()
     workshop = Workshop.query.get_or_404(workshop_id)
-    contacts = list_contacts()
 
     # Load already-sent contact IDs for this workshop (for colour indicators)
     from app.workshops.models import WorkshopInviteContact
@@ -798,6 +797,8 @@ def send_invite(workshop_id):
     already_sent_ids = {str(row.crm_contact_id) for row in already_sent if row.crm_contact_id}
 
     if request.method == 'POST':
+        # On POST: use full live contacts list for actual sending
+        contacts = list_contacts()
         filter_type = request.form.get('filter_type', 'contacts')
         email_type = request.form.get('email_type', 'individual')
         preview_only = request.form.get('preview_only') == 'true'

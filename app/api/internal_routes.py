@@ -135,10 +135,6 @@ def set_workshop_ready(workshop_id):
     Manually activate a workshop (Admin Workspace).
     Expects: { ready: true }
     """
-    # Note: This is a restricted endpoint. In production, ensure session or token check.
-    # For now, we allow the request if it comes with the CRM token as a shortcut for the Admin UI call
-    # but the Admin UI call uses fetch from same domain - so we need a different check or allow it for Admins.
-    
     from app.workshops.models import Workshop
     from app.core.extensions import db
     
@@ -150,7 +146,45 @@ def set_workshop_ready(workshop_id):
         workshop.status = 'published'
         db.session.commit()
         
-        # Trigger any Background Tasks: Invitation emails, Credential Provisioning etc.
-        # current_app.task_queue.push(provision_workshop, workshop_id)
-        
     return jsonify({'success': True})
+
+
+@internal_bp.route('/contacts', methods=['GET'])
+def list_contacts_api():
+    """
+    Fast contacts endpoint served from shadow DB — no CRM network call.
+    Session-authenticated (admin only). Used by send_invite TomSelect lazy load.
+    Returns: { data: [{id, name, email, company}] }
+    """
+    from flask_login import current_user
+    from flask import session
+
+    # Require admin session
+    if not current_user.is_authenticated or current_user.role not in ['admin', 'super_admin']:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    from app.core.shadow_models import ShadowContact
+    from app.core.extensions import db
+    q = request.args.get('q', '').strip().lower()
+
+    query = ShadowContact.query
+    if q:
+        query = query.filter(
+            db.or_(
+                ShadowContact.name.ilike(f'%{q}%'),
+                ShadowContact.email.ilike(f'%{q}%')
+            )
+        )
+
+    contacts = query.order_by(ShadowContact.name).limit(200).all()
+    return jsonify({
+        'data': [
+            {
+                'id': c.crm_contact_id,
+                'name': c.name,
+                'email': c.email,
+                'company': ''  # ShadowContact doesn't store company; future enhancement
+            }
+            for c in contacts if c.email
+        ]
+    })
