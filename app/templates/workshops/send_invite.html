@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container form-card">
     <div class="page-header" style="margin-bottom: 1.5rem;">
-        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+        <div style="margin-bottom: 0.5rem;">
             <a href="{{ url_for('workshops.detail_workshop', workshop_id=workshop.id) }}"
                 style="color: var(--text-secondary); font-size: 0.85rem;">
                 <i class="ph ph-arrow-left"></i> Back to Workshop
@@ -26,12 +26,8 @@
         <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 200px;">
                 <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.25rem;">Subject Line</div>
-                <div style="font-weight: 500; font-size: 0.9rem;">Invitation: {{ workshop.title }} — {{ workshop.start_date.strftime('%d %B %Y') }}</div>
+                <div style="font-weight: 500; font-size: 0.9rem;">Invitation: {{ workshop.title }} — {% if workshop.start_date %}{{ workshop.start_date.strftime('%d %B %Y') }}{% endif %}</div>
             </div>
-            <a href="{{ url_for('workshops.detail_workshop', workshop_id=workshop.id) }}?preview_email=1"
-                target="_blank" class="btn btn-sm btn-outline">
-                <i class="ph ph-eye"></i> Preview Email
-            </a>
         </div>
     </div>
 
@@ -41,8 +37,8 @@
 
         <!-- Section 1: Invitation Type -->
         <div class="form-section-title" style="margin-top: 0;">1. Invitation Type</div>
-        <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
-            <label style="flex: 1; padding: 1rem; border: 2px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer;" id="type_individual_card">
+        <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+            <label style="flex: 1; min-width: 200px; padding: 1rem; border: 2px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer;">
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                     <input type="radio" name="email_type" value="individual" checked>
                     <span style="font-weight: 600;">Individual Invitation</span>
@@ -51,7 +47,7 @@
                     Directly addresses the recipient ("You are invited to attend...")
                 </div>
             </label>
-            <label style="flex: 1; padding: 1rem; border: 2px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer;" id="type_corporate_card">
+            <label style="flex: 1; min-width: 200px; padding: 1rem; border: 2px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer;">
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                     <input type="radio" name="email_type" value="corporate">
                     <span style="font-weight: 600;">Corporate / Team Share</span>
@@ -65,27 +61,31 @@
         <!-- Section 2: Recipients -->
         <div class="form-section-title">2. Select Recipients</div>
 
-        <!-- Loading state shown while contacts are fetched -->
+        <!-- Loading state -->
         <div id="contacts-loading" style="padding: 1rem; background: #f8fafc; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 1rem; font-size: 0.88rem; color: var(--text-secondary);">
-            <i class="ph ph-spinner-gap"></i> Loading contacts from CRM cache...
+            <i class="ph ph-spinner-gap"></i> Loading contacts from local cache...
         </div>
 
         <div id="contacts-ready" style="display: none;">
             <div style="margin-bottom: 0.75rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
                 <div style="font-size: 0.85rem; color: var(--text-secondary);">
-                    <strong id="selected-count">0</strong> contacts selected.
-                    <span id="already-sent-info" style="margin-left: 0.5rem; color: #22c55e; font-weight: 600;">
-                        {{ already_sent_ids | length }} already emailed.
+                    <strong id="selected-count">0</strong> of <strong id="total-count">0</strong> contacts selected.
+                    {% if already_sent_ids %}
+                    <span style="margin-left: 0.5rem; color: #22c55e; font-weight: 600;">
+                        {{ already_sent_ids | length }} already emailed this workshop.
                     </span>
+                    {% endif %}
                 </div>
-                <div style="display: flex; gap: 0.5rem;">
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                     <button type="button" class="btn btn-sm btn-outline" onclick="selectAll()">Select All</button>
                     <button type="button" class="btn btn-sm btn-outline" onclick="deselectAll()">Deselect All</button>
+                    {% if already_sent_ids %}
                     <button type="button" class="btn btn-sm btn-outline" onclick="deselectAlreadySent()">Deselect Already Emailed</button>
+                    {% endif %}
                 </div>
             </div>
 
-            <!-- TomSelect — options populated via JS after async fetch -->
+            <!-- TomSelect — options pre-built via JS with selected=true before init -->
             <div style="margin-bottom: 1.5rem;">
                 <select id="contacts_filter" name="contact_ids" multiple class="form-control" style="width: 100%;"></select>
             </div>
@@ -105,18 +105,11 @@
             </div>
         </details>
 
-        <!-- Section 3: Preview & Send -->
-        <div class="form-section-title">3. Preview &amp; Send</div>
-        <div id="count_preview" style="background: var(--bg-surface-hover); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem; font-size: 0.88rem; color: var(--text-secondary);">
-            Click <strong>Preview Recipients</strong> to confirm the final list before sending.
-        </div>
-
+        <!-- Section 3: Send -->
+        <div class="form-section-title">3. Send</div>
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-            <button type="button" class="btn btn-outline" onclick="previewRecipients()">
-                <i class="ph ph-users"></i> Preview Recipients
-            </button>
             <button type="submit" class="btn btn-primary" id="send_btn"
-                onclick="return confirm('Send invitations to all selected recipients?')">
+                onclick="return confirmSend()">
                 <i class="ph ph-paper-plane-tilt"></i> Send Invitation
             </button>
             <a href="{{ url_for('workshops.detail_workshop', workshop_id=workshop.id) }}" class="btn btn-outline">Cancel</a>
@@ -125,39 +118,46 @@
 </div>
 
 <script>
-    // Already-sent contact IDs for this workshop (from server, fast DB query)
-    const alreadySentIds = new Set([{{ already_sent_ids | map('int') | list | join(', ') }}]);
+    // Already-sent IDs from server (fast shadow DB query, no CRM call)
+    const alreadySentIds = new Set([{{ already_sent_ids | join(', ') }}]);
 
     let tomSelectInstance;
+    let allContactIds = [];
 
     async function loadContactsAndInit() {
+        const loadingEl = document.getElementById('contacts-loading');
         try {
-            const res = await fetch('/api/v1/lms/contacts');
-            if (!res.ok) throw new Error('Failed to load contacts');
+            // New endpoint: on workshops_bp, fully session-authenticated
+            const res = await fetch('{{ url_for("workshops.contacts_api") }}');
+            if (!res.ok) {
+                throw new Error(`Server returned ${res.status}: ${res.statusText}`);
+            }
             const data = await res.json();
             const contacts = data.data || [];
 
-            // Hide loading, show UI
-            document.getElementById('contacts-loading').style.display = 'none';
-            document.getElementById('contacts-ready').style.display = 'block';
+            if (contacts.length === 0) {
+                loadingEl.innerHTML = '<span style="color: #f59e0b;">⚠ No contacts found in local cache. Contacts sync with CRM on each page load — try visiting the Invite page again.</span>';
+                return;
+            }
 
-            // Build select options
+            // Build options in DOM with selected=true BEFORE TomSelect init
+            // This way TomSelect reads native selection — no setValue() storm
             const select = document.getElementById('contacts_filter');
             contacts.forEach(c => {
                 const opt = document.createElement('option');
                 opt.value = c.id;
-                opt.textContent = c.name + (c.company ? ` (${c.company})` : '');
-                opt.dataset.sent = alreadySentIds.has(parseInt(c.id)) ? 'true' : 'false';
-                opt.selected = true;  // Pre-select all
+                opt.textContent = c.name + ' <' + c.email + '>';
+                opt.selected = true;  // Native pre-selection — no JS event fired
                 select.appendChild(opt);
+                allContactIds.push(String(c.id));
             });
 
-            // Init TomSelect
+            // Init TomSelect — picks up pre-selected options from DOM natively
             tomSelectInstance = new TomSelect('#contacts_filter', {
                 plugins: ['remove_button'],
                 placeholder: 'Search contacts...',
                 maxItems: null,
-                maxOptions: 5000,
+                maxOptions: 1000,
                 searchField: ['text'],
                 render: {
                     item: function(data, escape) {
@@ -177,13 +177,14 @@
                 onItemRemove: updateCount
             });
 
-            // Select all
-            tomSelectInstance.setValue(contacts.map(c => String(c.id)));
+            // Show the UI
+            loadingEl.style.display = 'none';
+            document.getElementById('contacts-ready').style.display = 'block';
+            document.getElementById('total-count').textContent = contacts.length;
             updateCount();
 
         } catch (err) {
-            document.getElementById('contacts-loading').innerHTML =
-                `<span style="color:red;">⚠ Could not load contacts. ${err.message}</span>`;
+            loadingEl.innerHTML = `<span style="color:red;">⚠ Could not load contacts: ${err.message}</span>`;
         }
     }
 
@@ -193,8 +194,7 @@
     }
 
     function selectAll() {
-        const allOptions = Object.keys(tomSelectInstance.options);
-        tomSelectInstance.setValue(allOptions);
+        tomSelectInstance.setValue(allContactIds);
         updateCount();
     }
 
@@ -204,30 +204,16 @@
     }
 
     function deselectAlreadySent() {
-        const current = [...tomSelectInstance.items];
-        const remaining = current.filter(id => !alreadySentIds.has(parseInt(id)));
+        const remaining = allContactIds.filter(id => !alreadySentIds.has(parseInt(id)));
         tomSelectInstance.setValue(remaining);
         updateCount();
     }
 
-    async function previewRecipients() {
-        const form = document.getElementById('invite_form');
-        const data = new FormData(form);
-        data.append('preview_only', 'true');
-        const preview = document.getElementById('count_preview');
-        preview.innerHTML = '<i class="ph ph-spinner-gap"></i> Loading...';
-        try {
-            const response = await fetch(window.location.href, { method: 'POST', body: data });
-            const result = await response.json();
-            preview.innerHTML = `
-                <strong style="font-size: 1rem; color: var(--text-primary);">${result.count} recipients</strong> will receive this invitation.<br>
-                <span style="font-size: 0.8rem;">Sample: ${result.sample.map(r => `${r.name} &lt;${r.email}&gt;`).join(', ')}</span>`;
-        } catch (e) {
-            preview.innerHTML = 'Could not fetch recipient preview.';
-        }
+    function confirmSend() {
+        const count = tomSelectInstance ? tomSelectInstance.items.length : 0;
+        return confirm(`Send invitations to ${count} selected recipient(s)?`);
     }
 
-    // Load contacts async on page ready
     document.addEventListener('DOMContentLoaded', loadContactsAndInit);
 </script>
 {% endblock %}

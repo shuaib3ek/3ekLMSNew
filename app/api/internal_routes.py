@@ -176,7 +176,7 @@ def list_contacts_api():
             )
         )
 
-    contacts = query.order_by(ShadowContact.name).limit(200).all()
+    contacts = query.order_by(ShadowContact.name).limit(1000).all()
     return jsonify({
         'data': [
             {

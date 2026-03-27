@@ -783,6 +783,24 @@ def delete_workshop(workshop_id):
     return redirect(url_for('workshops.list_workshops'))
 
 
+@workshops_bp.route('/api/contacts', methods=['GET'])
+@login_required
+def contacts_api():
+    """Fast contacts list from shadow DB — no CRM network call. Session-authenticated."""
+    _admin_required()
+    from app.core.shadow_models import ShadowContact
+    contacts = ShadowContact.query.filter(
+        ShadowContact.email != None,
+        ShadowContact.email != ''
+    ).order_by(ShadowContact.name).all()
+    return jsonify({
+        'data': [
+            {'id': c.crm_contact_id, 'name': c.name, 'email': c.email}
+            for c in contacts
+        ]
+    })
+
+
 @workshops_bp.route('/<int:workshop_id>/invite', methods=['GET', 'POST'])
 @login_required
 def send_invite(workshop_id):
@@ -790,11 +808,15 @@ def send_invite(workshop_id):
     workshop = Workshop.query.get_or_404(workshop_id)
 
     # Load already-sent contact IDs for this workshop (for colour indicators)
-    from app.workshops.models import WorkshopInviteContact
-    already_sent = WorkshopInviteContact.query.filter_by(
-        workshop_id=workshop_id, email_type='invitation'
-    ).all()
-    already_sent_ids = {str(row.crm_contact_id) for row in already_sent if row.crm_contact_id}
+    already_sent_ids = set()
+    try:
+        from app.workshops.models import WorkshopInviteContact
+        already_sent = WorkshopInviteContact.query.filter_by(
+            workshop_id=workshop_id, email_type='invitation'
+        ).all()
+        already_sent_ids = {str(row.crm_contact_id) for row in already_sent if row.crm_contact_id}
+    except Exception:
+        pass  # Table may not exist yet if migration hasn't run
 
     if request.method == 'POST':
         # On POST: use full live contacts list for actual sending
@@ -914,7 +936,7 @@ def send_invite(workshop_id):
             
         return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
 
-    return render_template('workshops/send_invite.html', workshop=workshop, contacts=contacts, already_sent_ids=already_sent_ids)
+    return render_template('workshops/send_invite.html', workshop=workshop, already_sent_ids=already_sent_ids)
 
 
 @workshops_bp.route('/<int:workshop_id>/send-joining-details', methods=['POST'])
