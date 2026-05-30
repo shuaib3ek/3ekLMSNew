@@ -2,33 +2,35 @@
 
 {% block content %}
 <div class="container">
-    <div class="page-header"
-        style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
-        <div>
-            <h1 class="page-title" style="margin-bottom: 0.25rem;">Workshops</h1>
-            <p style="color: var(--text-secondary); margin: 0;">Open-enrolment training events organised by 3EK</p>
+    {% set title = "Workshop Catalog" %}
+    {% set count = workshops|length %}
+    {% set telemetry = "// LMS_MODULE_V4.2 // WORKSHOP_CATALOG" %}
+    {% set action_url = url_for('workshops.new_workshop') if current_user.role in ['admin', 'super_admin'] else none %}
+    {% set action_label = "Provision" if current_user.role in ['admin', 'super_admin'] else none %}
+    {% set action_icon = "ph-plus" %}
+    {% include "components/page_header.html" %}
+
+    <!-- COMMAND BAR -->
+    <div class="command-bar">
+        <div class="cmd-group">
+            {% for tab in [('all', 'All', 'ph-circles-four'), ('draft', 'Draft', 'ph-file-dashed'), ('published', 'Live', 'ph-broadcast'), ('completed', 'Done', 'ph-check-circle'), ('cancelled', 'Void', 'ph-x-circle')] %}
+            <a href="{{ url_for('workshops.list_workshops', status=tab[0]) }}"
+                class="cmd-pill {% if status_filter == tab[0] %}active{% endif %}">
+                <i class="ph-bold {{ tab[2] }}"></i> {{ tab[1] }}
+            </a>
+            {% endfor %}
         </div>
-        {% if current_user.role in ['admin', 'super_admin'] %}
-        <a href="{{ url_for('workshops.new_workshop') }}" class="btn btn-primary">
-            <i class="ph ph-plus"></i> New Workshop
-        </a>
-        {% endif %}
-    </div>
-    <!-- Status Filter Tabs -->
-    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; overflow-x: auto;">
-        {% for tab in [('all', 'All'), ('draft', 'Draft'), ('published', 'Published'), ('completed', 'Completed'),
-        ('cancelled', 'Cancelled')] %}
-        <a href="{{ url_for('workshops.list_workshops', status=tab[0]) }}"
-            class="btn btn-sm {% if status_filter == tab[0] %}btn-primary{% else %}btn-outline{% endif %}"
-            style="flex: 1; text-align: center; justify-content: center; min-width: 120px;">
-            {{ tab[1] }}
-        </a>
-        {% endfor %}
+
+        <div class="cmd-group">
+            <div class="cmd-input-wrapper">
+                <i class="ph ph-magnifying-glass cmd-input-icon"></i>
+                <input type="text" class="cmd-input" placeholder="Search workshops...">
+            </div>
+        </div>
     </div>
 
     {% if not workshops %}
-    <div
-        style="text-align: center; padding: 4rem 2rem; color: var(--text-secondary); background: var(--bg-surface); border-radius: var(--radius-lg); border: 1px dashed var(--border-light);">
+    <div style="text-align: center; padding: 4rem 2rem; color: var(--text-secondary); background: var(--bg-surface); border-radius: 12px; border: 1px dashed var(--border-light);">
         <i class="ph ph-calendar-x" style="font-size: 3rem; display: block; margin-bottom: 1rem; opacity: 0.4;"></i>
         <p style="font-size: 1rem; margin-bottom: 1.5rem;">No workshops found.</p>
         {% if current_user.role in ['admin', 'super_admin'] %}
@@ -36,78 +38,59 @@
         {% endif %}
     </div>
     {% else %}
-    <div class="card" style="padding: 0; overflow: hidden;">
-        <div class="table-container" style="overflow-x: auto;">
-            <table class="table" style="width: 100%; border-collapse: collapse; text-align: left;">
-                <thead>
-                    <tr style="background: var(--bg-app); border-bottom: 1px solid var(--border-light);">
-                        <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Workshop</th>
-                        <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Date & Mode</th>
-                        <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Status</th>
-                        <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Enrollment</th>
-                        <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for w in workshops %}
-                    <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.15s;">
-                        <!-- Workshop Info -->
-                        <td style="padding: 1.25rem 1.5rem;">
-                            <a href="{{ url_for('workshops.detail_workshop', workshop_id=w.id) }}" style="color: var(--text-primary); text-decoration: none; font-weight: 600;">
-                                {{ w.title }}
-                            </a>
+    <div class="precision-grid-container mt-4">
+        <div class="precision-row header">
+            <div class="sortable-header"><i class="ph ph-chalkboard-teacher mr-1 text-xs"></i> WORKSHOP</div>
+            <div class="sortable-header"><i class="ph ph-calendar-blank mr-1 text-xs"></i> DATE & MODE</div>
+            <div class="sortable-header"><i class="ph ph-chart-bar mr-1 text-xs"></i> ENROLLMENT</div>
+            <div style="text-align: right;"><i class="ph ph-gear mr-1 text-xs"></i> ACTION</div>
+        </div>
+        <div style="overflow-y: auto; max-height: calc(100vh - 260px);">
+            {% for w in workshops %}
+            {% set status_raw = w.status|lower %}
+            {% set dot_class = 'status-dot-active' if status_raw == 'published' else ('status-dot-dormant' if status_raw in ['cancelled', 'completed'] else 'status-dot-warning') %}
+            <a href="{{ url_for('workshops.detail_workshop', workshop_id=w.id) }}" class="precision-row">
+                <!-- Workshop Info -->
+                <div class="p-cell">
+                    <div class="p-flex-row">
+                        <span class="status-dot {{ dot_class }}"></span>
+                        <div style="display: flex; flex-direction: column; overflow: hidden; min-width: 0; width: 100%;">
+                            <span class="p-primary">{{ w.title }}</span>
                             {% if w.subtitle %}
-                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">{{ w.subtitle }}</div>
+                            <span class="p-sub">{{ w.subtitle }}</span>
                             {% endif %}
-                            <div style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 0.25rem;">{{ w.category }}</div>
-                        </td>
-                        <!-- Date & Mode -->
-                        <td style="padding: 1.25rem 1.5rem; color: var(--text-secondary); font-size: 0.9rem;">
-                            <div>
-                                <i class="ph ph-calendar-blank"></i> {{ w.start_date.strftime('%d %b %Y') }}
-                                {% if w.end_date != w.start_date %} – {{ w.end_date.strftime('%d %b') }}{% endif %}
-                            </div>
-                            <div style="margin-top: 0.25rem; font-size: 0.85rem;">
-                                <i class="ph ph-{% if w.mode == 'online' %}video-camera{% elif w.mode == 'in_person' %}map-pin{% else %}arrows-out{% endif %}"></i> {{ w.mode|replace('_',' ')|title }}
-                            </div>
-                        </td>
-                        <!-- Status -->
-                        <td style="padding: 1.25rem 1.5rem;">
-                             <span class="status-warm" style="font-size: 0.75rem; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid currentColor;">
-                                {{ w.status|title }}
-                            </span>
-                            {% if w.is_public %}
-                                <i class="ph ph-globe-simple" style="color: var(--success); margin-left: 0.5rem;" title="Publicly Visible"></i>
-                            {% endif %}
-                        </td>
-                        <!-- Enrollment -->
-                        <td style="padding: 1.25rem 1.5rem;">
-                            <div style="font-size: 0.9rem; color: var(--text-secondary);">
-                                {{ w.seats_booked }} / {{ w.total_seats or '—' }} seats
-                            </div>
-                            {% if w.total_seats %}
-                            <div style="height: 4px; background: var(--border-light); border-radius: 99px; overflow: hidden; margin-top: 0.5rem; width: 100px;">
-                                {% set bg_color = 'var(--success)' %}
-                                {% if w.fill_percentage > 80 %}
-                                    {% set bg_color = 'var(--danger)' %}
-                                {% elif w.fill_percentage > 50 %}
-                                    {% set bg_color = 'var(--warning)' %}
-                                {% endif %}
-                                <div style="height: 100%; width: {{ w.fill_percentage }}%; background: {{ bg_color }}; border-radius: 99px;">
-                                </div>
-                            </div>
-                            {% endif %}
-                        </td>
-                        <!-- Action -->
-                        <td style="padding: 1.25rem 1.5rem;">
-                            <a href="{{ url_for('workshops.detail_workshop', workshop_id=w.id) }}" class="btn btn-sm btn-outline">
-                                Manage →
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- Date & Mode -->
+                <div class="p-cell">
+                    <span class="p-mono"><i class="ph ph-calendar"></i> {{ w.start_date | format_date }}</span>
+                    <span class="p-sub"><i class="ph ph-{% if w.mode == 'online' %}video-camera{% elif w.mode == 'in_person' %}map-pin{% else %}arrows-out{% endif %}"></i> {{ w.mode|replace('_',' ')|title }}</span>
+                </div>
+                <!-- Enrollment -->
+                <div class="p-cell" style="width: 100%;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 4px;">
+                        <span class="p-mono">{{ w.seats_booked }} / {{ w.total_seats or '—' }} SEATS</span>
+                        <span class="p-badge" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9;">{{ w.status|upper }}</span>
+                    </div>
+                    {% if w.total_seats %}
+                    <div style="height: 4px; background: var(--border-light); border-radius: 99px; overflow: hidden; width: 100%;">
+                        {% set bg_color = 'var(--success)' %}
+                        {% if w.fill_percentage > 80 %}
+                            {% set bg_color = 'var(--danger)' %}
+                        {% elif w.fill_percentage > 50 %}
+                            {% set bg_color = 'var(--warning)' %}
+                        {% endif %}
+                        <div style="height: 100%; width: {{ w.fill_percentage }}%; background: {{ bg_color }}; border-radius: 99px;"></div>
+                    </div>
+                    {% endif %}
+                </div>
+                <!-- Action -->
+                <div style="text-align: right;">
+                    <span class="btn btn-sm btn-outline" style="pointer-events: none; padding: 0.25rem 0.75rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem;">Manage <i class="ph ph-arrow-right"></i></span>
+                </div>
+            </a>
+            {% endfor %}
         </div>
     </div>
     {% endif %}

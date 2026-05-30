@@ -1,0 +1,90 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="container">
+    {% set title = "Tenant Management" %}
+    {% set count = organizations|length %}
+    {% set telemetry = "// SYSTEM.ADMIN // TENANT_ROSTER" %}
+    {% set action_url = url_for('organizations.new_organization') %}
+    {% set action_label = "Provision" %}
+    {% set action_icon = "ph-plus" %}
+    {% include "components/page_header.html" %}
+
+    <div class="command-bar">
+        <div class="cmd-group">
+            <div class="cmd-pill active">
+                <i class="ph-bold ph-buildings"></i> ACTIVE TENANTS
+            </div>
+            <div class="cmd-pill">
+                <i class="ph-bold ph-shield-check"></i> SYSTEM LOGS
+            </div>
+        </div>
+
+        <div class="cmd-group">
+            <div class="cmd-input-wrapper">
+                <i class="ph ph-magnifying-glass cmd-input-icon"></i>
+                <input type="text" class="cmd-input" placeholder="Search tenants...">
+            </div>
+        </div>
+    </div>
+
+    <div class="precision-grid-container mt-4">
+        <div class="precision-row header" style="grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 1.5fr) 180px;">
+            <div class="sortable-header"><i class="ph ph-buildings mr-1 text-xs"></i> TENANT NAME</div>
+            <div class="sortable-header"><i class="ph ph-fingerprint mr-1 text-xs"></i> SLUG & ACCENT</div>
+            <div class="sortable-header"><i class="ph ph-shield mr-1 text-xs"></i> STATUS</div>
+            <div style="text-align: right;"><i class="ph ph-gear mr-1 text-xs"></i> ACTIONS</div>
+        </div>
+        <div style="overflow-y: auto; max-height: calc(100vh - 280px);">
+            {% for org in organizations %}
+            <div class="precision-row" style="grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 1.5fr) 180px;">
+                <!-- Tenant Name -->
+                <div class="p-cell">
+                    <div class="p-flex-row">
+                        {% if org.logo_url %}
+                            <img src="{{ org.logo_url }}" class="p-avatar" style="object-fit: contain; background: white; border: 1px solid var(--border-light);">
+                        {% else %}
+                            <div class="p-avatar" style="background: {{ org.primary_color or 'var(--accent)' }};">{{ org.name[:1]|upper }}</div>
+                        {% endif %}
+                        <div style="display: flex; flex-direction: column; overflow: hidden; min-width: 0; width: 100%;">
+                            <span class="p-primary">{{ org.name }}</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Slug & Accent -->
+                <div class="p-cell">
+                    <span class="p-mono" style="color: var(--accent);">{{ org.slug }}</span>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 2px;">
+                        <div style="width: 10px; height: 10px; border-radius: 50%; background: {{ org.primary_color }}; flex-shrink: 0;"></div>
+                        <span class="p-sub" style="font-family: 'JetBrains Mono', monospace; margin: 0;">{{ org.primary_color }}</span>
+                    </div>
+                </div>
+                <!-- Status -->
+                <div class="p-cell">
+                    {% if org.is_active %}
+                        <span class="p-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">ACTIVE</span>
+                    {% else %}
+                        <span class="p-badge" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">SUSPENDED</span>
+                    {% endif %}
+                </div>
+                <!-- Actions -->
+                <div style="text-align: right; display: flex; justify-content: flex-end; gap: 0.5rem; align-items: center;">
+                    {% if g.organization_id == org.id %}
+                        <span class="btn btn-sm" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.75rem; font-weight: 600; cursor: default; display: inline-flex; align-items: center; gap: 0.25rem;" title="Current Context">
+                            <i class="ph ph-check-circle"></i> Active Context
+                        </span>
+                    {% else %}
+                        <a href="{{ url_for('organizations.switch_tenant', id=org.id) }}" class="btn btn-sm btn-outline" style="border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem;" title="Switch Context">
+                            <i class="ph ph-swap"></i> Switch Context
+                        </a>
+                    {% endif %}
+                    <a href="{{ url_for('organizations.edit_organization', id=org.id) }}" class="btn btn-icon" style="color: var(--text-tertiary); padding: 0.35rem;" title="Edit Tenant">
+                        <i class="ph ph-pencil-simple"></i>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

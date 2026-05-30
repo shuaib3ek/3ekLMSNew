@@ -1,10 +1,12 @@
 from flask import current_app
+from celery import shared_task
 from app.crm_client import client as crm_client
 from app.crm_client.shadow_sync import (
     update_shadow_trainer, update_shadow_client, 
     update_shadow_contact, update_shadow_staff_user
 )
 
+@shared_task
 def sync_all_crm_data():
     """
     Background task to perform a 'Full Sweep' of CRM data.

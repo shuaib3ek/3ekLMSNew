@@ -7,6 +7,7 @@ Mounted at: /pulse-api   (keeps the existing website call-sites unchanged)
 from flask import Blueprint, request, jsonify, current_app
 from app.workshops.models import Workshop, WorkshopRegistration, Learner
 from app.core.extensions import db
+from app.core.tenancy import scoped_query
 import secrets
 
 website_bp = Blueprint('website', __name__)
@@ -62,7 +63,7 @@ def list_workshops():
     if not _verify_token():
         return jsonify({'error': 'Unauthorized'}), 401
 
-    workshops = Workshop.query.filter_by(is_public=True, status='published').order_by(Workshop.start_date).all()
+    workshops = scoped_query(Workshop).filter_by(is_public=True, status='published').order_by(Workshop.start_date).all()
     return jsonify({'workshops': [_workshop_to_dict(w) for w in workshops]})
 
 
@@ -74,7 +75,7 @@ def get_workshop(slug):
     if not _verify_token():
         return jsonify({'error': 'Unauthorized'}), 401
 
-    w = Workshop.query.filter_by(slug=slug, is_public=True).first()
+    w = scoped_query(Workshop).filter_by(slug=slug, is_public=True).first()
     if not w:
         return jsonify({'error': 'Workshop not found'}), 404
 
@@ -89,8 +90,8 @@ def get_stats():
     if not _verify_token():
         return jsonify({'error': 'Unauthorized'}), 401
 
-    total_workshops = Workshop.query.filter_by(status='published').count()
-    total_registrations = WorkshopRegistration.query.count()
+    total_workshops = scoped_query(Workshop).filter_by(status='published').count()
+    total_registrations = scoped_query(WorkshopRegistration).count()
     
     # Revenue: sum of amount_paid for all successful registrations
     from sqlalchemy import func
@@ -112,7 +113,7 @@ def list_registrations():
         return jsonify({'error': 'Unauthorized'}), 401
 
     limit = request.args.get('limit', 50, type=int)
-    regs = (WorkshopRegistration.query
+    regs = (scoped_query(WorkshopRegistration)
             .order_by(WorkshopRegistration.registered_at.desc())
             .limit(limit)
             .all())
@@ -144,7 +145,7 @@ def register_for_workshop(slug):
     if not _verify_token():
         return jsonify({'error': 'Unauthorized'}), 401
 
-    w = Workshop.query.filter_by(slug=slug, is_public=True).first()
+    w = scoped_query(Workshop).filter_by(slug=slug, is_public=True).first()
     if not w:
         return jsonify({'error': 'Workshop not found'}), 404
 
@@ -159,7 +160,7 @@ def register_for_workshop(slug):
         return jsonify({'error': 'name and email are required'}), 400
 
     # Upsert learner
-    learner = Learner.query.filter_by(email=email).first()
+    learner = scoped_query(Learner).filter_by(email=email).first()
     if not learner:
         learner = Learner(
             name=name,
@@ -172,7 +173,7 @@ def register_for_workshop(slug):
         db.session.flush()
 
     # Prevent duplicate registration
-    existing = WorkshopRegistration.query.filter_by(
+    existing = scoped_query(WorkshopRegistration).filter_by(
         workshop_id=w.id, email=email
     ).first()
     if existing:

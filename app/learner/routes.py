@@ -12,6 +12,7 @@ from app.workshops.models import (
     WorkshopDocument, WorkshopVideoProgress, Certificate
 )
 from app.core.extensions import db
+from app.core.tenancy import scoped_query
 
 
 def learner_required(f):
@@ -28,7 +29,7 @@ def learner_required(f):
 
 def _get_learner():
     """Fetch the Learner DB row for the current logged-in learner."""
-    return Learner.query.get(current_user.id)
+    return scoped_query(Learner).filter_by(id=current_user.id).first()
 
 
 # ─── Dashboard ────────────────────────────────────────────────────────────────
@@ -42,7 +43,7 @@ def dashboard():
         return redirect(url_for('auth.logout'))
 
     registrations = (
-        WorkshopRegistration.query
+        scoped_query(WorkshopRegistration)
         .filter_by(learner_id=learner.id)
         .join(Workshop)
         .order_by(Workshop.start_date.desc())
@@ -55,7 +56,7 @@ def dashboard():
     upcoming = [r for r in registrations if r.workshop.start_date >= today and r.status != 'cancelled']
     past     = [r for r in registrations if r.workshop.start_date < today or r.status == 'cancelled']
 
-    certificates = Certificate.query.filter_by(learner_id=learner.id).all()
+    certificates = scoped_query(Certificate).filter_by(learner_id=learner.id).all()
 
     # ── Phase 3: Program Assignments (Labs & Assessments) ──
     from app.training_management.models import ProgramParticipant
@@ -77,11 +78,12 @@ def dashboard():
 @learner_required
 def workshop_detail(workshop_id):
     learner = _get_learner()
-    registration = WorkshopRegistration.query.filter_by(
+    registration = scoped_query(WorkshopRegistration).filter_by(
         learner_id=learner.id, workshop_id=workshop_id
     ).first_or_404()
 
     workshop = registration.workshop
+    # Note: WorkshopDocument doesn't have organization_id yet, but it's linked to Workshop which IS scoped.
     documents = WorkshopDocument.query.filter_by(workshop_id=workshop_id).all()
 
     # Sessions with video progress
@@ -111,7 +113,7 @@ def workshop_detail(workshop_id):
 @learner_required
 def certificates():
     learner = _get_learner()
-    certs = Certificate.query.filter_by(learner_id=learner.id).all()
+    certs = scoped_query(Certificate).filter_by(learner_id=learner.id).all()
     return render_template('learner/certificates.html', learner=learner, certificates=certs)
 
 
@@ -137,18 +139,13 @@ def profile():
             
             # Also update session cache if it exists (for the header chip)
             from flask import session
-            if 'user_data' in session: # Check current cached_user key used in auth/routes.py
-                u = session['user_data']
-                u['full_name'] = learner.name
-                u['first_name'] = learner.name.split()[0] if learner.name else '?'
-                session['user_data'] = u
-            
-            # Check for alternate session key 'cached_user'
-            if 'cached_user' in session:
-                u = session['cached_user']
-                u['full_name'] = learner.name
-                u['first_name'] = learner.name.split()[0] if learner.name else '?'
-                session['cached_user'] = u
+            if '_lms_user' in session:
+                u = session['_lms_user']
+                name_parts = learner.name.split(' ', 1) if learner.name else ['', '']
+                u['first_name'] = name_parts[0]
+                u['last_name'] = name_parts[1] if len(name_parts) > 1 else ''
+                session['_lms_user'] = u
+                session.modified = True
 
             flash('Profile updated successfully!', 'success')
         except Exception as e:

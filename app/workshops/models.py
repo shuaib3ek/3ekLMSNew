@@ -19,6 +19,7 @@ class Workshop(db.Model):
     __tablename__ = 'workshops'
 
     id = db.Column(db.Integer, primary_key=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False, index=True, default=1)
 
     # Identity
     title = db.Column(db.String(255), nullable=False)
@@ -295,6 +296,7 @@ class Learner(db.Model):
     __tablename__ = 'learners'
 
     id = db.Column(db.Integer, primary_key=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False, index=True, default=1)
     name = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
     phone = db.Column(db.String(50))
@@ -319,6 +321,7 @@ class WorkshopRegistration(db.Model):
     __tablename__ = 'workshop_registrations'
 
     id = db.Column(db.Integer, primary_key=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False, index=True, default=1)
     workshop_id = db.Column(db.Integer, db.ForeignKey('workshops.id'), nullable=False)
 
     learner_id = db.Column(db.Integer, db.ForeignKey('learners.id'), nullable=False)
@@ -398,6 +401,7 @@ class WorkshopEmailLog(db.Model):
     __tablename__ = 'workshop_email_logs'
 
     id = db.Column(db.Integer, primary_key=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False, index=True, default=1)
     workshop_id = db.Column(db.Integer, db.ForeignKey('workshops.id'), nullable=False)
 
     # ── CRM soft reference (NO FK constraint) ────────────────────────────────
@@ -437,6 +441,7 @@ class OtpToken(db.Model):
     __tablename__ = 'otp_tokens'
 
     id = db.Column(db.Integer, primary_key=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False, index=True, default=1)
     email = db.Column(db.String(255), nullable=False, index=True)
     role = db.Column(db.String(30), nullable=False)   # learner, trainer, client
     code = db.Column(db.String(6), nullable=False)
@@ -503,20 +508,32 @@ class WorkshopVideoProgress(db.Model):
 
 
 class Certificate(db.Model):
-    """Issued certificates for completed workshops."""
+    """Issued certificates for completed workshops or program assessments."""
     __tablename__ = 'certificates'
 
     id = db.Column(db.Integer, primary_key=True)
-    workshop_id = db.Column(db.Integer, db.ForeignKey('workshops.id'), nullable=False)
-    registration_id = db.Column(db.Integer, db.ForeignKey('workshop_registrations.id'), nullable=False)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False, index=True, default=1)
+    workshop_id = db.Column(db.Integer, db.ForeignKey('workshops.id'), nullable=True)
+    registration_id = db.Column(db.Integer, db.ForeignKey('workshop_registrations.id'), nullable=True)
     learner_id = db.Column(db.Integer, db.ForeignKey('learners.id'), nullable=False)
+
+    # For program-assessment certs (no workshop)
+    assessment_assignment_id = db.Column(db.Integer, db.ForeignKey('assessment_assignments.id'), nullable=True)
+    program_title = db.Column(db.String(255), nullable=True)
 
     issued_at = db.Column(db.DateTime, default=datetime.utcnow)
     certificate_url = db.Column(db.String(512))
     certificate_number = db.Column(db.String(100), unique=True)
 
-    workshop = db.relationship('Workshop')
-    registration = db.relationship('WorkshopRegistration')
+    workshop = db.relationship('Workshop', foreign_keys=[workshop_id])
+    registration = db.relationship('WorkshopRegistration', foreign_keys=[registration_id])
+    assessment_assignment = db.relationship('AssessmentAssignment', foreign_keys=[assessment_assignment_id])
+
+    @property
+    def display_title(self):
+        if self.workshop:
+            return self.workshop.title
+        return self.program_title or 'Assessment Certificate'
 
     def __repr__(self):
         return f'<Certificate {self.certificate_number}>'

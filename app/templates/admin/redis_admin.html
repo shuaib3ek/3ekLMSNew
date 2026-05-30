@@ -1,0 +1,69 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="intelligence-dashboard">
+    <!-- Header Intelligence -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <div>
+            <div class="intel-telemetry" style="color: var(--accent); margin-bottom: 0.5rem;">// INFRASTRUCTURE.MONITOR // CACHE_LAYER</div>
+            <h1 style="font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 800; margin: 0; color: var(--text-primary);">
+                Redis <span style="font-weight: 300; opacity: 0.5;">Telemetry</span>
+            </h1>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <form action="{{ url_for('admin.redis_flush') }}" method="POST" onsubmit="return confirm('CRITICAL ACTION: Are you sure you want to flush the entire system cache? This will reset all rate limits and sessions.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline" style="border-color: #ef4444; color: #ef4444; padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="ph ph-trash"></i> Flush Cache
+                </button>
+            </form>
+            <div class="intel-card" style="padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.5rem; background: rgba(16, 185, 129, 0.05); border-color: var(--success);">
+                <div style="width: 8px; height: 8px; background: var(--success); border-radius: 50%; box-shadow: 0 0 10px var(--success); animation: pulse 2s infinite;"></div>
+                <span class="intel-telemetry" style="color: var(--success);">Status: {{ status }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+        <!-- Memory Card -->
+        <div class="intel-card" style="padding: 1.5rem;">
+            <h3 class="intel-telemetry" style="font-size: 0.9rem; color: var(--accent); margin-bottom: 1rem;">MEMORY UTILIZATION</h3>
+            <div class="intel-stat-val">{{ (info.get('used_memory_human', '0B')) }}</div>
+            <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 0.5rem;">
+                Peak: {{ info.get('used_memory_peak_human', 'N/A') }}
+            </div>
+        </div>
+
+        <!-- Clients Card -->
+        <div class="intel-card" style="padding: 1.5rem;">
+            <h3 class="intel-telemetry" style="font-size: 0.9rem; color: var(--accent); margin-bottom: 1rem;">ACTIVE CLIENTS</h3>
+            <div class="intel-stat-val">{{ info.get('connected_clients', 0) }}</div>
+            <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 0.5rem;">
+                Blocked: {{ info.get('blocked_clients', 0) }}
+            </div>
+        </div>
+
+        <!-- Keys Card -->
+        <div class="intel-card" style="padding: 1.5rem;">
+            <h3 class="intel-telemetry" style="font-size: 0.9rem; color: var(--accent); margin-bottom: 1rem;">KEY SPACE</h3>
+            <div class="intel-stat-val">{{ keys }}</div>
+            <div style="font-size: 0.8rem; color: var(--text-tertiary); margin-top: 0.5rem;">
+                Total Database Keys
+            </div>
+        </div>
+    </div>
+
+    <!-- Full Telemetry Log -->
+    <div class="intel-card" style="margin-top: 1.5rem; padding: 1.5rem;">
+        <h3 class="intel-telemetry" style="font-size: 0.9rem; color: var(--accent); margin-bottom: 1rem;">SYSTEM_INFO_LOG</h3>
+        <div style="background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #94a3b8; max-height: 400px; overflow-y: auto;">
+            {% for key, val in info.items() %}
+            <div style="display: flex; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding: 0.25rem 0;">
+                <span style="color: var(--accent); width: 250px;">{{ key }}</span>
+                <span style="color: white;">{{ val }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

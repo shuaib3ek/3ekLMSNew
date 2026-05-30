@@ -1,0 +1,143 @@
+{% extends "learner/base.html" %}
+{% block title %}{{ assessment.title }} — Quiz{% endblock %}
+
+{% block content %}
+<style>
+.quiz-header {
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: white;
+    padding: 2rem 2.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.quiz-progress {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.6);
+}
+.question-card {
+    background: white;
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+    scroll-margin-top: 2rem;
+}
+.option-label {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.875rem 1rem;
+    border: 2px solid var(--border-light);
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 0.6rem;
+    transition: all 0.15s ease;
+    font-size: 0.95rem;
+}
+.option-label:hover {
+    border-color: var(--primary);
+    background: rgba(59,130,246,0.04);
+}
+.option-label input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    flex-shrink: 0;
+}
+.option-label input[type="radio"]:checked ~ span {
+    font-weight: 600;
+}
+#timer {
+    font-size: 1.75rem;
+    font-weight: 800;
+    font-family: monospace;
+    color: #10b981;
+    transition: color 0.3s;
+}
+#timer.danger { color: #ef4444; animation: pulse 1s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+</style>
+
+<div class="quiz-header">
+    <div>
+        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.08em;">Assessment</div>
+        <h1 style="margin: 0; font-size: 1.5rem; font-weight: 800;">{{ assessment.title }}</h1>
+        <div class="quiz-progress" style="margin-top: 0.5rem;">
+            {{ assessment.questions | length }} Questions ·
+            Pass: {{ assessment.pass_score }}% ·
+            Attempt {{ assignment.attempts + 1 }} of {{ assessment.max_attempts }}
+        </div>
+    </div>
+    {% if assessment.time_limit_minutes %}
+    <div style="text-align: center;">
+        <div style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-bottom: 0.25rem;">TIME LEFT</div>
+        <div id="timer">{{ '%02d:%02d' % (assessment.time_limit_minutes, 0) }}</div>
+    </div>
+    {% endif %}
+</div>
+
+<form method="POST" action="{{ url_for('assessments.submit_quiz', assignment_id=assignment.id) }}" id="quizForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    {% for q in assessment.questions %}
+    <div class="question-card" id="q-{{ loop.index }}">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem;">
+            <div style="display: flex; gap: 0.75rem; align-items: flex-start;">
+                <span style="width: 32px; height: 32px; border-radius: 50%; background: #0f172a; color: white;
+                             display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0;">
+                    {{ loop.index }}
+                </span>
+                <p style="margin: 0; font-weight: 600; font-size: 1rem; line-height: 1.5;">{{ q.text }}</p>
+            </div>
+            <span style="font-size: 0.75rem; color: var(--text-secondary); white-space: nowrap; margin-left: 1rem;">
+                {{ q.points }} pt{{ 's' if q.points != 1 }}
+            </span>
+        </div>
+
+        <div>
+            {% for opt in q.options %}
+            <label class="option-label">
+                <input type="radio" name="question_{{ q.id }}" value="{{ opt.id }}" required>
+                <span>{{ opt.text }}</span>
+            </label>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; background: var(--bg-app);
+                border-radius: 10px; border: 1px solid var(--border-light);">
+        <div style="font-size: 0.9rem; color: var(--text-secondary);">
+            <i class="ph ph-info"></i> Make sure you've answered all questions before submitting.
+        </div>
+        <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1rem;"
+                onclick="return confirm('Submit your answers? You cannot change them after submission.')">
+            <i class="ph ph-paper-plane-tilt"></i> Submit Quiz
+        </button>
+    </div>
+</form>
+
+{% if assessment.time_limit_minutes %}
+<script>
+(function() {
+    let seconds = {{ assessment.time_limit_minutes }} * 60;
+    const el = document.getElementById('timer');
+    const interval = setInterval(() => {
+        seconds--;
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        if (seconds <= 60) el.classList.add('danger');
+        if (seconds <= 0) {
+            clearInterval(interval);
+            document.getElementById('quizForm').submit();
+        }
+    }, 1000);
+})();
+</script>
+{% endif %}
+{% endblock %}

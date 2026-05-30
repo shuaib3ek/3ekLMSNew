@@ -22,7 +22,7 @@
         <table style="width: 100%; border-collapse: collapse;">
             <tr>
                 <td style="padding: 8px 0; font-weight: 600; width: 120px; vertical-align: top;">Date:</td>
-                <td style="padding: 8px 0; color: #334155;">{{ workshop.start_date.strftime('%d %B %Y') }}</td>
+                <td style="padding: 8px 0; color: #334155;">{{ workshop.start_date | format_date }}</td>
             </tr>
             <tr>
                 <td style="padding: 8px 0; font-weight: 600; vertical-align: top;">Time:</td>

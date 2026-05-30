@@ -38,8 +38,8 @@
                             URL: <a href="{{ lab.lab_url }}" target="_blank" style="color: var(--primary);">{{ lab.lab_url[:30] }}{% if lab.lab_url|length > 30 %}...{% endif %}</a>
                         </div>
                         <div style="font-size: 0.8rem; color: var(--text-secondary); display: flex; gap: 1rem;">
-                            <span><i class="ph ph-clock"></i> Starts: {{ lab.access_start.strftime('%Y-%m-%d %H:%M') if lab.access_start else 'Immediate' }}</span>
-                            <span><i class="ph ph-clock-countdown"></i> Ends: {{ lab.access_end.strftime('%Y-%m-%d %H:%M') if lab.access_end else 'No Expiry' }}</span>
+                            <span><i class="ph ph-clock"></i> Starts: {{ lab.access_start | format_date if lab.access_start else 'Immediate' }}</span>
+                            <span><i class="ph ph-clock-countdown"></i> Ends: {{ lab.access_end | format_date if lab.access_end else 'No Expiry' }}</span>
                         </div>
                     </div>
                 </div>

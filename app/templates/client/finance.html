@@ -1,0 +1,143 @@
+{% extends "client/base.html" %}
+{% block title %}Finance Hub — {{ company_name }} — 3EK{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header" style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <h1 class="page-title" style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem;">
+                Finance Hub
+            </h1>
+            <div style="font-family: monospace; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8;">
+                // TRACK YOUR INVOICES AND PENDING PAYMENTS
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Command Bar (Tab Navigation) -->
+<div class="command-bar">
+    <div class="cmd-group">
+        <button class="cmd-pill active" data-target="tab-invoices">
+            <i class="ph-bold ph-receipt"></i> PENDING INVOICES
+            {% if pending_invoice_count > 0 %}
+            <span style="background: rgba(255,255,255,0.2); font-size: 0.6rem; padding: 1px 6px; border-radius: 4px; margin-left: 4px;">{{ pending_invoice_count }}</span>
+            {% endif %}
+        </button>
+        <button class="cmd-pill" data-target="tab-pos">
+            <i class="ph-bold ph-file-text"></i> PENDING PURCHASE ORDERS
+            {% if pending_po_count > 0 %}
+            <span style="background: rgba(255,255,255,0.2); font-size: 0.6rem; padding: 1px 6px; border-radius: 4px; margin-left: 4px;">{{ pending_po_count }}</span>
+            {% endif %}
+        </button>
+    </div>
+
+    <div class="cmd-group" style="margin-left: auto; border-right: none;">
+        <div class="cmd-pill" style="opacity: 0.6;">
+            <i class="ph-bold ph-info"></i> AUTO-SYNC ACTIVE
+        </div>
+    </div>
+</div>
+
+<!-- Pending Invoices Tab -->
+<div id="tab-invoices" class="tab-content active">
+    <div class="precision-table">
+        <div class="pt-header pt-cols-finance-inv">
+            <div>Program & Client</div>
+            <div>Invoice #</div>
+            <div>Due Date</div>
+            <div class="align-right">Amount</div>
+        </div>
+
+        {% if pending_invoices %}
+            {% for inv in pending_invoices %}
+            <div class="pt-row pt-cols-finance-inv">
+                <div>
+                    <a href="{{ url_for('client_portal.program_detail', engagement_id=inv.program_id) }}" class="pt-title">
+                        {{ inv.program_name }}
+                    </a>
+                    {% if inv.client_name %}
+                    <div class="pt-subtitle"><i class="ph ph-buildings"></i> {{ inv.client_name }}</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <div class="pt-text" style="font-family: monospace;">{{ inv.invoice_number or '—' }}</div>
+                </div>
+                <div>
+                    <div class="pt-text">{{ inv.date | format_date }}</div>
+                </div>
+                <div class="amount-standard">
+                    <div class="pt-bold">₹{{ "%.2f"|format(inv.amount) if inv.amount else '—' }}</div>
+                    {% if inv.balance and inv.balance > 0 %}
+                    <div class="pt-muted">₹{{ "%.2f"|format(inv.balance) }} balance due</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="padding: 3rem; text-align: center; color: #94a3b8;">
+                <i class="ph-bold ph-check-circle" style="font-size: 2rem; color: #10b981; opacity: 0.5; display: block; margin-bottom: 0.75rem;"></i>
+                All invoices are settled.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Pending Purchase Orders Tab -->
+<div id="tab-pos" class="tab-content">
+    <div class="precision-table">
+        <div class="pt-header pt-cols-finance-po">
+            <div>Program & Client</div>
+            <div>PO Number</div>
+            <div>Date</div>
+        </div>
+
+        {% if pending_pos %}
+            {% for po in pending_pos %}
+            <div class="pt-row pt-cols-finance-po">
+                <div>
+                    <a href="{{ url_for('client_portal.program_detail', engagement_id=po.program_id) }}" class="pt-title">
+                        {{ po.program_name }}
+                    </a>
+                    {% if po.client_name %}
+                    <div class="pt-subtitle"><i class="ph ph-buildings"></i> {{ po.client_name }}</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <div class="pt-text" style="font-family: monospace;">{{ po.po_number or '—' }}</div>
+                    <div class="pt-muted">Awaiting receipt</div>
+                </div>
+                <div>
+                    <div class="pt-text">{{ po.date | format_date }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="padding: 3rem; text-align: center; color: #94a3b8;">
+                <i class="ph-bold ph-check-circle" style="font-size: 2rem; color: #10b981; opacity: 0.5; display: block; margin-bottom: 0.75rem;"></i>
+                No pending purchase orders.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const btns = document.querySelectorAll('.cmd-pill');
+    const contents = document.querySelectorAll('.tab-content');
+
+    btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.getAttribute('data-target');
+            if (targetId) {
+                btns.forEach(b => b.classList.remove('active'));
+                contents.forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(targetId).classList.add('active');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

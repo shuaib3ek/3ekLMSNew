@@ -103,6 +103,16 @@ def get_client(client_id: int) -> dict | None:
         'logo': client.logo
     } if client else None
 
+def get_account_manager(client_id: int) -> dict | None:
+    """Fetch the account manager for a specific client from CRM."""
+    try:
+        r = requests.get(f'{_base()}/api/v1/crm/clients/{client_id}/account-manager', headers=_headers(), timeout=2)
+        if r.ok:
+            return r.json().get('data')
+    except Exception:
+        pass
+    return None
+
 def list_clients() -> list:
     """Return all active CRM clients with shadow fallback."""
     try:
@@ -122,6 +132,25 @@ def list_clients() -> list:
         'domain': c.domain,
         'logo': c.logo
     } for c in clients]
+
+def get_programs_for_client(client_id: int) -> list:
+    """Fetch programs (engagements) for a specific client from CRM."""
+    all_programs = fetch_pulse_programs()
+    
+    # Get client name for fuzzy matching fallback
+    c_data = get_client(client_id)
+    c_name = (c_data.get('name') or '').lower() if c_data else ''
+    
+    result = []
+    for p in all_programs:
+        if p.get('client_id') == client_id:
+            result.append(p)
+        elif p.get('client_id') in (None, '') and c_name and p.get('client_name'):
+            p_name = p.get('client_name').lower()
+            if c_name in p_name or p_name in c_name:
+                result.append(p)
+                
+    return result
 
 # ─── Contacts ────────────────────────────────────────────────────────────────
 
@@ -175,6 +204,16 @@ def list_contacts() -> list:
         'email': c.email,
         'client_id': c.crm_client_id
     } for c in contacts]
+
+def get_open_requests(client_id: int) -> list:
+    """Fetch open training requests (inquiries) for a specific client from CRM."""
+    try:
+        r = requests.get(f'{_base()}/api/v1/crm/requests?client_id={client_id}', headers=_headers(), timeout=2)
+        if r.ok:
+            return r.json().get('data', [])
+    except Exception:
+        pass
+    return []
 
 def verify_contact_password(email: str, password: str) -> dict | None:
     """Verify contact credentials with shadow fallback."""
@@ -266,6 +305,10 @@ def list_trainers(status: str = 'active') -> list:
     } for t in trainers]
 
 def lookup_trainer_by_email(email: str) -> dict | None:
+    """Find a trainer by email. Falls back to full list scan when /lookup is unavailable."""
+    email = email.strip().lower()
+
+    # 1. Try the dedicated lookup endpoint (may not exist in all CRM versions)
     try:
         r = requests.get(f'{_base()}/api/v1/crm/trainers/lookup', params={'email': email}, headers=_headers(), timeout=2)
         if r.ok:
@@ -275,9 +318,35 @@ def lookup_trainer_by_email(email: str) -> dict | None:
                 return data
     except Exception:
         pass
-    
+
+    # 2. Fall back: search the full trainer list (both active and vetted)
+    for status in ('active', 'vetted'):
+        try:
+            r = requests.get(f'{_base()}/api/v1/crm/trainers',
+                             params={'status': status}, headers=_headers(), timeout=3)
+            if r.ok:
+                trainers = r.json().get('data', [])
+                match = next((t for t in trainers if t.get('email', '').strip().lower() == email), None)
+                if match:
+                    try:
+                        update_shadow_trainer(match)
+                    except Exception:
+                        pass
+                    return match
+        except Exception:
+            pass
+
+    # 3. Shadow DB fallback
     trainer = ShadowTrainer.query.filter_by(email=email).first()
-    return {'id': trainer.crm_trainer_id, 'name': trainer.name} if trainer else None
+    if trainer:
+        return {
+            'id': trainer.crm_trainer_id,
+            'name': trainer.name,
+            'email': trainer.email,
+            'first_name': trainer.name.split()[0] if trainer.name else '',
+            'last_name': ' '.join(trainer.name.split()[1:]) if trainer.name and ' ' in trainer.name else '',
+        }
+    return None
 
 def lookup_contact_by_email(email: str) -> dict | None:
     try:
@@ -345,3 +414,5 @@ def fetch_pulse_program_detail(program_id: int) -> dict | None:
         if p.get('id') == program_id:
             return p
     return None
+
+get_program_detail = fetch_pulse_program_detail

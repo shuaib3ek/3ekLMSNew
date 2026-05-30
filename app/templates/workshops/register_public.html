@@ -405,8 +405,8 @@
                         <div class="meta-icon">📅</div>
                         <div>
                             <div class="meta-label">Date</div>
-                            <div class="meta-value">{{ workshop.start_date.strftime('%d %B %Y') }}{% if
-                                workshop.end_date != workshop.start_date %} – {{ workshop.end_date.strftime('%d %B %Y')
+                            <div class="meta-value">{{ workshop.start_date | format_date }}{% if
+                                workshop.end_date != workshop.start_date %} – {{ workshop.end_date | format_date
                                 }}{% endif %}</div>
                         </div>
                     </div>

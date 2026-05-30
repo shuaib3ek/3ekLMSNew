@@ -50,7 +50,7 @@
                 <div>
                     <div style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">Date Range</div>
                     <div style="font-weight: 500; font-size: 1.05rem;">
-                        {{ program.start_date }} {% if program.end_date %}to {{ program.end_date }}{% endif %}
+                        {{ program.start_date | format_date }} {% if program.end_date %}to {{ program.end_date | format_date }}{% endif %}
                     </div>
                 </div>
                 <div>
@@ -96,18 +96,28 @@
                             <th>Email</th>
                             <th>Organization</th>
                             <th>Status</th>
+                            <th style="text-align: right;">Performance</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for p in participants %}
                         <tr>
-                            <td style="font-weight: 600;">{{ p.name }}</td>
+                            <td style="font-weight: 600;">
+                                <a href="{{ url_for('training_management.participant_report', crm_engagement_id=program.id, participant_id=p.id) }}" style="color: var(--accent, #3b82f6); text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                    {{ p.name }} <i class="ph ph-arrow-square-out" style="font-size: 0.85rem;"></i>
+                                </a>
+                            </td>
                             <td style="color: var(--text-secondary);">{{ p.email }}</td>
                             <td style="color: var(--text-secondary);">{{ p.organization or '-' }}</td>
                             <td>
                                 <span class="badge badge-{{ 'success' if p.status == 'active' else 'ghost' }}">
                                     {{ p.status | capitalize }}
                                 </span>
+                            </td>
+                            <td style="text-align: right;">
+                                <a href="{{ url_for('training_management.participant_report', crm_engagement_id=program.id, participant_id=p.id) }}" class="btn btn-sm btn-outline" style="padding: 0.25rem 0.75rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                                    View Performance <i class="ph ph-chart-line"></i>
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -146,7 +156,7 @@
                     </div>
                 </div>
                 <label class="toggle-switch">
-                    <input type="checkbox" id="toggleAssessments" onchange="toggleModule('assessments', this.checked)" {% if config.assessments_enabled %}checked{% endif %}>
+                    <input type="checkbox" id="toggleAssessments" onchange="toggleModule('assessments', this.checked, event)" {% if config.assessments_enabled %}checked{% endif %}>
                     <span class="slider round"></span>
                 </label>
             </div>
@@ -163,7 +173,7 @@
                     </div>
                 </div>
                 <label class="toggle-switch">
-                    <input type="checkbox" id="toggleLabs" onchange="toggleModule('labs', this.checked)" {% if config.labs_enabled %}checked{% endif %}>
+                    <input type="checkbox" id="toggleLabs" onchange="toggleModule('labs', this.checked, event)" {% if config.labs_enabled %}checked{% endif %}>
                     <span class="slider round"></span>
                 </label>
             </div>
@@ -230,12 +240,13 @@
 </div>
 
 <style>
-/* CSS Toggle Switch Styles */
 .toggle-switch {
   position: relative;
   display: inline-block;
   width: 50px;
   height: 28px;
+  flex-shrink: 0;
+  margin-left: 1rem;
 }
 .toggle-switch input {
   opacity: 0;
@@ -249,7 +260,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--border-dark);
+  background-color: #cbd5e1;
   transition: .3s;
 }
 .slider:before {
@@ -293,9 +304,10 @@ window.onclick = function(event) {
     }
 }
 
-async function toggleModule(feature, state) {
+async function toggleModule(feature, state, event) {
     try {
-        const response = await fetch("{{ url_for('training_management.toggle_feature', crm_engagement_id=program.id, feature='') }}" + feature, {
+        const url = `/training_management/{{ program.id }}/toggle/${feature}`;
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -304,14 +316,12 @@ async function toggleModule(feature, state) {
         });
         if (!response.ok) {
             alert('Failed to update. Please try again.');
-            // Revert UI toggle
-            event.target.checked = !state;
+            if (event) event.target.checked = !state;
         }
     } catch (e) {
         console.error(e);
         alert('An error occurred.');
-        // Revert UI toggle
-        event.target.checked = !state;
+        if (event) event.target.checked = !state;
     }
 }
 </script>

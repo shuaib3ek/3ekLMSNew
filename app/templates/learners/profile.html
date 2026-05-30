@@ -1,0 +1,226 @@
+{% extends "layouts/base.html" %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+    <div>
+        <div class="breadcrumb" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <a href="{{ url_for('learners.list_learners') }}" style="color: var(--text-secondary); text-decoration: none;">Global Roster</a>
+            <i class="ph ph-caret-right" style="color: var(--text-tertiary);"></i>
+            <span style="color: var(--text-primary);">{{ learner.name }}</span>
+        </div>
+        <h1 class="page-title"><i class="ph ph-user-circle"></i> {{ learner.name }}</h1>
+        <div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">{{ learner.email }}</div>
+    </div>
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <span style="font-family: monospace; font-size: 0.8rem; color: var(--text-secondary); background: var(--bg-app);
+                     padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border-light);">
+            ID #{{ learner.id }}
+        </span>
+        <span style="font-size: 0.8rem; color: var(--text-secondary);">
+            Member since {{ learner.created_at | format_date }}
+        </span>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 320px; gap: 2rem;">
+
+    <!-- Left: Main Content -->
+    <div style="display: flex; flex-direction: column; gap: 2rem;">
+
+        <!-- Identity Card -->
+        <div class="card">
+            <h3 style="margin-top: 0; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="ph ph-identification-card" style="color: var(--primary);"></i> Identity
+            </h3>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;">
+                <div>
+                    <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.25rem;">Full Name</div>
+                    <div style="font-weight: 600;">{{ learner.name }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.25rem;">Email</div>
+                    <div style="font-weight: 500;">{{ learner.email }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.25rem;">Phone</div>
+                    <div style="font-weight: 500;">{{ learner.phone or '—' }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.25rem;">Company</div>
+                    <div style="font-weight: 500;">{{ learner.company or '—' }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.25rem;">Job Title</div>
+                    <div style="font-weight: 500;">{{ learner.job_title or '—' }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.25rem;">Username</div>
+                    <div style="font-weight: 500; font-family: monospace;">{{ learner.username or '—' }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workshop History -->
+        <div class="card">
+            <h3 style="margin-top: 0; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="ph ph-chalkboard-teacher" style="color: var(--primary);"></i>
+                Workshop History
+                <span style="margin-left: auto; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">
+                    {{ learner.registrations | length }} total
+                </span>
+            </h3>
+            {% if learner.registrations %}
+            <table class="table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Workshop</th>
+                        <th>Date</th>
+                        <th>Mode</th>
+                        <th>Status</th>
+                        <th>Payment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for reg in learner.registrations | sort(attribute='registered_at', reverse=True) %}
+                    <tr>
+                        <td style="font-weight: 500;">{{ reg.workshop.title | truncate(40) }}</td>
+                        <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ reg.workshop.start_date | format_date }}</td>
+                        <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ reg.workshop.mode | title }}</td>
+                        <td>
+                            <span class="badge badge-{{ 'success' if reg.status == 'confirmed' else 'warning' if reg.status == 'pending' else 'ghost' }}">
+                                {{ reg.status | title }}
+                            </span>
+                        </td>
+                        <td>
+                            <span style="font-size: 0.8rem; color: {{ '#16a34a' if reg.payment_status == 'paid' else 'var(--text-secondary)' }};">
+                                {{ reg.payment_status | title }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div style="padding: 2rem; text-align: center; border: 1px dashed var(--border-light); border-radius: 8px;">
+                <p style="color: var(--text-secondary);">No workshop registrations yet.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Assessment Results -->
+        {% if assessment_results %}
+        <div class="card">
+            <h3 style="margin-top: 0; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="ph ph-exam" style="color: var(--primary);"></i> Assessment Results
+            </h3>
+            <table class="table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Assessment</th>
+                        <th>Type</th>
+                        <th>Score</th>
+                        <th>Status</th>
+                        <th>Graded</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for res in assessment_results %}
+                    <tr>
+                        <td style="font-weight: 500;">{{ res.assessment.title }}</td>
+                        <td style="color: var(--text-secondary); font-size: 0.85rem;">{{ res.assessment.assessment_type | title }}</td>
+                        <td>
+                            {% if res.score is not none %}
+                            <span style="font-weight: 700; color: {{ '#16a34a' if res.status == 'passed' else '#dc2626' if res.status == 'failed' else 'var(--text-primary)' }};">
+                                {{ res.score | round(1) }}%
+                            </span>
+                            {% else %}
+                            <span style="color: var(--text-secondary);">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ 'success' if res.status == 'passed' else 'danger' if res.status == 'failed' else 'ghost' }}">
+                                {{ res.status | title }}
+                            </span>
+                        </td>
+                        <td style="color: var(--text-secondary); font-size: 0.85rem;">
+                            {{ res.graded_at | format_date if res.graded_at else '—' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- Right Sidebar -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+        <!-- Stats -->
+        <div class="card" style="padding: 1.25rem;">
+            <h4 style="margin-top: 0; margin-bottom: 1.25rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">At a Glance</h4>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.9rem; color: var(--text-secondary);">Workshops Attended</span>
+                    <span style="font-weight: 700; font-size: 1.1rem;">{{ learner.registrations | selectattr('status', 'equalto', 'attended') | list | length }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.9rem; color: var(--text-secondary);">Total Registrations</span>
+                    <span style="font-weight: 700; font-size: 1.1rem;">{{ learner.registrations | length }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.9rem; color: var(--text-secondary);">Certificates</span>
+                    <span style="font-weight: 700; font-size: 1.1rem; color: #b45309;">{{ certificates | length }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.9rem; color: var(--text-secondary);">Assessments Passed</span>
+                    <span style="font-weight: 700; font-size: 1.1rem; color: #16a34a;">
+                        {{ assessment_results | selectattr('status', 'equalto', 'passed') | list | length }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Certificates -->
+        {% if certificates %}
+        <div class="card" style="padding: 1.25rem;">
+            <h4 style="margin-top: 0; margin-bottom: 1rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Certificates</h4>
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                {% for cert in certificates %}
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; border: 1px solid var(--border-light); border-radius: 8px; background: var(--bg-app);">
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.85rem;">{{ cert.display_title | truncate(28) }}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); font-family: monospace;">{{ cert.certificate_number }}</div>
+                    </div>
+                    {% if cert.certificate_url %}
+                    <a href="{{ cert.certificate_url }}" target="_blank" class="btn btn-sm btn-outline" style="padding: 4px 8px; font-size: 0.75rem;">
+                        <i class="ph ph-download-simple"></i>
+                    </a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Program Assignments -->
+        {% if program_assignments %}
+        <div class="card" style="padding: 1.25rem;">
+            <h4 style="margin-top: 0; margin-bottom: 1rem; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary);">Program Assignments</h4>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                {% for pa in program_assignments %}
+                <div style="font-size: 0.85rem; padding: 0.5rem 0.75rem; border-radius: 6px; background: var(--bg-app); border: 1px solid var(--border-light);">
+                    <div style="font-weight: 500;">{{ pa.organization or pa.name }}</div>
+                    <div style="color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">
+                        {{ pa.status }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

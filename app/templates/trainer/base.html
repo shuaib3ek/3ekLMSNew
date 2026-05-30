@@ -3,72 +3,117 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Trainer Portal — 3EK{% endblock %}</title>
-
-    <!-- Fonts & Icons -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>{% block title %}Trainer Intelligence — 3EK{% endblock %}</title>
+    
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=39">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-
-    <!-- Shared Portal Styles -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/learner_portal.css') }}">
-
+    
     {% block extra_css %}{% endblock %}
 </head>
 
 <body>
-
-    <nav class="lp-nav">
-        <a href="{{ url_for('trainer_portal.dashboard') }}" class="lp-brand">
-            <img src="https://3ek.in/logo.png" alt="3EK Logo">
-            <span class="lp-portal-pill">Trainer</span>
-        </a>
-
-        <div class="lp-nav-links">
-            <a href="{{ url_for('trainer_portal.dashboard') }}"
-                class="lp-nav-link {{ 'active' if request.endpoint == 'trainer_portal.dashboard' }}">
-                <i class="ph ph-house"></i> Dashboard
-            </a>
-            <a href="{{ url_for('trainer_portal.profile') }}"
-                class="lp-nav-link {{ 'active' if request.endpoint == 'trainer_portal.profile' }}">
-                <i class="ph ph-user"></i> My Profile
-            </a>
-        </div>
-
-        <div class="lp-nav-user">
-            <div class="lp-user-chip">
-                <div class="lp-avatar">
-                    {{ current_user.first_name[0] | upper if current_user.first_name else 'T' }}
-                </div>
-                <span class="lp-user-name">{{ current_user.full_name or 'Trainer' }}</span>
+    <div class="app-shell">
+        <!-- SIDEBAR -->
+        <aside class="layout-sidebar">
+            <div class="logo-area">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="3ek">
+                <span class="portal-pill">Instructor Unit</span>
             </div>
-            <a href="{{ url_for('auth.logout') }}" class="lp-btn-logout">
-                <i class="ph ph-sign-out"></i>
-                <span>Sign Out</span>
-            </a>
-        </div>
-    </nav>
 
-    <main class="lp-page">
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        {% for category, message in messages %}
-        <div class="lp-alert lp-alert-{{ category if category != 'message' else 'info' }}">
-            <i class="ph-bold ph-info"></i>
-            {{ message }}
-        </div>
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
+            <nav class="nav-links">
+                <div class="nav-section-title">MANAGEMENT</div>
+                <a href="{{ url_for('trainer_portal.dashboard') }}" class="nav-item {{ 'active' if request.endpoint == 'trainer_portal.dashboard' }}">
+                    <i class="ph-bold ph-squares-four"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{{ url_for('trainer_portal.dashboard') }}" class="nav-item">
+                    <i class="ph-bold ph-calendar-blank"></i>
+                    <span>Sessions</span>
+                </a>
 
-        {% block content %}{% endblock %}
-    </main>
+                <div class="nav-section-title">CONTENT</div>
+                <a href="{{ url_for('trainer_portal.dashboard') }}" class="nav-item">
+                    <i class="ph-bold ph-notebook"></i>
+                    <span>Curriculum Lab</span>
+                </a>
+                <a href="{{ url_for('trainer_portal.dashboard') }}" class="nav-item">
+                    <i class="ph-bold ph-folder-open"></i>
+                    <span>Asset Vault</span>
+                </a>
+
+                <div class="nav-section-title">INTELLIGENCE</div>
+                <a href="{{ url_for('trainer_portal.dashboard') }}" class="nav-item">
+                    <i class="ph-bold ph-chart-bar"></i>
+                    <span>Impact HUD</span>
+                </a>
+                <a href="{{ url_for('trainer_portal.profile') }}" class="nav-item {{ 'active' if request.endpoint == 'trainer_portal.profile' }}">
+                    <i class="ph-bold ph-user-circle-gear"></i>
+                    <span>Portfolio</span>
+                </a>
+            </nav>
+
+            <!-- Sidebar Footer -->
+            <div style="margin-top: auto; padding-top: 1rem; flex-shrink: 0;">
+                <div class="user-profile-mini" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 8px; background: rgba(255,255,255,0.05);">
+                    <div style="width: 32px; height: 32px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.85rem;">
+                        {{ current_user.first_name[0] | upper if current_user.first_name else 'T' }}
+                    </div>
+                    <div style="flex: 1; overflow: hidden;">
+                        <div style="font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--sidebar-text);">
+                            {{ current_user.full_name or 'Instructor' }}
+                        </div>
+                    </div>
+                </div>
+                <a href="{{ url_for('auth.logout') }}" class="nav-item" style="color: var(--danger) !important; font-weight: 600;">
+                    <i class="ph-bold ph-sign-out"></i>
+                    <span style="flex:1">Logout</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-content">
+            <header class="main-header" style="display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; border-bottom: 1px solid var(--border-light); background: white;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="header-search" style="position: relative;">
+                        <i class="ph ph-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-tertiary);"></i>
+                        <input type="text" placeholder="Search sessions, content or labs..." style="padding: 0.5rem 1rem 0.5rem 2.5rem; border: 1px solid var(--border-light); border-radius: 8px; width: 300px; font-size: 0.85rem; background: #f8fafc;">
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="icon-btn" style="width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border-light); background: white; color: var(--text-secondary); cursor: pointer;">
+                            <i class="ph ph-bell"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-body" style="padding: 2rem; overflow-y: auto; height: calc(100vh - 64px);">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                <div style="margin-bottom: 1.5rem;">
+                    {% for category, message in messages %}
+                    <div class="alert-box-{{ category if category != 'message' else 'info' }}" style="padding: 1rem; border-radius: 8px; margin-bottom: 0.5rem; font-weight: 500; font-size: 0.9rem; display: flex; align-items: center; gap: 0.75rem;">
+                        <i class="ph ph-info" style="font-size: 1.2rem;"></i>
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% endwith %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
 
     {% block extra_js %}{% endblock %}
 </body>
-
 </html>

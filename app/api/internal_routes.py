@@ -43,8 +43,11 @@ def enroll_learner():
 
     from app.workshops.models import Workshop, WorkshopRegistration
     from app.core.extensions import db
+    from app.core.tenancy import scoped_query
     import secrets
 
+    # If this is called by CRM, we should ideally know the org.
+    # For now, we'll try to find the workshop first.
     workshop = Workshop.query.get(workshop_id)
     if not workshop:
         return jsonify({'error': 'Workshop not found'}), 404
@@ -63,6 +66,7 @@ def enroll_learner():
         payment_status='free',
         source=data.get('source', 'crm_assignment'),
         confirmation_token=secrets.token_urlsafe(32),
+        organization_id=workshop.organization_id if workshop else 1
     )
     db.session.add(reg)
     db.session.commit()
@@ -86,16 +90,19 @@ def program_handover():
 
     from app.workshops.models import Workshop
     from app.core.extensions import db
+    from app.core.tenancy import scoped_query
     from datetime import datetime
 
     # Find or create workshop shell
+    org_id = data.get('organization_id', 1)
     workshop = Workshop.query.filter_by(crm_engagement_id=crm_id).first()
     if not workshop:
         workshop = Workshop(
             crm_engagement_id=crm_id,
             is_lms_managed=True,
             admin_ready=False,  # Wait for Admin to upload roster
-            status='draft'
+            status='draft',
+            organization_id=org_id
         )
         db.session.add(workshop)
 
@@ -137,8 +144,9 @@ def set_workshop_ready(workshop_id):
     """
     from app.workshops.models import Workshop
     from app.core.extensions import db
+    from app.core.tenancy import scoped_query
     
-    workshop = Workshop.query.get_or_404(workshop_id)
+    workshop = scoped_query(Workshop).filter_by(id=workshop_id).first_or_404()
     data = request.get_json(silent=True) or {}
     
     if data.get('ready'):
@@ -165,9 +173,10 @@ def list_contacts_api():
 
     from app.core.shadow_models import ShadowContact
     from app.core.extensions import db
+    from app.core.tenancy import scoped_query
     q = request.args.get('q', '').strip().lower()
 
-    query = ShadowContact.query
+    query = scoped_query(ShadowContact)
     if q:
         query = query.filter(
             db.or_(

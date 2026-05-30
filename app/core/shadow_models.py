@@ -6,6 +6,7 @@ class ShadowStaffUser(db.Model):
     __tablename__ = 'shadow_staff_users'
 
     id = db.Column(db.Integer, primary_key=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False, index=True, default=1)
     crm_user_id = db.Column(db.Integer, unique=True, nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password_hash = db.Column(db.String(255))
@@ -22,6 +23,7 @@ class ShadowTrainer(db.Model):
     __tablename__ = 'shadow_trainers'
 
     id = db.Column(db.Integer, primary_key=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False, index=True, default=1)
     crm_trainer_id = db.Column(db.Integer, unique=True, nullable=False)
     name = db.Column(db.String(255), nullable=False)
     email = db.Column(db.String(255))
@@ -38,6 +40,7 @@ class ShadowClient(db.Model):
     __tablename__ = 'shadow_clients'
 
     id = db.Column(db.Integer, primary_key=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False, index=True, default=1)
     crm_client_id = db.Column(db.Integer, unique=True, nullable=False)
     name = db.Column(db.String(255), nullable=False)
     domain = db.Column(db.String(255))
@@ -52,11 +55,12 @@ class ShadowContact(db.Model):
     __tablename__ = 'shadow_contacts'
 
     id = db.Column(db.Integer, primary_key=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False, index=True, default=1)
     crm_contact_id = db.Column(db.Integer, unique=True, nullable=False)
     crm_client_id = db.Column(db.Integer, nullable=True) # Soft reference to ShadowClient's crm_client_id
     
     name = db.Column(db.String(255), nullable=False)
-    email = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(255), nullable=True)
     password_hash = db.Column(db.String(255))
     last_synced = db.Column(db.DateTime, default=datetime.utcnow)
 

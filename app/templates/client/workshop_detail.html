@@ -16,7 +16,7 @@
             <div style="display:flex; flex-wrap:wrap; gap:1.5rem; margin-top:1rem;">
                 <div style="display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; color:var(--text-muted);">
                     <i class="ph ph-calendar-blank" style="font-size:1.2rem; color:var(--teal);"></i>
-                    {{ workshop.start_date.strftime('%d %B %Y') }}
+                    {{ workshop.start_date | format_date }}
                 </div>
                 <div style="display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; color:var(--text-muted);">
                     <i class="ph ph-clock" style="font-size:1.2rem; color:var(--teal);"></i>

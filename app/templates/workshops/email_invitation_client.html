@@ -51,9 +51,9 @@
                                     style="display: inline-block; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 7px 12px; margin-right: 8px; margin-bottom: 8px; color: #f8fafc; font-size: 13px;">
                                     <img src="https://img.icons8.com/fluency-systems-regular/24/ffffff/calendar.png"
                                         width="14" height="14" style="vertical-align: -2px; margin-right: 4px;"
-                                        alt="Date" />{{ workshop.start_date.strftime('%d %B %Y') }}{% if
+                                        alt="Date" />{{ workshop.start_date | format_date }}{% if
                                     workshop.end_date !=
-                                    workshop.start_date %} – {{ workshop.end_date.strftime('%d %b') }}{% endif %}
+                                    workshop.start_date %} – {{ workshop.end_date | format_date }}{% endif %}
                                 </span>
                                 <span class="meta-pill"
                                     style="display: inline-block; background-color: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 7px 12px; margin-right: 8px; margin-bottom: 8px; color: #f8fafc; font-size: 13px;">
@@ -138,8 +138,8 @@
                                 style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 4px;">
                                 Date</div>
                             <div style="font-size: 15px; font-weight: 600; color: #0f172a;">{{
-                                workshop.start_date.strftime('%d %b %Y') }}{% if workshop.end_date !=
-                                workshop.start_date %} – {{ workshop.end_date.strftime('%d %b') }}{% endif %}</div>
+                                workshop.start_date | format_date }}{% if workshop.end_date !=
+                                workshop.start_date %} – {{ workshop.end_date | format_date }}{% endif %}</div>
                         </td>
                         <td width="4%"></td>
                         <td width="48%" valign="top"
@@ -170,7 +170,7 @@
                                 {% if workshop.early_bird_fee and workshop.early_bird_deadline %}
                                 <br><span style="font-size: 12px; color: #64748b; font-weight: 400;">Early Bird: ₹{{
                                     '{:,.0f}'.format(workshop.early_bird_fee) }} (till {{
-                                    workshop.early_bird_deadline.strftime('%d %b') }})</span>
+                                    workshop.early_bird_deadline | format_date }})</span>
                                 {% endif %}
                                 {% endif %}
                             </div>

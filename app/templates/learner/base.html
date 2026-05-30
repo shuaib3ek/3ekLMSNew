@@ -7,60 +7,97 @@
     <title>{% block title %}My Learning — 3EK{% endblock %}</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/learner_portal.css') }}">
+    
+    <!-- Enterprise Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=39">
+    
     {% block extra_head %}{% endblock %}
 </head>
 
 <body>
 
-    <!-- Top Nav -->
-    <nav class="lp-nav">
-        <a href="{{ url_for('learner_portal.dashboard') }}" class="lp-brand">
-            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="3EK">
-            <span class="lp-portal-pill">Learner</span>
-        </a>
+    <div class="app-shell">
+        <!-- Mobile Sidebar Overlay -->
+        <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
-        <div class="lp-nav-links">
-            <a href="{{ url_for('learner_portal.dashboard') }}"
-                class="lp-nav-link {% if request.endpoint == 'learner_portal.dashboard' %}active{% endif %}">
-                <i class="ph ph-house"></i> Dashboard
-            </a>
-            <a href="{{ url_for('learner_portal.certificates') }}"
-                class="lp-nav-link {% if request.endpoint == 'learner_portal.certificates' %}active{% endif %}">
-                <i class="ph ph-certificate"></i> Certificates
-            </a>
-            <a href="{{ url_for('learner_portal.profile') }}"
-                class="lp-nav-link {% if request.endpoint == 'learner_portal.profile' %}active{% endif %}">
-                <i class="ph ph-user-circle"></i> Profile
-            </a>
-        </div>
+        <!-- Mobile Header -->
+        <header class="mobile-header">
+            <button class="mobile-menu-btn" onclick="toggleMobileSidebar()">
+                <i class="ph ph-list"></i>
+            </button>
+            <div style="font-weight: 700; font-size: 1.1rem; color: var(--accent);">3ek Learner</div>
+        </header>
 
-        <div class="lp-nav-user">
-            <div class="lp-user-chip">
-                <div class="lp-avatar">
-                    {{ current_user.first_name[0] | upper if current_user.first_name else '?' }}
-                </div>
-                <span class="lp-user-name">{{ current_user.full_name }}</span>
+        <!-- SIDEBAR (Standard Enterprise Sidebar) -->
+        <aside class="layout-sidebar">
+            <div class="logo-area">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="3ek Learning">
+                <span class="portal-pill">Learner Unit</span>
             </div>
-            <a href="{{ url_for('auth.logout') }}" class="lp-btn-logout">
-                <i class="ph ph-sign-out"></i> Sign Out
-            </a>
-        </div>
-    </nav>
 
-    <!-- Page Content -->
-    <div class="lp-page">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}{% for category, message in messages %}
-        <div class="lp-alert lp-alert-{{ category }}">{{ message }}</div>
-        {% endfor %}{% endif %}{% endwith %}
+            <nav class="nav-links" id="sidebar-nav">
+                <div class="nav-section-title">ACADEMY</div>
+                
+                <a href="{{ url_for('learner_portal.dashboard') }}" 
+                   class="nav-item {% if request.endpoint == 'learner_portal.dashboard' %}active{% endif %}">
+                    <i class="ph-bold ph-squares-four"></i>
+                    <span>Dashboard</span>
+                </a>
+                
+                <a href="{{ url_for('learner_portal.certificates') }}" 
+                   class="nav-item {% if request.endpoint == 'learner_portal.certificates' %}active{% endif %}">
+                    <i class="ph-bold ph-certificate"></i>
+                    <span>Certificates</span>
+                </a>
 
-        {% block content %}{% endblock %}
+                <div class="nav-section-title">ACCOUNT</div>
+                
+                <a href="{{ url_for('learner_portal.profile') }}" 
+                   class="nav-item {% if request.endpoint == 'learner_portal.profile' %}active{% endif %}">
+                    <i class="ph-bold ph-user-circle"></i>
+                    <span>My Profile</span>
+                </a>
+
+                <a href="{{ url_for('auth.logout') }}" class="nav-item" style="margin-top: auto;">
+                    <i class="ph-bold ph-sign-out"></i>
+                    <span>Logout</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main class="main-content">
+            <!-- Optional Top Header for Breadcrumbs -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+                <div class="breadcrumb" style="margin-bottom: 0;">
+                    <a href="{{ url_for('learner_portal.dashboard') }}">3ek</a> 
+                    <i class="ph ph-caret-right"></i> 
+                    <span>Learner Portal</span>
+                </div>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}{% for category, message in messages %}
+            <div class="alert-box alert-box-{{ category if category != 'message' else 'info' }}" style="margin-bottom: 1.5rem;">
+                {{ message }}
+            </div>
+            {% endfor %}{% endif %}{% endwith %}
+
+            <div class="lp-container">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
     </div>
 
+    <script>
+        function toggleMobileSidebar() {
+            document.querySelector('.sidebar').classList.toggle('active');
+            document.querySelector('.sidebar-overlay').classList.toggle('active');
+        }
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 

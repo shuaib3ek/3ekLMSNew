@@ -35,7 +35,7 @@
 
     <div style="margin-top: 25px; font-size: 0.9rem; color: #64748b;">
         <p><strong>Workshop Schedule:</strong><br>
-            Date: {{ workshop.start_date.strftime('%d %B %Y') }}<br>
+            Date: {{ workshop.start_date | format_date }}<br>
             Time: {{ workshop.start_time }} ({{ workshop.timezone }})</p>
     </div>
 

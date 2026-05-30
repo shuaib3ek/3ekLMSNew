@@ -11,421 +11,532 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        *,
-        *::before,
-        *::after {
+        :root {
+            --primary: #0f172a;
+            --primary-hover: #1e293b;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --border: #e2e8f0;
+            --input-focus: #3b82f6;
+            --error: #ef4444;
+            --success: #10b981;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-        }
-
-        :root {
-            --teal: #14b8a6;
-            --teal-light: #f0fdfa;
-            --teal-mid: #ccfbf1;
-            --teal-dark: #0d9488;
-            --teal-glow: rgba(20, 184, 166, 0.15);
-            --zinc-950: #09090b;
-            --zinc-900: #18181b;
-            --zinc-800: #27272a;
-            --text: #111827;
-            --text-muted: #52525b;
-            --border: #e4e4e7;
-            --border-active: #14b8a6;
-            --surface: #fafafa;
-            --white: #ffffff;
+            -webkit-font-smoothing: antialiased;
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #f8fafc 100%);
-            min-height: 100vh;
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1.5rem;
+            padding: 1rem;
         }
 
         .login-card {
-            background: var(--white);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 2.5rem;
+            background: var(--bg-card);
             width: 100%;
-            max-width: 480px;
-            box-shadow: 0 4px 32px rgba(6, 182, 212, 0.08), 0 1px 4px rgba(0, 0, 0, 0.06);
-        }
-
-        /* Brand */
-        .brand {
+            max-width: 440px;
+            padding: 2.5rem 2rem;
+            border-radius: 1.25rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
             text-align: center;
-            margin-bottom: 2rem;
         }
 
-        .brand img {
-            height: 40px;
-            margin-bottom: 0.85rem;
-        }
-
-        .brand h1 {
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: var(--text);
-            margin-bottom: 0.3rem;
-        }
-
-        .brand p {
-            font-size: 0.84rem;
-            color: var(--text-muted);
-        }
-
-        /* Flash messages */
-        .alert {
-            padding: 0.7rem 1rem;
-            border-radius: 10px;
-            font-size: 0.84rem;
-            margin-bottom: 1.25rem;
-            border: 1px solid;
-        }
-
-        .alert-danger {
-            background: #fef2f2;
-            border-color: #fecaca;
-            color: #b91c1c;
-        }
-
-        .alert-success {
-            background: #f0fdf4;
-            border-color: #bbf7d0;
-            color: #15803d;
-        }
-
-        .alert-info {
-            background: #ecfeff;
-            border-color: #a5f3fc;
-            color: #0e7490;
-        }
-
-        .alert-warning {
-            background: #fffbeb;
-            border-color: #fde68a;
-            color: #b45309;
-        }
-
-        /* Role label */
-        .role-label {
-            font-size: 0.7rem;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            margin-bottom: 0.65rem;
-        }
-
-        /* Role grid */
-        .role-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0.55rem;
+        .brand-logo {
+            height: 52px;
             margin-bottom: 1.5rem;
         }
 
-        .role-card {
-            background: var(--surface);
-            border: 1.5px solid var(--border);
-            border-radius: 12px;
-            padding: 0.85rem 0.4rem 0.7rem;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.18s ease;
-            user-select: none;
+        .heading {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
         }
 
-        .role-card:hover {
-            border-color: var(--cyan);
-            background: var(--cyan-light);
-            transform: translateY(-1px);
-        }
-
-        .role-card.active {
-            border-color: var(--cyan);
-            background: var(--cyan-mid);
-            box-shadow: 0 0 0 3px var(--cyan-glow);
-        }
-
-        .role-card .role-icon {
-            font-size: 1.35rem;
+        .subheading {
+            font-size: 0.93rem;
             color: var(--text-muted);
-            display: block;
-            margin-bottom: 0.35rem;
-            transition: color 0.18s;
+            margin-bottom: 2rem;
         }
 
-        .role-card.active .role-icon,
-        .role-card:hover .role-icon {
-            color: var(--cyan-dark);
+        /* Segmented Role Selector */
+        .role-selector {
+            background: #f1f5f9;
+            padding: 0.25rem;
+            border-radius: 0.75rem;
+            display: flex;
+            margin-bottom: 2rem;
+            gap: 0.25rem;
         }
 
-        .role-card .role-name {
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            transition: color 0.18s;
-        }
-
-        .role-card.active .role-name,
-        .role-card:hover .role-name {
-            color: var(--cyan-dark);
-        }
-
-        /* Divider */
-        .divider {
-            height: 1px;
-            background: var(--border);
-            margin-bottom: 1.4rem;
-        }
-
-        /* Form */
-        .form-group {
-            margin-bottom: 1.1rem;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 500;
-            color: var(--text-muted);
-            margin-bottom: 0.4rem;
-        }
-
-        .form-control {
-            width: 100%;
-            background: var(--white);
-            border: 1.5px solid var(--border);
-            border-radius: 10px;
-            padding: 0.68rem 0.9rem;
-            font-size: 0.88rem;
-            color: var(--text);
-            font-family: 'Inter', sans-serif;
-            outline: none;
-            transition: border-color 0.18s, box-shadow 0.18s;
-        }
-
-        .form-control:focus {
-            border-color: var(--cyan);
-            box-shadow: 0 0 0 3px var(--cyan-glow);
-        }
-
-        .form-control::placeholder {
-            color: #d1d5db;
-        }
-
-        .otp-hint {
-            font-size: 0.77rem;
-            color: var(--text-muted);
-            margin-top: 0.35rem;
-        }
-
-        /* Submit button */
-        .btn-submit {
-            width: 100%;
-            padding: 0.78rem;
-            background: var(--cyan);
+        .role-btn {
+            flex: 1;
+            padding: 0.6rem 0.5rem;
             border: none;
-            border-radius: 10px;
-            color: #fff;
-            font-size: 0.88rem;
+            background: transparent;
+            font-size: 0.8rem;
             font-weight: 600;
-            font-family: 'Inter', sans-serif;
+            color: var(--text-muted);
+            border-radius: 0.5rem;
             cursor: pointer;
-            transition: all 0.18s ease;
-            margin-top: 0.4rem;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .role-btn.active {
+            background: var(--bg-card);
+            color: var(--text-main);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Forms */
+        .form-group {
+            text-align: left;
+            margin-bottom: 1.25rem;
+            position: relative;
+        }
+
+        .label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.05);
+        }
+
+        .input-field:disabled {
+            background: #f8fafc;
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .toggle-password:hover {
+            color: var(--text-main);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            width: 100%;
+            padding: 0.875rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.45rem;
+            gap: 0.5rem;
+            margin-top: 1rem;
         }
 
-        .btn-submit:hover {
-            background: var(--cyan-dark);
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(6, 182, 212, 0.3);
+        .btn-primary:hover {
+            background: var(--primary-hover);
         }
 
-        .btn-submit:active {
-            transform: translateY(0);
+        .btn-primary:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
         }
 
-        /* Form panels */
-        .form-panel {
+        /* Checkbox */
+        .options-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 1rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .checkbox-group input {
+            width: 1rem;
+            height: 1rem;
+            accent-color: var(--primary);
+        }
+
+        /* OTP Section */
+        #otp-section {
             display: none;
-        }
-
-        .form-panel.visible {
-            display: block;
-        }
-
-        /* Footer */
-        .login-footer {
-            text-align: center;
             margin-top: 1.5rem;
-            font-size: 0.73rem;
-            color: #d1d5db;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            animation: slideDown 0.3s ease-out;
         }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .otp-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        /* Alerts */
+        #alert-box {
+            display: none;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .alert-error { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .alert-success { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+
+        .loading-spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         @media (max-width: 480px) {
-            .login-card {
-                padding: 1.75rem 1.25rem;
-            }
-
-            .role-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
+            .login-card { padding: 2rem 1.5rem; }
         }
     </style>
 </head>
 
 <body>
     <div class="login-card">
-        <!-- Brand -->
-        <div class="brand">
-            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="3EK LMS">
-            <h1>Welcome to 3EK LMS</h1>
-            <p>Select your role to continue</p>
-        </div>
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="3EK LMS" class="brand-logo">
+        <h1 class="heading">Welcome Back</h1>
+        <p class="subheading">Sign in to your account</p>
 
-        <!-- Flash Messages -->
+        <!-- Flash Messages (for redirects) -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-        {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">{{ message }}</div>
-        {% endfor %}
+        <div id="flash-messages">
+            {% for category, message in messages %}
+            <div class="alert-{{ 'error' if category == 'danger' else category }}" style="padding: 0.75rem 1rem; border-radius: 0.75rem; font-size: 0.875rem; margin-bottom: 1.5rem; text-align: left; border: 1px solid transparent; {{ 'background: #fee2e2; color: #b91c1c; border-color: #fecaca;' if category == 'danger' else '' }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
         {% endif %}
         {% endwith %}
 
+        <div id="alert-box"></div>
+
         <!-- Role Selector -->
-        <div class="role-label">I am a…</div>
-        <div class="role-grid">
-            <div class="role-card active" data-role="admin" onclick="selectRole('admin')">
-                <i class="ph ph-shield-check role-icon"></i>
-                <div class="role-name">Admin</div>
+        <div class="role-selector">
+            <button class="role-btn active" onclick="setRole('admin')">Admin</button>
+            <button class="role-btn" onclick="setRole('trainer')">Trainer</button>
+            <button class="role-btn" onclick="setRole('client')">Client</button>
+            <button class="role-btn" onclick="setRole('learner')">Learner</button>
+        </div>
+
+        <form id="login-form">
+            <input type="hidden" id="current-role" value="admin">
+            <input type="hidden" id="tid" value="">
+
+            <div class="form-group">
+                <label class="label">Email Address</label>
+                <div class="input-wrapper">
+                    <input type="email" id="email" class="input-field" placeholder="name@company.com" required autofocus>
+                </div>
             </div>
-            <div class="role-card" data-role="trainer" onclick="selectRole('trainer')">
-                <i class="ph ph-chalkboard-teacher role-icon"></i>
-                <div class="role-name">Trainer</div>
+
+            <!-- Password (Admin only initially) -->
+            <div class="form-group" id="password-group">
+                <label class="label">Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="password" class="input-field" placeholder="••••••••">
+                    <div class="toggle-password" onclick="togglePasswordVisibility()">
+                        <i class="ph ph-eye" id="eye-icon"></i>
+                    </div>
+                </div>
             </div>
-            <div class="role-card" data-role="client" onclick="selectRole('client')">
-                <i class="ph ph-buildings role-icon"></i>
-                <div class="role-name">Client</div>
+
+            <!-- Get OTP Button (Non-admin initially hidden) -->
+            <button type="button" id="btn-get-otp" class="btn-primary" style="display: none;" onclick="requestOTP()">
+                Get Login Code
+            </button>
+
+            <!-- OTP Field (Revealed dynamically) -->
+            <div id="otp-section">
+                <div class="form-group">
+                    <label class="label">Enter 6-Digit Code</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="otp-code" class="input-field" placeholder="123456" maxlength="6" inputmode="numeric">
+                    </div>
+                    <p class="otp-hint">Check your email for the secure code.</p>
+                </div>
             </div>
-            <div class="role-card" data-role="learner" onclick="selectRole('learner')">
-                <i class="ph ph-graduation-cap role-icon"></i>
-                <div class="role-name">Learner</div>
+
+            <!-- Main Sign In Button -->
+            <button type="submit" id="btn-submit" class="btn-primary">
+                Sign In
+            </button>
+
+            <div class="options-row">
+                <label class="checkbox-group">
+                    <input type="checkbox" id="remember">
+                    <span>Remember me</span>
+                </label>
             </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <!-- Admin Form (Password) -->
-        <div class="form-panel visible" id="panel-admin">
-            <form method="POST" action="{{ url_for('auth.login') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="role" value="admin">
-                <div class="form-group">
-                    <label class="form-label">Email Address</label>
-                    <input type="email" name="email" class="form-control" placeholder="you@3ek.in" required autofocus>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
-                </div>
-                <button type="submit" class="btn-submit">
-                    <i class="ph ph-sign-in"></i> Sign In as Admin
-                </button>
-            </form>
-        </div>
-
-        <!-- Trainer Form -->
-        <div class="form-panel" id="panel-trainer">
-            <form method="POST" action="{{ url_for('auth.login') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="role" value="trainer">
-                <div class="form-group">
-                    <label class="form-label">Your Trainer Email</label>
-                    <input type="email" name="email" class="form-control" placeholder="trainer@example.com" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
-                    <div class="otp-hint">Enter your portal password.</div>
-                </div>
-                <button type="submit" class="btn-submit">
-                    <i class="ph ph-sign-in"></i> Sign In as Trainer
-                </button>
-            </form>
-        </div>
-
-        <!-- Client Form -->
-        <div class="form-panel" id="panel-client">
-            <form method="POST" action="{{ url_for('auth.login') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="role" value="client">
-                <div class="form-group">
-                    <label class="form-label">Your Work Email</label>
-                    <input type="email" name="email" class="form-control" placeholder="you@yourcompany.com" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
-                    <div class="otp-hint">Enter your portal password.</div>
-                </div>
-                <button type="submit" class="btn-submit">
-                    <i class="ph ph-sign-in"></i> Sign In as Client
-                </button>
-            </form>
-        </div>
-
-        <!-- Learner Form -->
-        <div class="form-panel" id="panel-learner">
-            <form method="POST" action="{{ url_for('auth.login') }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="role" value="learner">
-                <div class="form-group">
-                    <label class="form-label">Your Email Address</label>
-                    <input type="email" name="email" class="form-control" placeholder="you@example.com" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" placeholder="••••••••" required>
-                    <div class="otp-hint">Enter your portal password.</div>
-                </div>
-                <button type="submit" class="btn-submit">
-                    <i class="ph ph-sign-in"></i> Sign In as Learner
-                </button>
-            </form>
-        </div>
-
-        <div class="login-footer">3EK Learning Management System &copy; 2026</div>
+        </form>
     </div>
 
     <script>
-        function selectRole(role) {
-            document.querySelectorAll('.role-card').forEach(c => c.classList.remove('active'));
-            document.querySelector(`[data-role="${role}"]`).classList.add('active');
-            document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('visible'));
-            document.getElementById(`panel-${role}`).classList.add('visible');
-            const emailInput = document.querySelector(`#panel-${role} input[type="email"]`);
-            if (emailInput) setTimeout(() => emailInput.focus(), 50);
+        let currentRole = 'admin';
+
+        function setRole(role) {
+            currentRole = role;
+            document.getElementById('current-role').value = role;
+            
+            // UI updates
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.innerText.toLowerCase() === role);
+            });
+
+            const passwordGroup = document.getElementById('password-group');
+            const getOtpBtn = document.getElementById('btn-get-otp');
+            const submitBtn = document.getElementById('btn-submit');
+            const otpSection = document.getElementById('otp-section');
+            const emailInput = document.getElementById('email');
+
+            // Reset state
+            otpSection.style.display = 'none';
+            emailInput.disabled = false;
+            showAlert(null);
+
+            if (role === 'admin') {
+                passwordGroup.style.display = 'block';
+                getOtpBtn.style.display = 'none';
+                submitBtn.style.display = 'flex';
+                submitBtn.innerText = 'Sign In';
+            } else {
+                passwordGroup.style.display = 'none';
+                getOtpBtn.style.display = 'flex';
+                submitBtn.style.display = 'none';
+            }
         }
 
-        // Auto-select role from URL param
-        const urlParams = new URLSearchParams(window.location.search);
-        const roleParam = urlParams.get('role');
-        if (roleParam && ['admin', 'trainer', 'client', 'learner'].includes(roleParam)) {
-            selectRole(roleParam);
+        function togglePasswordVisibility() {
+            const pwd = document.getElementById('password');
+            const icon = document.getElementById('eye-icon');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                icon.classList.replace('ph-eye', 'ph-eye-slash');
+            } else {
+                pwd.type = 'password';
+                icon.classList.replace('ph-eye-slash', 'ph-eye');
+            }
         }
 
-        localStorage.removeItem('3ek_last_activity');
+        function showAlert(msg, type = 'error') {
+            const box = document.getElementById('alert-box');
+            if (!msg) {
+                box.style.display = 'none';
+                return;
+            }
+            box.innerText = msg;
+            box.className = `alert-${type}`;
+            box.style.display = 'block';
+        }
+
+        async function requestOTP() {
+            const email = document.getElementById('email').value;
+            const role = currentRole;
+            const btn = document.getElementById('btn-get-otp');
+
+            if (!email) {
+                showAlert('Please enter your email address.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading-spinner"></div> Sending...';
+
+            try {
+                const formData = new FormData();
+                formData.append('email', email);
+                formData.append('role', role);
+                formData.append('csrf_token', '{{ csrf_token() }}');
+
+                const response = await fetch("{{ url_for('auth.request_otp') }}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('tid').value = data.tid;
+                    document.getElementById('email').disabled = true;
+                    document.getElementById('btn-get-otp').style.display = 'none';
+                    document.getElementById('otp-section').style.display = 'block';
+                    const subBtn = document.getElementById('btn-submit');
+                    subBtn.style.display = 'flex';
+                    subBtn.innerText = 'Verify & Sign In';
+                    showAlert(data.message, 'success');
+                    setTimeout(() => document.getElementById('otp-code').focus(), 100);
+                } else {
+                    showAlert(data.message || 'Failed to send OTP.');
+                }
+            } catch (err) {
+                showAlert('An error occurred. Please try again.');
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Get Login Code';
+            }
+        }
+
+        document.getElementById('login-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const role = currentRole;
+            const email = document.getElementById('email').value;
+            const submitBtn = document.getElementById('btn-submit');
+
+            if (role === 'admin') {
+                // Standard Password Submit
+                const password = document.getElementById('password').value;
+                const formData = new FormData();
+                formData.append('email', email);
+                formData.append('password', password);
+                formData.append('role', role);
+                formData.append('csrf_token', '{{ csrf_token() }}');
+                formData.append('ajax', '1');
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<div class="loading-spinner"></div> Signing in...';
+
+                try {
+                    const response = await fetch("{{ url_for('auth.login') }}", {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                        return;
+                    }
+
+                    const data = await response.json();
+                    if (data.success) {
+                        // If it returns success JSON instead of redirect
+                        window.location.href = data.redirect_url || "{{ url_for('workshops.list_workshops') }}";
+                    } else {
+                        showAlert(data.message || 'Invalid email or password.');
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = 'Sign In';
+                    }
+                } catch (err) {
+                    // Fallback for non-JSON or other errors
+                    showAlert('Invalid email or password.');
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = 'Sign In';
+                }
+            } else {
+                // Verify OTP Submit
+                const otp = document.getElementById('otp-code').value;
+                const tid = document.getElementById('tid').value;
+                
+                if (!otp) {
+                    showAlert('Please enter the 6-digit code.');
+                    return;
+                }
+
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<div class="loading-spinner"></div> Verifying...';
+
+                const formData = new FormData();
+                formData.append('otp', otp);
+                formData.append('tid', tid);
+                formData.append('email', email);
+                formData.append('role', role);
+                formData.append('csrf_token', '{{ csrf_token() }}');
+                formData.append('ajax', '1');
+
+                try {
+                    const response = await fetch("{{ url_for('auth.verify_otp') }}", {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        showAlert(data.message || 'Incorrect code.');
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = 'Verify & Sign In';
+                    }
+                } catch (err) {
+                    showAlert('Verification failed.');
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = 'Verify & Sign In';
+                }
+            }
+        };
     </script>
 </body>
 

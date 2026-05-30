@@ -2,85 +2,225 @@
 {% block title %}Training Requests — {{ company_name }} — 3EK{% endblock %}
 
 {% block content %}
-<div
-    style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.75rem;">
-    <div>
-        <h1 style="font-size:1.6rem; font-weight:800; color:var(--text); margin:0 0 0.25rem;">Open <span
-                style="color:var(--teal);">Training Requests</span></h1>
-        <p style="color:var(--text-muted); font-size:0.9rem; margin:0;">Training requirements submitted by {{
-            company_name }} — track your pipeline with 3EK.</p>
-    </div>
-    <a href="mailto:training@3ek.in?subject=New Training Requirement — {{ company_name }}" class="lp-btn lp-btn-primary"
-        style="display:inline-flex; align-items:center; gap:0.5rem;">
-        <i class="ph ph-plus"></i> New Requirement
-    </a>
-</div>
+<style>
+    /* PRECISION INTERFACE STYLES */
+    .precision-grid-container {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--border-light);
+        background: var(--bg-surface);
+        display: flex;
+        flex-direction: column;
+    }
 
-{% if requests %}
-<div style="display:flex; flex-direction:column; gap:1rem;">
-    {% for req in requests %}
-    <div class="lp-panel"
-        style="padding:1.5rem; border-left:3px solid {{ 'var(--danger, #ef4444)' if req.urgency == 'urgent' else ('var(--warning, #f59e0b)' if req.urgency == 'medium' else 'var(--border)') }};">
-        <div
-            style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem; margin-bottom:1rem;">
-            <div style="flex:1;">
-                <div style="font-size:1.05rem; font-weight:700; color:var(--text); margin-bottom:0.35rem;">{{ req.topic
-                    }}</div>
-                <div style="display:flex; gap:0.75rem; flex-wrap:wrap; font-size:0.8rem; color:var(--text-muted);">
-                    {% if req.training_type %}<span><i class="ph ph-monitor"></i> {{ req.training_type }}</span>{% endif
-                    %}
-                    {% if req.requested_date %}<span><i class="ph ph-calendar"></i> {{ req.requested_date }}</span>{%
-                    endif %}
-                    {% if req.created_at %}<span><i class="ph ph-clock-counter-clockwise"></i> Submitted {{
-                        req.created_at[:10] }}</span>{% endif %}
-                </div>
-            </div>
-            <div style="display:flex; align-items:center; gap:0.5rem; flex-shrink:0;">
-                {% if req.urgency == 'urgent' %}
-                <span class="lp-pill lp-pill-danger" style="font-size:0.72rem;">🔴 Urgent</span>
-                {% elif req.urgency == 'medium' %}
-                <span class="lp-pill lp-pill-warning" style="font-size:0.72rem;">🟡 Medium</span>
-                {% else %}
-                <span class="lp-pill lp-pill-info" style="font-size:0.72rem;">🔵 Standard</span>
-                {% endif %}
-                <span class="lp-pill lp-pill-secondary" style="font-size:0.72rem;">{{ req.stage }}</span>
+    .precision-grid-header {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) 150px 120px 120px;
+        gap: 1rem;
+        align-items: center;
+        padding: 0.75rem 1.5rem;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        background: #f8fafc;
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--border-light);
+    }
+
+    .precision-row {
+        display: grid;
+        grid-template-columns: minmax(0, 2fr) 150px 120px 120px;
+        gap: 1rem;
+        align-items: center;
+        background: var(--bg-surface);
+        border-bottom: 1px solid #f1f5f9;
+        min-height: 60px;
+        padding: 0 1.5rem;
+    }
+
+    .precision-row:hover {
+        background: #f8fafc;
+    }
+
+    .p-cell {
+        padding: 0.5rem 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .p-topic-text {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .command-bar {
+        background: #0f172a;
+        color: #f8fafc;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .cmd-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .cmd-pill {
+        cursor: pointer;
+        color: #94a3b8;
+        font-weight: 700;
+        font-size: 0.65rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        text-transform: uppercase;
+        transition: all 0.2s;
+    }
+
+    .cmd-pill:hover, .cmd-pill.active {
+        color: #f8fafc;
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    @media (max-width: 768px) {
+        .precision-grid-header { display: none; }
+        .precision-row {
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+            gap: 0.5rem;
+        }
+        .p-cell { width: 100%; white-space: normal; }
+    }
+</style>
+
+<div class="page-header" style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <h1 class="page-title" style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem;">
+                Training Requests
+            </h1>
+            <div style="font-family: monospace; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8;">
+                // TRACK YOUR OPEN, IN PROGRESS, AND SCHEDULED REQUESTS
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Pipeline Progress Bar -->
-        {% set stages = ['Under Discussion', 'Trainer Matching', 'Scheduled', 'In Progress'] %}
-        {% set current_idx = stages.index(req.stage) if req.stage in stages else 0 %}
-        <div style="display:flex; align-items:center; gap:0; margin-top:0.5rem;">
-            {% for stage_name in stages %}
-            {% set idx = loop.index0 %}
-            <div style="flex:1; display:flex; flex-direction:column; align-items:center;">
-                <div
-                    style="width:10px; height:10px; border-radius:50%; background:{{ 'var(--teal)' if idx <= current_idx else 'var(--border)' }}; margin-bottom:0.3rem; position:relative; z-index:1;">
+<!-- COMMAND BAR -->
+    <div class="command-bar">
+        <div class="cmd-group">
+            <div class="cmd-pill active">
+                <i class="ph-bold ph-git-pull-request"></i> ALL REQUESTS
+            </div>
+        </div>
+        
+        <div class="cmd-group">
+            <button class="cmd-pill active" onclick="filterRequests('open', this)">OPEN</button>
+            <button class="cmd-pill" onclick="filterRequests('in review', this)">IN PROGRESS</button>
+            <button class="cmd-pill" onclick="filterRequests('scheduled', this)">SCHEDULED</button>
+        </div>
+
+        <div class="cmd-group" style="margin-left: auto; border-right: none;">
+            <button class="cmd-pill">
+                <i class="ph-bold ph-plus"></i> NEW REQUEST
+            </button>
+        </div>
+    </div>
+
+<!-- PRECISION GRID -->
+<div class="precision-grid-container">
+    <div class="precision-grid-header">
+        <div>Topic</div>
+        <div>Stage</div>
+        <div>Urgency</div>
+        <div>Submitted Date</div>
+    </div>
+    
+    <div class="precision-grid-body" id="requests-container">
+        {% if requests %}
+            {% for req in requests %}
+            <div class="precision-row request-row" data-stage="{{ req.stage | lower }}" data-status="{{ req.status | lower }}">
+                <div class="p-cell">
+                    <div class="p-topic-text">{{ req.topic }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem; display: flex; gap: 1rem;">
+                        {% if req.training_type %}<span><i class="ph-bold ph-monitor"></i> {{ req.training_type }}</span>{% endif %}
+                        {% if req.requested_date %}<span><i class="ph-bold ph-calendar"></i> Target: {{ req.requested_date }}</span>{% endif %}
+                    </div>
                 </div>
-                <div
-                    style="font-size:0.65rem; color:{{ 'var(--teal)' if idx <= current_idx else 'var(--text-muted)' }}; text-align:center; white-space:nowrap;">
-                    {{ stage_name }}</div>
+                
+                <div class="p-cell" style="font-size: 0.75rem; font-weight: 600;">
+                    {% set stg_clr = 'var(--success)' if req.stage == 'Scheduled' else ('var(--primary)' if req.stage == 'In Progress' else ('var(--text-tertiary)' if req.status in ['closed', 'lost'] else 'var(--warning)')) %}
+                    <span style="--stage-color: {{ stg_clr }}; color: var(--stage-color); text-transform: uppercase;">
+                        {{ req.stage }}
+                    </span>
+                </div>
+                
+                <div class="p-cell">
+                    {% set u_bg = '#fee2e2' if req.urgency == 'urgent' else ('#fef3c7' if req.urgency == 'medium' else '#e0f2fe') %}
+                    {% set u_clr = '#b91c1c' if req.urgency == 'urgent' else ('#b45309' if req.urgency == 'medium' else '#0369a1') %}
+                    <span style="padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 600; font-size: 0.7rem; --urg-bg: {{ u_bg }}; --urg-color: {{ u_clr }}; background: var(--urg-bg); color: var(--urg-color); text-transform: uppercase;">
+                        {{ req.urgency }}
+                    </span>
+                </div>
+                
+                <div class="p-cell" style="font-size: 0.75rem; color: var(--text-secondary);">
+                    {{ req.created_at[:10] if req.created_at else 'Unknown' }}
+                </div>
             </div>
-            {% if not loop.last %}
-            <div
-                style="flex:1; height:2px; background:{{ 'var(--teal)' if idx < current_idx else 'var(--border)' }}; margin-bottom:1.2rem;">
-            </div>
-            {% endif %}
             {% endfor %}
-        </div>
+        {% else %}
+            <div style="padding: 4rem; text-align: center;">
+                <i class="ph-bold ph-clipboard-text" style="font-size: 2.5rem; color: var(--border-light); margin-bottom: 1rem;"></i>
+                <div style="color: var(--text-secondary); font-weight: 600;">No requests found</div>
+            </div>
+        {% endif %}
     </div>
-    {% endfor %}
 </div>
-{% else %}
-<div class="lp-empty-state" style="padding:4rem; text-align:center;">
-    <i class="ph ph-clipboard-text" style="font-size:3rem; opacity:0.2;"></i>
-    <h3 style="color:var(--text-muted); margin:1rem 0 0.5rem;">No open requirements</h3>
-    <p style="color:var(--text-muted); font-size:0.9rem;">Submit a new training requirement and we'll get back to you
-        promptly.</p>
-    <a href="mailto:training@3ek.in?subject=New Training Requirement — {{ company_name }}" class="lp-btn lp-btn-primary"
-        style="display:inline-flex; align-items:center; gap:0.5rem; margin-top:1.25rem;">
-        <i class="ph ph-envelope"></i> Contact Training Team
-    </a>
-</div>
-{% endif %}
+
+<script>
+function filterRequests(filterType, element) {
+    // Update active pill
+    if (element) {
+        document.querySelectorAll('.cmd-pill').forEach(p => p.classList.remove('active'));
+        element.classList.add('active');
+    }
+    
+    // Filter rows
+    const rows = document.querySelectorAll('.request-row');
+    rows.forEach(row => {
+        const stage = row.getAttribute('data-stage') || '';
+        const status = row.getAttribute('data-status') || '';
+        
+        let show = false;
+        if (filterType === 'open') {
+            show = (stage === 'under discussion');
+        } else if (filterType === 'in review') {
+            show = (stage === 'in progress');
+        } else if (filterType === 'scheduled') {
+            show = (stage === 'scheduled');
+        }
+        
+        row.style.display = show ? '' : 'none';
+    });
+}
+
+// Apply default filter on page load
+document.addEventListener('DOMContentLoaded', () => {
+    const defaultPill = document.querySelector('.cmd-pill.active');
+    filterRequests('open', defaultPill);
+});
+</script>
 {% endblock %}

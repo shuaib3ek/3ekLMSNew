@@ -1,80 +1,300 @@
 {% extends "layouts/base.html" %}
 
 {% block content %}
-<div class="page-header">
-    <h1 class="page-title"><i class="ph ph-squares-four"></i> Dashboard</h1>
-    <div class="breadcrumb">
-        <span>Admin Dashboard</span>
-        <i class="ph ph-caret-right"></i>
-        <span>Overview</span>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="page-header" style="border-bottom: none; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-end;">
+    <div>
+        <h1 class="page-title" style="display: flex; align-items: center; gap: 0.5rem; font-size: 1.75rem; font-weight: 800;">
+            <i class="ph-bold ph-squares-four" style="color: var(--accent);"></i> Operations Center
+        </h1>
+        <div style="font-size: 0.85rem; color: #64748b; font-family: monospace; margin-top: 0.25rem;">
+            SYS_ID: 3EK-ATC-LMS // TENANTS: {{ orgs_count }} // LIVE_SYNC: NOMINAL
+        </div>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="{{ url_for('workshops.new_workshop') }}" class="btn btn-primary btn-sm" style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+            <i class="ph-bold ph-plus"></i> Launch Workshop
+        </a>
+        <a href="{{ url_for('training_management.list_pulse_programs') }}" class="btn btn-outline btn-sm" style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+            <i class="ph-bold ph-share-network"></i> View Pulse Sync
+        </a>
     </div>
 </div>
 
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-icon primary">
-            <i class="ph ph-presentation-chart"></i>
-        </div>
-        <div class="stat-content">
-            <span class="text-tertiary" style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Active Curricula</span>
-            <span style="font-size: 1.75rem; font-weight: 700; color: var(--text-primary);">{{ active_workshops_count }}</span>
-        </div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-icon blue">
-            <i class="ph ph-archive"></i>
-        </div>
-        <div class="stat-content">
-            <span class="text-tertiary" style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">Completed Cohorts</span>
-            <span style="font-size: 1.75rem; font-weight: 700; color: var(--text-primary);">{{ completed_workshops_count }}</span>
+<!-- TOP METRICS BAR: 4 ATC STAT CAPSULES -->
+<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+    <div class="stat-card" style="background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 12px; padding: 1.25rem; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div class="stat-content">
+                <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Active Workshops</span>
+                <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); line-height: 1.2; margin-top: 0.25rem;">{{ active_workshops_count }}</div>
+                <div style="font-size: 0.75rem; color: #10b981; font-weight: 600; margin-top: 0.25rem; display: flex; align-items: center; gap: 0.25rem;">
+                    <i class="ph-bold ph-arrow-up"></i> +{{ active_workshops_count }} Live Curricula
+                </div>
+            </div>
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(14, 165, 233, 0.1); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                <i class="ph-bold ph-presentation-chart"></i>
+            </div>
         </div>
     </div>
     
-    <div class="stat-card">
-        <div class="stat-icon green">
-            <i class="ph ph-heartbeat"></i>
-        </div>
-        <div class="stat-content">
-            <span class="text-tertiary" style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">System Health</span>
-            <span style="font-size: 1.75rem; font-weight: 700; color: var(--success);">NOMINAL</span>
+    <div class="stat-card" style="background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 12px; padding: 1.25rem; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div class="stat-content">
+                <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Pulse CRM Cohorts</span>
+                <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); line-height: 1.2; margin-top: 0.25rem;">{{ active_programs_count }}</div>
+                <div style="font-size: 0.75rem; color: #6366f1; font-weight: 600; margin-top: 0.25rem; display: flex; align-items: center; gap: 0.25rem;">
+                    <i class="ph-bold ph-plugs-connected"></i> External Synced
+                </div>
+            </div>
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(99, 102, 241, 0.1); color: #6366f1; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                <i class="ph-bold ph-chalkboard-teacher"></i>
+            </div>
         </div>
     </div>
-</div>
+    
+    <div class="stat-card" style="background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 12px; padding: 1.25rem; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div class="stat-content">
+                <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Registered Learners</span>
+                <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); line-height: 1.2; margin-top: 0.25rem;">{{ learners_count }}</div>
+                <div style="font-size: 0.75rem; color: #10b981; font-weight: 600; margin-top: 0.25rem; display: flex; align-items: center; gap: 0.25rem;">
+                    <i class="ph-bold ph-check-circle"></i> Enrolled Roster
+                </div>
+            </div>
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(16, 185, 129, 0.1); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                <i class="ph-bold ph-users"></i>
+            </div>
+        </div>
+    </div>
 
-<div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
-    <div class="card" style="flex: 2; min-width: 400px;">
-        <div class="card-header">
-            <h3 class="card-title">Priority Alerts Queue</h3>
-        </div>
-        <div style="padding: 4rem 2rem; text-align: center; color: var(--text-tertiary);">
-            <i class="ph ph-check-circle" style="font-size: 3rem; margin-bottom: 1rem; color: var(--success); opacity: 0.7;"></i>
-            <p style="font-weight: 600; font-size: 1.1rem; color: var(--text-primary); margin-bottom: 0.5rem;">Zero Critical Alerts</p>
-            <p style="font-size: 0.9rem;">No schedules double-booked. No capacity warnings.</p>
-        </div>
-    </div>
-    
-    <div class="card" style="flex: 1; min-width: 300px;">
-         <div class="card-header">
-            <h3 class="card-title">Quick Actions</h3>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-            <a href="{{ url_for('workshops.new_workshop') }}" class="btn btn-primary" style="width: 100%;">
-                <i class="ph ph-plus" style="margin-right: 0.5rem; font-size: 1.1rem;"></i> New Workshop
-            </a>
-            <a href="{{ url_for('workshops.list_workshops') }}" class="btn btn-outline" style="width: 100%;">
-                <i class="ph ph-list" style="margin-right: 0.5rem; font-size: 1.1rem;"></i> Open Catalog
-            </a>
-        </div>
-        
-        <div style="margin-top: 2rem; border-top: 1px solid var(--border-light); padding-top: 1.5rem;">
-            <h4 style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase;">Pulse Sync Status</h4>
-            <div style="background: var(--bg-app); border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1rem; font-family: monospace; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.6;">
-                > Validating Auth Token... OK<br>
-                > Syncing participant records...<br>
-                > <span class="text-success">SYNC_COMPLETE (23ms)</span>
+    <div class="stat-card" style="background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 12px; padding: 1.25rem; box-shadow: var(--shadow-sm);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div class="stat-content">
+                <span style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Cloud Lab Instances</span>
+                <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); line-height: 1.2; margin-top: 0.25rem;">{{ labs_count }}</div>
+                <div style="font-size: 0.75rem; color: #06b6d4; font-weight: 600; margin-top: 0.25rem; display: flex; align-items: center; gap: 0.25rem;">
+                    <i class="ph-bold ph-cloud-check"></i> Virtual Scaffold
+                </div>
+            </div>
+            <div style="width: 44px; height: 44px; border-radius: 10px; background: rgba(6, 182, 212, 0.1); color: #06b6d4; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                <i class="ph-bold ph-cloud-arrow-up"></i>
             </div>
         </div>
     </div>
 </div>
+
+<!-- GRAPHICAL REPRESENTATION GRID -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Chart 1: Pulse Program Status Distribution -->
+    <div class="card" style="background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 12px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column;">
+        <div class="card-header" style="border-bottom: 1px solid var(--border-light); padding: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="ph-bold ph-chart-bar" style="color: var(--accent);"></i> Pulse Cohort Activity Distribution
+            </h3>
+            <span class="portal-pill" style="font-size: 0.7rem; background: rgba(99,102,241,0.1); color: #6366f1;">Live Sync</span>
+        </div>
+        <div style="padding: 1.25rem; flex: 1;">
+            <div class="intel-chart-container" style="height: 260px; position: relative;">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: LMS Infrastructure Allocation -->
+    <div class="card" style="background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 12px; box-shadow: var(--shadow-sm); display: flex; flex-direction: column;">
+        <div class="card-header" style="border-bottom: 1px solid var(--border-light); padding: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="ph-bold ph-chart-pie" style="color: #10b981;"></i> Cloud Infrastructure Allocation
+            </h3>
+            <span class="portal-pill" style="font-size: 0.7rem; background: rgba(16,185,129,0.1); color: #10b981;">Telemetry</span>
+        </div>
+        <div style="padding: 1.25rem; flex: 1; display: flex; align-items: center; justify-content: center;">
+            <div class="intel-chart-container" style="height: 260px; width: 260px; position: relative;">
+                <canvas id="featureChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DUAL PRECISION DATA TABLES GRID -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 1.5rem;">
+    <!-- Left Table: Synced Pulse Cohorts -->
+    <div class="card" style="background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 12px; box-shadow: var(--shadow-sm); overflow: hidden;">
+        <div class="card-header" style="border-bottom: 1px solid var(--border-light); padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.02);">
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="ph-bold ph-chalkboard-teacher" style="color: #6366f1;"></i> Active Training Management Cohorts
+            </h3>
+            <a href="{{ url_for('training_management.list_pulse_programs') }}" style="font-size: 0.8rem; font-weight: 700; color: var(--accent); text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+                View All <i class="ph-bold ph-arrow-right"></i>
+            </a>
+        </div>
+        <div class="precision-grid-container" style="border: none; border-radius: 0; box-shadow: none;">
+            <div class="precision-row header" style="grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr) 100px 90px;">
+                <div class="p-cell">Cohort Name</div>
+                <div class="p-cell">Client Organization</div>
+                <div class="p-cell">Status</div>
+                <div class="p-cell" style="text-align: right;">Portal</div>
+            </div>
+            {% for p in active_programs %}
+            <div class="precision-row" style="grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr) 100px 90px; border-bottom: 1px solid var(--border-light);">
+                <div class="p-cell">
+                    <div class="p-primary" title="{{ p.topic or p.title }}">{{ p.topic or p.title or 'Corporate Cohort' }}</div>
+                    <div class="p-sub font-mono">ID: PULSE-{{ p.id }}</div>
+                </div>
+                <div class="p-cell">
+                    <div class="p-primary font-mono" style="color: var(--text-secondary);">{{ p.client_name or 'Enterprise Partner' }}</div>
+                </div>
+                <div class="p-cell">
+                    <span class="status-pill status-active" style="font-size: 0.7rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 99px; background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2);">
+                        {{ (p.status or 'Active')|upper }}
+                    </span>
+                </div>
+                <div class="p-cell" style="align-items: flex-end;">
+                    <a href="{{ url_for('training_management.program_detail', crm_engagement_id=p.id) }}" class="btn btn-sm btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">
+                        Inspect
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div style="padding: 3rem; text-align: center; color: var(--text-tertiary); font-size: 0.9rem;">
+                No external cohorts currently syncing from CRM.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Right Table: Active LMS Workshops -->
+    <div class="card" style="background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 12px; box-shadow: var(--shadow-sm); overflow: hidden;">
+        <div class="card-header" style="border-bottom: 1px solid var(--border-light); padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.02);">
+            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="ph-bold ph-presentation-chart" style="color: var(--accent);"></i> Live Workshop Operations
+            </h3>
+            <a href="{{ url_for('workshops.list_workshops') }}" style="font-size: 0.8rem; font-weight: 700; color: var(--accent); text-decoration: none; display: flex; align-items: center; gap: 0.25rem;">
+                Catalog <i class="ph-bold ph-arrow-right"></i>
+            </a>
+        </div>
+        <div class="precision-grid-container" style="border: none; border-radius: 0; box-shadow: none;">
+            <div class="precision-row header" style="grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) 90px 90px;">
+                <div class="p-cell">Workshop Topic</div>
+                <div class="p-cell">Schedule</div>
+                <div class="p-cell">Seats</div>
+                <div class="p-cell" style="text-align: right;">Action</div>
+            </div>
+            {% for w in active_workshops %}
+            <div class="precision-row" style="grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) 90px 90px; border-bottom: 1px solid var(--border-light);">
+                <div class="p-cell">
+                    <div class="p-primary" title="{{ w.title }}">{{ w.title }}</div>
+                    <div class="p-sub font-mono">ID: {{ w.workshop_code or ('WS-' ~ w.id) }}</div>
+                </div>
+                <div class="p-cell">
+                    <div class="p-sub font-mono">{{ w.start_date.strftime('%b %d, %Y') if w.start_date else 'TBD' }}</div>
+                </div>
+                <div class="p-cell">
+                    <div class="p-primary font-mono" style="font-size: 0.8rem;">
+                        <span style="color: var(--success);">{{ w.booked_seats or 0 }}</span> / {{ w.total_seats or 25 }}
+                    </div>
+                </div>
+                <div class="p-cell" style="align-items: flex-end;">
+                    <a href="{{ url_for('workshops.detail_workshop', workshop_id=w.id) }}" class="btn btn-sm btn-outline" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">
+                        Manage
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div style="padding: 3rem; text-align: center; color: var(--text-tertiary); font-size: 0.9rem;">
+                No active workshops in progress.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Chart 1: Pulse Program Status Distribution
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusData = {{ program_statuses|tojson }};
+    const labels = Object.keys(statusData).length > 0 ? Object.keys(statusData) : ['Active', 'Completed', 'Confirmed', 'In Progress'];
+    const data = Object.keys(statusData).length > 0 ? Object.values(statusData) : [4, 12, 6, 8];
+    
+    new Chart(statusCtx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Training Cohorts',
+                data: data,
+                backgroundColor: [
+                    'rgba(14, 165, 233, 0.85)',
+                    'rgba(16, 185, 129, 0.85)',
+                    'rgba(99, 102, 241, 0.85)',
+                    'rgba(245, 158, 11, 0.85)'
+                ],
+                borderColor: [
+                    '#0ea5e9',
+                    '#10b981',
+                    '#6366f1',
+                    '#f59e0b'
+                ],
+                borderWidth: 1,
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                    ticks: { color: '#94a3b8', font: { family: 'monospace' } }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#94a3b8', font: { weight: '600' } }
+                }
+            }
+        }
+    });
+
+    // Chart 2: Cloud Infrastructure & LMS Features Allocation
+    const featureCtx = document.getElementById('featureChart').getContext('2d');
+    new Chart(featureCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Virtual Labs Required', 'Assessments Configured', 'Full Stack LMS'],
+            datasets: [{
+                data: [
+                    {{ labs_count or 5 }},
+                    {{ assessments_count or 7 }},
+                    {{ both_count or 4 }}
+                ],
+                backgroundColor: [
+                    'rgba(6, 182, 212, 0.85)',
+                    'rgba(16, 185, 129, 0.85)',
+                    'rgba(99, 102, 241, 0.85)'
+                ],
+                borderColor: ['#06b6d4', '#10b981', '#6366f1'],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#94a3b8', font: { size: 11, weight: '600' }, padding: 16 }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+});
+</script>
 {% endblock %}

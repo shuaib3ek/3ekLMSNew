@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate Verification — 3rd Eye Knowledge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .verify-box {
+            background: white;
+            border-radius: 16px;
+            max-width: 560px;
+            width: 100%;
+            padding: 3rem;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        .status-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin: 0 auto 1.5rem;
+        }
+        .status-icon.valid { background: #f0fdf4; color: #16a34a; }
+        .status-icon.invalid { background: #fef2f2; color: #dc2626; }
+        .cert-detail {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin: 1.5rem 0;
+            text-align: left;
+        }
+        .cert-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.9rem;
+        }
+        .cert-row:last-child { border-bottom: none; }
+        .cert-label { color: #64748b; font-weight: 500; }
+        .cert-value { font-weight: 600; color: #0f172a; }
+        .brand {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 2rem;
+        }
+        .badge-valid {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: #dcfce7;
+            color: #16a34a;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+        .badge-invalid {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="verify-box">
+
+        {% if valid %}
+        <div class="status-icon valid">✓</div>
+        <div class="badge-valid">✓ VERIFIED</div>
+        <h1 style="font-size: 1.5rem; font-weight: 800; margin-top: 1rem; margin-bottom: 0.5rem;">Certificate is Authentic</h1>
+        <p style="color: #64748b; font-size: 0.9rem;">This certificate was issued by 3rd Eye Knowledge and is genuine.</p>
+
+        <div class="cert-detail">
+            <div class="cert-row">
+                <span class="cert-label">Recipient</span>
+                <span class="cert-value">{{ cert.learner.name }}</span>
+            </div>
+            <div class="cert-row">
+                <span class="cert-label">Certificate</span>
+                <span class="cert-value">{{ cert.display_title }}</span>
+            </div>
+            <div class="cert-row">
+                <span class="cert-label">Certificate No.</span>
+                <span class="cert-value" style="font-family: monospace;">{{ cert.certificate_number }}</span>
+            </div>
+            <div class="cert-row">
+                <span class="cert-label">Issued On</span>
+                <span class="cert-value">{{ cert.issued_at | format_date }}</span>
+            </div>
+            <div class="cert-row">
+                <span class="cert-label">Issued By</span>
+                <span class="cert-value">3rd Eye Knowledge</span>
+            </div>
+        </div>
+
+        {% if cert.certificate_url %}
+        <a href="{{ cert.certificate_url }}" target="_blank"
+           style="display: inline-block; background: #0f172a; color: white; padding: 0.75rem 1.75rem;
+                  border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 0.5rem;">
+            Download Certificate PDF
+        </a>
+        {% endif %}
+
+        {% else %}
+        <div class="status-icon invalid">✗</div>
+        <div class="badge-invalid">✗ NOT FOUND</div>
+        <h1 style="font-size: 1.5rem; font-weight: 800; margin-top: 1rem; margin-bottom: 0.5rem;">Certificate Not Found</h1>
+        <p style="color: #64748b; font-size: 0.9rem; max-width: 360px; margin: 0 auto;">
+            No certificate matching that number exists in our system. Please check the certificate number and try again.
+        </p>
+        {% endif %}
+
+        <div class="brand">
+            Verified by <strong>3rd Eye Knowledge LMS</strong><br>
+            <a href="https://www.3ek.in" style="color: #94a3b8;">www.3ek.in</a>
+        </div>
+    </div>
+</body>
+</html>

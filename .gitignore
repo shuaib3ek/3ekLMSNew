@@ -40,3 +40,5 @@ logs/
 .vscode/
 .idea/
 *.swp
+celerybeat-schedule*
+.env.bak

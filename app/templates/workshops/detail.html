@@ -34,7 +34,7 @@
         gap: 0.4rem;
     }
 
-    .badge-published { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+    .badge-published { background: #f8fafc; color: #1e293b; border: 1px solid #e2e8f0; }
     .badge-category { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
     .badge-live { color: #475569; font-weight: 500; font-size: 0.78rem; border: none; background: transparent; }
 
@@ -102,20 +102,35 @@
         </div>
 
         <div style="display: flex; gap: 0.5rem;">
+            {% if workshop.status == 'draft' %}
+            <form method="POST" action="{{ url_for('workshops.change_status', workshop_id=workshop.id) }}" style="display: inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="status" value="published">
+                <button type="submit" class="btn btn-sm action-btn-dark">
+                    <i class="ph ph-paper-plane-tilt"></i> Publish
+                </button>
+            </form>
+            {% endif %}
+            
             <a href="{{ url_for('workshops.edit_workshop', workshop_id=workshop.id) }}" class="btn btn-sm btn-outline">
                 <i class="ph ph-pencil"></i> Edit
             </a>
             <a href="{{ url_for('workshops.send_invite', workshop_id=workshop.id) }}" class="btn btn-sm btn-outline">
                 <i class="ph ph-envelope"></i> Send Invitation
             </a>
-            <button class="btn btn-sm action-btn-dark" onclick="openJoiningModal()">
+            <button class="btn btn-sm btn-outline" onclick="openJoiningModal()">
                 <i class="ph ph-paper-plane"></i> Send Joining Details
             </button>
+            
+            {% if workshop.status == 'published' %}
             <form method="POST" action="{{ url_for('workshops.change_status', workshop_id=workshop.id) }}" style="display: inline;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="status" value="completed">
-                <button type="submit" class="btn btn-sm btn-outline text-success" style="border-color: #dcfce7;">Mark Complete</button>
+                <button type="submit" class="btn btn-sm btn-outline">
+                    <i class="ph ph-check-square"></i> Mark Complete
+                </button>
             </form>
+            {% endif %}
         </div>
     </div>
 
@@ -130,7 +145,7 @@
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem 2rem;">
                     <div>
                         <div class="detail-label">DATE</div>
-                        <div class="detail-value">{{ workshop.start_date.strftime('%d %b %Y') }}{% if workshop.end_date != workshop.start_date %} – {{ workshop.end_date.strftime('%d %b %Y') }}{% endif %}</div>
+                        <div class="detail-value">{{ workshop.start_date | format_date }}{% if workshop.end_date != workshop.start_date %} – {{ workshop.end_date | format_date }}{% endif %}</div>
                     </div>
                     <div>
                         <div class="detail-label">TIME</div>
@@ -146,7 +161,7 @@
                     </div>
                     <div>
                         <div class="detail-label">REGISTRATION DEADLINE</div>
-                        <div class="detail-value">{{ workshop.registration_deadline.strftime('%d %b %Y') if workshop.registration_deadline else '—' }}</div>
+                        <div class="detail-value">{{ workshop.registration_deadline | format_date if workshop.registration_deadline else '—' }}</div>
                     </div>
                     <div>
                         <div class="detail-label">DURATION</div>
@@ -311,7 +326,7 @@
                     <span class="value">₹{{ '{:,.0f}'.format(workshop.total_revenue) }}</span>
                 </div>
                 <div style="height: 4px; background: #f1f5f9; border-radius: 2px; margin-top: 1rem; overflow: hidden;">
-                    <div style="width: {{ workshop.fill_percentage }}%; height: 100%; background: #e2e8f0;"></div>
+                    <div style="--w: {{ workshop.fill_percentage }}%; width: var(--w); height: 100%; background: #e2e8f0;"></div>
                 </div>
             </div>
 
@@ -336,12 +351,10 @@
                         <div style="font-size: 1.4rem; font-weight: 800; color: #475569;">{{ workshop.seats_booked }}</div>
                         <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Registered</div>
                     </div>
-                    {% if failed_count > 0 %}
-                    <div style="text-align: center; flex: 1; background: #fff7ed; border-radius: 8px; padding: 0.6rem;">
-                        <div style="font-size: 1.4rem; font-weight: 800; color: #c2410c;">{{ failed_count }}</div>
-                        <div style="font-size: 0.7rem; color: #9a3412; text-transform: uppercase; letter-spacing: 0.04em;">Failed</div>
+                    <div style="text-align: center; flex: 1; background: #f8fafc; border-radius: 8px; padding: 0.6rem;">
+                        <div style="font-size: 1.4rem; font-weight: 800; color: #475569;">{{ failed_count }}</div>
+                        <div style="font-size: 0.7rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Failed</div>
                     </div>
-                    {% endif %}
                 </div>
                 {% if sent_contacts %}
                 <details>
@@ -350,7 +363,7 @@
                         {% for ic in sent_contacts[:15] %}
                         <div style="padding: 0.4rem 0; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; display: flex; justify-content: space-between;">
                             <div style="font-weight: 600; color: var(--dark-navy);">{{ ic.name }}</div>
-                            <div style="color: var(--soft-gray);">{{ ic.sent_at.strftime('%d %b') if ic.sent_at else '' }}</div>
+                            <div style="color: var(--soft-gray);">{{ ic.sent_at | format_date if ic.sent_at else '' }}</div>
                         </div>
                         {% endfor %}
                         {% if sent_count > 15 %}
@@ -371,9 +384,10 @@
                 <h3 class="card-title-modern" style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">EMAIL HISTORY</h3>
                 {% if workshop.email_logs %}
                     {% for log in workshop.email_logs|sort(attribute='sent_at', reverse=True) %}
-                    <div style="padding: 0.5rem 0; {% if not loop.last %}border-bottom: 1px solid #f1f5f9;{% endif %}">
+                    {% set border_val = '1px solid #f1f5f9' if not loop.last else 'none' %}
+                    <div style="padding: 0.5rem 0; --b: {{ border_val }}; border-bottom: var(--b);">
                         <div style="font-weight: 700; font-size: 0.85rem; color: var(--dark-navy);">{{ log.email_type|replace('_', ' ')|title }}</div>
-                        <div style="font-size: 0.78rem; color: var(--soft-gray);">{{ log.recipient_count }} recipients · {{ log.sent_at.strftime('%d %b %Y') }}</div>
+                        <div style="font-size: 0.78rem; color: var(--soft-gray);">{{ log.recipient_count }} recipients · {{ log.sent_at | format_date }}</div>
                     </div>
                     {% endfor %}
                 {% else %}

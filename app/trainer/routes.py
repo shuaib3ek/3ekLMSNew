@@ -12,6 +12,7 @@ from app.workshops.models import (
     WorkshopSession, WorkshopDocument
 )
 from app.core.extensions import db
+from app.core.tenancy import scoped_query
 from app.crm_client import client as crm
 
 def trainer_required(f):
@@ -46,7 +47,7 @@ def dashboard():
 
     # Find workshops where this trainer is assigned
     workshop_ids = [wt.workshop_id for wt in WorkshopTrainer.query.filter_by(crm_trainer_id=trainer_id).all()]
-    workshops = Workshop.query.filter(Workshop.id.in_(workshop_ids)).order_by(Workshop.start_date.desc()).all()
+    workshops = scoped_query(Workshop).filter(Workshop.id.in_(workshop_ids)).order_by(Workshop.start_date.desc()).all()
     
     # Split into upcoming and past
     from datetime import date
@@ -70,8 +71,8 @@ def workshop_detail(workshop_id):
     if not assignment:
         abort(403)
         
-    workshop = Workshop.query.get_or_404(workshop_id)
-    registrations = WorkshopRegistration.query.filter_by(workshop_id=workshop_id).all()
+    workshop = scoped_query(Workshop).filter_by(id=workshop_id).first_or_404()
+    registrations = scoped_query(WorkshopRegistration).filter_by(workshop_id=workshop_id).all()
     documents = WorkshopDocument.query.filter_by(workshop_id=workshop_id).all()
     
     return render_template(
@@ -94,7 +95,7 @@ def update_attendance(workshop_id):
     registration_id = request.form.get('registration_id')
     status = request.form.get('status') # confirmed, attended, cancelled
     
-    reg = WorkshopRegistration.query.get_or_404(registration_id)
+    reg = scoped_query(WorkshopRegistration).filter_by(id=registration_id).first_or_404()
     if reg.workshop_id != workshop_id:
         abort(400)
         

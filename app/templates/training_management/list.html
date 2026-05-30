@@ -1,75 +1,82 @@
 {% extends "layouts/base.html" %}
 
 {% block content %}
-<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
-    <div>
-        <h1 class="page-title"><i class="ph ph-briefcase"></i> External Training</h1>
-        <div class="breadcrumb" style="margin-top: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span style="display: inline-block; width: 8px; height: 8px; background: var(--success); border-radius: 50%;"></span>
-            <span style="font-weight: 600; font-size: 0.8rem; color: var(--success);">LIVE STREAM FROM 3EK-PULSE</span>
+<div class="container">
+    {% set title = "Training Cohorts" %}
+    {% set count = programs|length %}
+    {% set telemetry = "// OPERATIONS // TRAINING_COHORTS" %}
+    {% include "components/page_header.html" %}
+
+    <div class="command-bar">
+        <div class="cmd-group">
+            <div class="cmd-pill active">
+                <i class="ph-bold ph-list-bullets"></i> ALL PROGRAMS
+            </div>
+            <div class="cmd-pill">
+                <i class="ph-bold ph-activity"></i> LIVE SYNC
+            </div>
+        </div>
+
+        <div class="cmd-group">
+            <div class="cmd-input-wrapper">
+                <i class="ph ph-magnifying-glass cmd-input-icon"></i>
+                <input type="text" class="cmd-input" placeholder="Search programs...">
+            </div>
         </div>
     </div>
-    <a href="{{ config.CRM_API_URL }}/ops" target="_blank" class="btn btn-outline">
-        NATIVE PULSE DASHBOARD <i class="ph ph-arrow-up-right"></i>
-    </a>
-</div>
 
-<div class="card" style="padding: 0; overflow: hidden;">
-    <div class="table-container" style="overflow-x: auto;">
-        <table class="table" style="width: 100%; border-collapse: collapse; text-align: left;">
-            <thead>
-                <tr style="background: var(--bg-app); border-bottom: 1px solid var(--border-light);">
-                    <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Program Name</th>
-                    <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Client / Cohort</th>
-                    <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Status</th>
-                    <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if programs %}
-                    {% for p in programs %}
-                    <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.15s;">
-                        <td style="padding: 1.25rem 1.5rem; font-weight: 600; color: var(--text-primary);">{{ p.topic }}</td>
-                        <td style="padding: 1.25rem 1.5rem; color: var(--text-secondary); font-size: 0.9rem;">{{ p.client_name or 'Unknown Client' }}</td>
-                        <td style="padding: 1.25rem 1.5rem;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span class="status-warm" style="font-size: 0.75rem; font-weight: 600; padding: 4px 8px; border-radius: 6px; border: 1px solid currentColor;">
-                                    {{ p.status }}
-                                </span>
-                                {% if p.is_lms_managed %}
-                                    <span class="badge" style="background: var(--pulse-teal-light); color: var(--pulse-teal-dark); border: 1px solid var(--pulse-teal); font-size: 0.65rem; padding: 2px 6px;">
-                                        PULSE MANAGED
-                                    </span>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td style="padding: 1.25rem 1.5rem;">
-                            <div style="display: flex; gap: 0.5rem;">
-                                {% if p.is_lms_managed %}
-                                    <a href="{{ url_for('workshops.detail', workshop_id=p.lms_workshop_id) }}" class="btn btn-sm btn-primary">
-                                        LMS Workspace <i class="ph ph-arrow-right"></i>
-                                    </a>
-                                {% else %}
-                                    <a href="{{ url_for('training_management.program_detail', crm_engagement_id=p.id) }}" class="btn btn-sm btn-primary">
-                                        View Program <i class="ph ph-arrow-right"></i>
-                                    </a>
-                                {% endif %}
-
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="4" style="padding: 4rem; text-align: center; color: var(--text-tertiary);">
-                            <i class="ph ph-folder-dashed" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                            <p style="font-size: 1.1rem; font-weight: 600; color: var(--text-secondary);">No historical programs detected.</p>
-                            <p style="font-size: 0.9rem;">Pulse sync might be offline or no data exists yet.</p>
-                        </td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
+    {% if not programs %}
+    <div style="text-align: center; padding: 4rem 2rem; color: var(--text-tertiary); background: var(--bg-surface); border-radius: 12px; border: 1px dashed var(--border-light); mt-4">
+        <i class="ph ph-folder-dashed" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+        <p style="font-size: 1.1rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.25rem;">No historical programs detected.</p>
+        <p style="font-size: 0.9rem;">Pulse sync might be offline or no data exists yet.</p>
     </div>
+    {% else %}
+    <div class="precision-grid-container mt-4">
+        <div class="precision-row header">
+            <div class="sortable-header"><i class="ph ph-briefcase mr-1 text-xs"></i> PROGRAM NAME</div>
+            <div class="sortable-header"><i class="ph ph-users mr-1 text-xs"></i> CLIENT / COHORT</div>
+            <div class="sortable-header"><i class="ph ph-shield mr-1 text-xs"></i> STATUS</div>
+            <div style="text-align: right;"><i class="ph ph-gear mr-1 text-xs"></i> ACTION</div>
+        </div>
+        <div style="overflow-y: auto; max-height: calc(100vh - 280px);">
+            {% for p in programs %}
+            {% set action_link = url_for('workshops.detail_workshop', workshop_id=p.lms_workshop_id) if p.is_lms_managed else url_for('training_management.program_detail', crm_engagement_id=p.id) %}
+            <a href="{{ action_link }}" class="precision-row">
+                <!-- Program Name -->
+                <div class="p-cell">
+                    <div class="p-flex-row">
+                        <div class="p-avatar" style="background: var(--accent, #3b82f6);">{{ p.topic[:1]|upper if p.topic else 'P' }}</div>
+                        <div style="display: flex; flex-direction: column; overflow: hidden; min-width: 0; width: 100%;">
+                            <span class="p-primary">{{ p.topic }}</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Client / Cohort -->
+                <div class="p-cell">
+                    <span class="p-mono"><i class="ph ph-buildings mr-1"></i> {{ p.client_name or 'Unknown Client' }}</span>
+                </div>
+                <!-- Status -->
+                <div class="p-cell">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="p-badge" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">{{ p.status|upper }}</span>
+                        {% if p.is_lms_managed %}
+                            <span class="p-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 0.65rem;">
+                                <i class="ph ph-check-circle"></i> PULSE MANAGED
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- Action -->
+                <div style="text-align: right;">
+                    <span class="btn btn-sm btn-outline" style="pointer-events: none; padding: 0.25rem 0.75rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem;">
+                        {% if p.is_lms_managed %}LMS Workspace{% else %}View Program{% endif %} <i class="ph ph-arrow-right"></i>
+                    </span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

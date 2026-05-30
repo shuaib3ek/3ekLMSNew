@@ -2,13 +2,77 @@
 
 {% block content %}
 <div class="container form-card">
-    <div class="page-header" style="margin-bottom: 1.5rem;">
-        <div style="margin-bottom: 0.5rem;">
-            <a href="{{ url_for('workshops.detail_workshop', workshop_id=workshop.id) }}"
-                style="color: var(--text-secondary); font-size: 0.85rem;">
-                <i class="ph ph-arrow-left"></i> Back to Workshop
-            </a>
+    <div style="margin-bottom: 0.5rem;">
+        <a href="{{ url_for('workshops.detail_workshop', workshop_id=workshop.id) }}"
+            style="color: var(--text-secondary); font-size: 0.85rem;">
+            <i class="ph ph-arrow-left"></i> Back to Workshop
+        </a>
+    </div>
+
+    {% if campaign_active %}
+    {# ─── Active Campaign Banner ──────────────────────────────────────────── #}
+    {% set pct = ((sent_count / total_tracked) * 100) | round(1) if total_tracked > 0 else 0 %}
+    <div id="campaign-banner" style="
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        color: #e2e8f0;
+    ">
+        <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:1rem;">
+            <i class="ph ph-paper-plane-tilt" style="font-size:1.2rem;"></i>
+            <span style="font-weight:700; font-size:1rem;">Invitation Campaign Active</span>
+            <span style="
+                margin-left:auto;
+                background:#334155;
+                color:#f8fafc;
+                font-size:0.72rem;
+                padding:2px 10px;
+                border-radius:999px;
+                font-weight:600;
+            ">SENDING IN BACKGROUND</span>
         </div>
+
+        {# Progress bar #}
+        <div style="background:#1e293b; border-radius:8px; height:10px; overflow:hidden; margin-bottom:0.75rem;">
+            <div id="prog-bar" style="
+                height:100%;
+                --w: {{ pct }}%;
+                width: var(--w);
+                background: #64748b;
+                border-radius:8px;
+                transition: width 0.8s ease;
+            "></div>
+        </div>
+
+        <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:0.75rem;">
+            <span id="prog-label"><strong style="color:#e2e8f0;">{{ sent_count }}</strong> of <strong style="color:#e2e8f0;">{{ total_tracked }}</strong> sent ({{ pct }}%)</span>
+        </div>
+
+        <div style="display:flex; gap:1.5rem; font-size:0.82rem; flex-wrap:wrap;">
+            <span><i class="ph ph-check-circle" style="color: #94a3b8;"></i> <strong id="count-sent">{{ sent_count }}</strong> sent</span>
+            <span><i class="ph ph-x-circle" style="color: #94a3b8;"></i> <strong id="count-failed">{{ failed_count }}</strong> failed</span>
+            <span><i class="ph ph-clock" style="color: #94a3b8;"></i> <strong id="count-queued">{{ queued_count }}</strong> queued</span>
+            <span style="margin-left:auto; color:#94a3b8;">Next batch in: <strong id="next-batch">checking…</strong></span>
+        </div>
+    </div>
+
+    <div style="
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.85rem;
+        color: #64748b;
+    ">
+        <i class="ph ph-info"></i> A campaign is in progress. The send form is disabled until all batches complete.
+    </div>
+    {% endif %}
+
+    {# ─── Page Header ────────────────────────────────────── #}
+    <div class="page-header" style="margin-bottom: 1.5rem;">
         <h1 class="page-title">Send Invitation Email</h1>
         <p style="color: var(--text-secondary); margin: 0;">
             Send a branded invitation to CRM contacts for <strong>{{ workshop.title }}</strong>
@@ -26,11 +90,12 @@
         <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 200px;">
                 <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.25rem;">Subject Line</div>
-                <div style="font-weight: 500; font-size: 0.9rem;">Invitation: {{ workshop.title }} — {% if workshop.start_date %}{{ workshop.start_date.strftime('%d %B %Y') }}{% endif %}</div>
+                <div style="font-weight: 500; font-size: 0.9rem;">Invitation: {{ workshop.title }} — {% if workshop.start_date %}{{ workshop.start_date | format_date }}{% endif %}</div>
             </div>
         </div>
     </div>
 
+    {% if not campaign_active %}
     <form method="POST" id="invite_form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="filter_type" value="contacts">
@@ -77,17 +142,25 @@
                     {% endif %}
                 </div>
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <button type="button" class="btn btn-sm btn-outline" onclick="selectAll()">Select All</button>
-                    <button type="button" class="btn btn-sm btn-outline" onclick="deselectAll()">Deselect All</button>
+                    <button type="button" class="btn btn-sm btn-outline" id="btn-select-all">Select All</button>
+                    <button type="button" class="btn btn-sm btn-outline" id="btn-deselect-all">Deselect All</button>
                     {% if already_sent_ids %}
-                    <button type="button" class="btn btn-sm btn-outline" onclick="deselectAlreadySent()">Deselect Already Emailed</button>
+                    <button type="button" class="btn btn-sm btn-outline" id="btn-deselect-sent">Deselect Already Emailed</button>
                     {% endif %}
+                    <button type="button" class="btn btn-sm btn-secondary" style="background:#0f172a; color:white; border:none;" id="btn-browse-contacts">
+                        <i class="ph ph-magnifying-glass-plus"></i> Browse All Contacts
+                    </button>
                 </div>
             </div>
 
-            <!-- TomSelect — options pre-built via JS with selected=true before init -->
+            <!-- TomSelect — remote search + optional bulk selection flag -->
             <div style="margin-bottom: 1.5rem;">
+                <input type="hidden" name="all_contacts_selected" id="all_contacts_selected" value="false">
                 <select id="contacts_filter" name="contact_ids" multiple class="form-control" style="width: 100%;"></select>
+                <div id="all-selected-banner" style="display:none; padding: 0.75rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; margin-top: 0.5rem; font-size: 0.85rem; color: #1e40af;">
+                    <i class="ph ph-info" style="vertical-align: middle; margin-right: 4px;"></i>
+                    <strong>All recipients selected.</strong> Individual search is disabled until you clear the selection.
+                </div>
             </div>
         </div>
 
@@ -115,105 +188,302 @@
             <a href="{{ url_for('workshops.detail_workshop', workshop_id=workshop.id) }}" class="btn btn-outline">Cancel</a>
         </div>
     </form>
+    {% endif %}
 </div>
 
+<!-- CONTACT BROWSING MODAL -->
+<div id="contactBrowseModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center; padding: 2rem;">
+    <div style="background: white; width: 100%; max-width: 900px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+        <!-- Header -->
+        <div style="padding: 1.5rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #f8fafc;">
+            <div>
+                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: #1e293b;">Browse All Contacts</h3>
+                <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem; color: #64748b;">Select recipients to add to the invitation list</p>
+            </div>
+            <button type="button" onclick="closeContactModal()" style="background: none; border: none; font-size: 1.5rem; color: #94a3b8; cursor: pointer; padding: 0.5rem; line-height: 1;">&times;</button>
+        </div>
+
+        <!-- Search & Stats -->
+        <div style="padding: 1rem 1.5rem; background: #fff; border-bottom: 1px solid #f1f5f9; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <div style="position: relative; flex: 1; min-width: 250px;">
+                <input type="text" id="modal-search" placeholder="Search by name, email, or company..." 
+                       style="width: 100%; padding: 0.625rem 1rem; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem;">
+            </div>
+            <div id="modal-selection-badge" style="display: none; background: #eff6ff; color: #2563eb; padding: 0.5rem 1rem; border-radius: 999px; font-weight: 600; font-size: 0.875rem;">
+                <span id="modal-selected-count">0</span> selected
+            </div>
+        </div>
+
+        <!-- Table Body -->
+        <div style="flex: 1; overflow-y: auto; position: relative; min-height: 300px;">
+            <div id="modal-loader" style="display: none; position: absolute; inset: 0; background: rgba(255,255,255,0.8); z-index: 20; align-items: center; justify-content: center; flex-direction: column;">
+                <div class="modal-spinner"></div>
+            </div>
+
+            <div id="modal-empty" style="display: none; padding: 4rem 2rem; text-align: center; color: #64748b;">
+                No contacts found matching your search.
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem;">
+                <thead style="position: sticky; top: 0; background: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1); z-index: 10;">
+                    <tr>
+                        <th style="width: 60px; padding: 1rem 1.5rem;"><input type="checkbox" id="modal-select-page"></th>
+                        <th style="padding: 1rem;">Name</th>
+                        <th style="padding: 1rem;">Email</th>
+                        <th style="padding: 1rem;">Company</th>
+                        <th style="padding: 1rem;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="modal-table-body"></tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div style="padding: 1.25rem 1.5rem; border-top: 1px solid #f1f5f9; background: #f8fafc; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div style="color: #64748b; font-size: 0.875rem;">
+                <span id="page-info">Page 1</span> | Total: <strong id="modal-total">0</strong> 
+                <span id="modal-range" style="margin-left:8px; opacity:0.7;"></span>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <button type="button" id="btn-prev" onclick="changePage(-1)" class="btn btn-sm btn-outline">Prev</button>
+                <button type="button" id="btn-next" onclick="changePage(1)" class="btn btn-sm btn-outline">Next</button>
+                <button type="button" onclick="applyModalSelection()" class="btn btn-sm btn-primary" style="background: #0f172a; color: white; border:none; padding: 0.5rem 1.5rem;">
+                    Add Selection (<span id="btn-selected-count">0</span>)
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .modal-spinner { width: 40px; height: 40px; border: 3px solid #f3f3f3; border-top: 3px solid #6366f1; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .disabled { opacity: 0.5; pointer-events: none; }
+</style>
+
 <script>
-    // Already-sent IDs from server (fast shadow DB query, no CRM call)
-    const alreadySentIds = new Set([{{ already_sent_ids | join(', ') }}]);
+    console.log("SEND INVITE SCRIPT INITIALIZING...");
+    
+    // Global State
+    let tsInstance;
+    const selectionMap = new Map();
+    let mPage = 1;
+    let mQuery = '';
+    let mCache = [];
 
-    let tomSelectInstance;
-    let allContactIds = [];
-
-    async function loadContactsAndInit() {
-        const loadingEl = document.getElementById('contacts-loading');
-        try {
-            // New endpoint: on workshops_bp, fully session-authenticated
-            const res = await fetch('{{ url_for("workshops.contacts_api") }}');
-            if (!res.ok) {
-                throw new Error(`Server returned ${res.status}: ${res.statusText}`);
-            }
-            const data = await res.json();
-            const contacts = data.data || [];
-
-            if (contacts.length === 0) {
-                loadingEl.innerHTML = '<span style="color: #f59e0b;">⚠ No contacts found in local cache. Contacts sync with CRM on each page load — try visiting the Invite page again.</span>';
-                return;
-            }
-
-            // Build options in DOM with selected=true BEFORE TomSelect init
-            // This way TomSelect reads native selection — no setValue() storm
-            const select = document.getElementById('contacts_filter');
-            contacts.forEach(c => {
-                const opt = document.createElement('option');
-                opt.value = c.id;
-                opt.textContent = c.name + ' <' + c.email + '>';
-                opt.selected = true;  // Native pre-selection — no JS event fired
-                select.appendChild(opt);
-                allContactIds.push(String(c.id));
-            });
-
-            // Init TomSelect — picks up pre-selected options from DOM natively
-            tomSelectInstance = new TomSelect('#contacts_filter', {
-                plugins: ['remove_button'],
-                placeholder: 'Search contacts...',
-                maxItems: null,
-                maxOptions: 1000,
-                searchField: ['text'],
-                render: {
-                    item: function(data, escape) {
-                        const isSent = alreadySentIds.has(parseInt(data.value));
-                        const color = isSent ? '#22c55e' : '#94a3b8';
-                        return `<div class="item" style="border-left: 3px solid ${color}; padding-left: 6px;">${escape(data.text)}</div>`;
-                    },
-                    option: function(data, escape) {
-                        const isSent = alreadySentIds.has(parseInt(data.value));
-                        const badge = isSent
-                            ? `<span style="font-size:0.7rem;background:#dcfce7;color:#16a34a;border-radius:4px;padding:1px 6px;margin-left:6px;">emailed</span>`
-                            : '';
-                        return `<div>${escape(data.text)}${badge}</div>`;
-                    }
-                },
-                onItemAdd: updateCount,
-                onItemRemove: updateCount
-            });
-
-            // Show the UI
-            loadingEl.style.display = 'none';
-            document.getElementById('contacts-ready').style.display = 'block';
-            document.getElementById('total-count').textContent = contacts.length;
-            updateCount();
-
-        } catch (err) {
-            loadingEl.innerHTML = `<span style="color:red;">⚠ Could not load contacts: ${err.message}</span>`;
-        }
+    // --- FORM LOGIC ---
+    function initTomSelect() {
+        const el = document.getElementById('contacts_filter');
+        if (!el) return;
+        
+        tsInstance = new TomSelect(el, {
+            valueField: 'id',
+            labelField: 'name',
+            searchField: ['name', 'email'],
+            plugins: ['remove_button'],
+            load: function(query, callback) {
+                if (!query.length) return callback();
+                fetch(`{{ url_for("workshops.contacts_api") }}?q=${encodeURIComponent(query)}`)
+                    .then(r => r.json()).then(j => callback(j.data)).catch(() => callback());
+            },
+            onItemAdd: updateMainCounter,
+            onItemRemove: updateMainCounter
+        });
+        
+        document.getElementById('contacts-loading').style.display = 'none';
+        document.getElementById('contacts-ready').style.display = 'block';
+        document.getElementById('total-count').textContent = "{{ all_contacts_count }}";
     }
 
-    function updateCount() {
-        const count = tomSelectInstance ? tomSelectInstance.items.length : 0;
-        document.getElementById('selected-count').textContent = count;
-    }
-
-    function selectAll() {
-        tomSelectInstance.setValue(allContactIds);
-        updateCount();
-    }
-
-    function deselectAll() {
-        tomSelectInstance.clear();
-        updateCount();
-    }
-
-    function deselectAlreadySent() {
-        const remaining = allContactIds.filter(id => !alreadySentIds.has(parseInt(id)));
-        tomSelectInstance.setValue(remaining);
-        updateCount();
+    function updateMainCounter() {
+        const isAll = document.getElementById('all_contacts_selected').value === 'true';
+        const allCount = Number('{{ all_contacts_count }}');
+        const count = isAll ? allCount : (tsInstance ? tsInstance.items.length : 0);
+        const el = document.getElementById('selected-count');
+        if (el) el.textContent = count;
     }
 
     function confirmSend() {
-        const count = tomSelectInstance ? tomSelectInstance.items.length : 0;
-        return confirm(`Send invitations to ${count} selected recipient(s)?`);
+        const isAll = document.getElementById('all_contacts_selected').value === 'true';
+        const allCount = Number('{{ all_contacts_count }}');
+        const count = isAll ? allCount : (tsInstance ? tsInstance.items.length : 0);
+        if (count === 0) { alert("Please select at least one recipient."); return false; }
+        return confirm(`Send invitations to ${count} recipient(s)?`);
     }
 
-    document.addEventListener('DOMContentLoaded', loadContactsAndInit);
+    // --- MODAL LOGIC ---
+    function openContactModal() {
+        console.log("Opening Modal...");
+        mPage = 1;
+        mQuery = '';
+        const input = document.getElementById('modal-search');
+        if (input) input.value = '';
+        
+        // Load current selection from TomSelect into Map
+        selectionMap.clear();
+        if (tsInstance) {
+            tsInstance.items.forEach(id => {
+                const opt = tsInstance.options[id];
+                selectionMap.set(id.toString(), { name: opt ? opt.name : '...', email: opt ? opt.email : '' });
+            });
+        }
+        
+        updateModalCounter();
+        document.getElementById('contactBrowseModal').style.display = 'flex';
+        fetchModalData();
+    }
+
+    function closeContactModal() {
+        document.getElementById('contactBrowseModal').style.display = 'none';
+    }
+
+    async function fetchModalData() {
+        const loader = document.getElementById('modal-loader');
+        const list = document.getElementById('modal-table-body');
+        const empty = document.getElementById('modal-empty');
+        
+        if (loader) loader.style.display = 'flex';
+        if (list) list.style.display = 'none';
+        
+        try {
+            const url = `{{ url_for("workshops.contacts_api") }}?workshop_id={{ workshop.id }}&page=${mPage}&q=${encodeURIComponent(mQuery)}`;
+            const res = await fetch(url);
+            const json = await res.json();
+            
+            mCache = json.data;
+            renderModalTable();
+            
+            document.getElementById('modal-total').textContent = json.total_count;
+            document.getElementById('page-info').textContent = `Page ${json.page} of ${json.total_pages}`;
+            document.getElementById('btn-prev').classList.toggle('disabled', json.page <= 1);
+            document.getElementById('btn-next').classList.toggle('disabled', json.page >= json.total_pages);
+            
+            if (loader) loader.style.display = 'none';
+            if (json.data.length > 0) {
+                list.style.display = 'table-row-group';
+                empty.style.display = 'none';
+            } else {
+                empty.style.display = 'block';
+            }
+        } catch (e) { console.error("Modal fetch error:", e); }
+    }
+
+    function renderModalTable() {
+        const body = document.getElementById('modal-table-body');
+        body.innerHTML = '';
+        
+        mCache.forEach(c => {
+            const isSel = selectionMap.has(c.id.toString());
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid #f1f5f9';
+            
+            let badge = '';
+            if (c.status === 'sent') badge = '<span style="color:#16a34a;background:#dcfce7;padding:2px 8px;border-radius:4px;font-size:0.7rem;">SENT</span>';
+            else if (c.status === 'queued') badge = '<span style="color:#92400e;background:#fef3c7;padding:2px 8px;border-radius:4px;font-size:0.7rem;">QUEUED</span>';
+
+            tr.innerHTML = `
+                <td style="padding:1rem 1.5rem;"><input type="checkbox" ${isSel ? 'checked' : ''}></td>
+                <td style="padding:1rem;font-weight:500;">${c.name}</td>
+                <td style="padding:1rem;color:#64748b;">${c.email}</td>
+                <td style="padding:1rem;color:#64748b;">${c.company || ''}</td>
+                <td style="padding:1rem;">${badge}</td>
+            `;
+            
+            const cb = tr.querySelector('input');
+            tr.onclick = (e) => {
+                if (e.target.type !== 'checkbox') cb.checked = !cb.checked;
+                if (cb.checked) selectionMap.set(c.id.toString(), {name: c.name, email: c.email});
+                else selectionMap.delete(c.id.toString());
+                updateModalCounter();
+            };
+            cb.onchange = (e) => {
+                if (e.target.checked) selectionMap.set(c.id.toString(), {name: c.name, email: c.email});
+                else selectionMap.delete(c.id.toString());
+                updateModalCounter();
+            };
+            body.appendChild(tr);
+        });
+    }
+
+    function updateModalCounter() {
+        const count = selectionMap.size;
+        document.getElementById('modal-selected-count').textContent = count;
+        document.getElementById('btn-selected-count').textContent = count;
+        document.getElementById('modal-selection-badge').style.display = count > 0 ? 'block' : 'none';
+    }
+
+    function changePage(delta) {
+        mPage += delta;
+        fetchModalData();
+    }
+
+    function applyModalSelection() {
+        if (!tsInstance) return;
+        document.getElementById('all_contacts_selected').value = 'false';
+        document.getElementById('all-selected-banner').style.display = 'none';
+        tsInstance.enable();
+        tsInstance.clear();
+        tsInstance.settings.onItemAdd = null; // silent add
+        
+        selectionMap.forEach((val, key) => {
+            tsInstance.addOption({ id: key, name: val.name, email: val.email });
+            tsInstance.addItem(key);
+        });
+        
+        tsInstance.settings.onItemAdd = updateMainCounter;
+        updateMainCounter();
+        closeContactModal();
+    }
+
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+        initTomSelect();
+        
+        document.getElementById('btn-browse-contacts')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            openContactModal();
+        });
+        
+        document.getElementById('modal-search')?.addEventListener('input', (e) => {
+            clearTimeout(window.mST);
+            window.mST = setTimeout(() => {
+                mQuery = e.target.value;
+                mPage = 1;
+                fetchModalData();
+            }, 300);
+        });
+
+        document.getElementById('btn-select-all')?.addEventListener('click', () => {
+            document.getElementById('all_contacts_selected').value = 'true';
+            document.getElementById('all-selected-banner').style.display = 'block';
+            if (tsInstance) { tsInstance.clear(); tsInstance.disable(); }
+            updateMainCounter();
+        });
+
+        document.getElementById('btn-deselect-all')?.addEventListener('click', () => {
+            document.getElementById('all_contacts_selected').value = 'false';
+            document.getElementById('all-selected-banner').style.display = 'none';
+            if (tsInstance) { tsInstance.enable(); tsInstance.clear(); }
+            updateMainCounter();
+        });
+    });
+
+    // Background Polling
+    if (JSON.parse('{{ campaign_active | tojson }}')) {
+        setInterval(async () => {
+            const r = await fetch('{{ url_for("workshops.invite_status", workshop_id=workshop.id) }}');
+            if (r.ok) {
+                const data = await r.json();
+                if (!data.campaign_active) { window.location.reload(); return; }
+                const pct = data.total > 0 ? ((data.sent / data.total) * 100).toFixed(1) : 0;
+                const bar = document.getElementById('prog-bar');
+                if (bar) bar.style.setProperty('--w', pct + '%');
+                if (document.getElementById('prog-label')) document.getElementById('prog-label').innerHTML = `<strong>${data.sent}</strong> of <strong>${data.total}</strong> sent (${pct}%)`;
+                if (document.getElementById('count-sent')) document.getElementById('count-sent').textContent = data.sent;
+                if (document.getElementById('count-failed')) document.getElementById('count-failed').textContent = data.failed;
+                if (document.getElementById('count-queued')) document.getElementById('count-queued').textContent = data.queued;
+            }
+        }, 5000);
+    }
 </script>
 {% endblock %}

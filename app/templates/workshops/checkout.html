@@ -133,7 +133,7 @@
             </div>
             <div class="detail-row">
                 <span class="detail-label">Date</span>
-                <span class="detail-value">{{ registration.workshop.start_date.strftime('%d %b %Y') }}</span>
+                <span class="detail-value">{{ registration.workshop.start_date | format_date }}</span>
             </div>
 
             <div class="total-row">
@@ -169,7 +169,7 @@
     <script>
         var options = {
             "key": "{{ key_id }}",
-            "amount": {{ amount }}, 
+            "amount": Number('{{ amount }}'), 
             "currency": "{{ currency }}",
             "name": "3 Essential Keys",
             "description": "Registration for {{ registration.workshop.title|replace('\"','\\\"') }}",
@@ -182,10 +182,8 @@
             },
             "prefill": {
                 "name": "{{ registration.name|replace('\"','\\\"') }}",
-                "email": "{{ registration.email|replace('\"','\\\"') }}"
-                {% if registration.phone %}
-                ,"contact": "{{ registration.phone|replace('\"','\\\"') }}"
-                {% endif %}
+                "email": "{{ registration.email|replace('\"','\\\"') }}",
+                "contact": "{{ registration.phone|replace('\"','\\\"') if registration.phone else '' }}"
             },
             "notes": {
                 "registration_token": "{{ registration.confirmation_token }}"

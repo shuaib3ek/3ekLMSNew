@@ -1,0 +1,28 @@
+<div class="precision-page-header" style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 1.5rem;">
+    <div>
+        <h1 class="page-title" style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.025em; display: flex; align-items: baseline; gap: 0.5rem; margin: 0; color: var(--text-primary);">
+            {{ title }}
+            {% if count is defined and count is not none %}
+            <span class="text-xs text-tertiary font-black opacity-80" style="font-family: var(--font-heading, 'Outfit', sans-serif); font-size: 0.85rem; color: #64748b;">({{ count }})</span>
+            {% endif %}
+        </h1>
+        {% if telemetry %}
+        <div class="text-xs text-tertiary font-mono" style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #64748b; margin-top: 0.25rem; font-weight: 600;">
+            {{ telemetry }}
+        </div>
+        {% endif %}
+    </div>
+
+    {% if action_url and action_label %}
+    <div style="display: flex; gap: 0.5rem;">
+        <a href="{{ action_url }}" class="btn btn-primary btn-sm" style="border-radius: 8px; font-weight: 600; font-size: 0.85rem; padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.5rem; height: 36px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            {% if action_icon %}
+            <i class="ph {{ action_icon }}"></i>
+            {% else %}
+            <i class="ph-bold ph-plus"></i>
+            {% endif %}
+            {{ action_label }}
+        </a>
+    </div>
+    {% endif %}
+</div>

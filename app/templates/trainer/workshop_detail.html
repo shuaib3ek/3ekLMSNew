@@ -1,161 +1,268 @@
 {% extends "trainer/base.html" %}
-{% block title %}{{ workshop.title }} — Trainer Detail{% endblock %}
+
+{% block title %}Session Intelligence — {{ workshop.topic }} — 3EK{% endblock %}
+
+{% block extra_css %}
+<style>
+    .intelligence-header {
+        background: var(--bg-sidebar);
+        margin: -2rem -2rem 2rem -2rem;
+        padding: 2.5rem 3rem;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .header-glow {
+        position: absolute;
+        top: -100px;
+        right: -100px;
+        width: 300px;
+        height: 300px;
+        background: rgba(14, 165, 233, 0.2);
+        filter: blur(80px);
+        pointer-events: none;
+    }
+
+    .telemetry-row {
+        display: flex;
+        gap: 3rem;
+        margin-top: 1.5rem;
+    }
+
+    .telemetry-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .telemetry-label {
+        font-size: 0.6rem;
+        font-weight: 800;
+        color: rgba(255, 255, 255, 0.5);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
+
+    .telemetry-value {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+
+    .intelligence-grid {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    .roster-card {
+        background: white;
+        border: 1px solid var(--border-light);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .roster-header {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--border-light);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .participant-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr;
+        gap: 1rem;
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f8fafc;
+        align-items: center;
+        transition: background 0.2s;
+    }
+
+    .participant-row:hover {
+        background: #f8fafc;
+    }
+
+    .engagement-badge {
+        font-size: 0.65rem;
+        font-weight: 800;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+    .engagement-high { background: #f0fdf4; color: #10b981; }
+
+    .action-btn {
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        border: 1px solid var(--border-light);
+        background: white;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .action-btn:hover {
+        background: #f8fafc;
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="lp-panel" style="padding: 2rem 2.5rem; margin-bottom: 2.5rem;">
-    <div style="display:flex; justify-content:space-between; align-items:start;">
-        <div style="flex:1;">
-            <div
-                style="display:flex; align-items:center; gap:0.6rem; font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:1rem;">
-                <i class="ph ph-chalkboard-teacher" style="font-size:1.1rem; color:var(--teal);"></i>
-                Assigned Engagement
+<div class="intelligence-header">
+    <div class="header-glow"></div>
+    <div style="position: relative; z-index: 1;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.7rem; font-weight: 800; color: rgba(255,255,255,0.4); margin-bottom: 0.5rem;">
+            <i class="ph-bold ph-broadcast"></i> LIVE BROADCAST // DEPLOYMENT: #{{ workshop.id }}
+        </div>
+        <h1 style="font-family: 'Outfit', sans-serif; font-size: 2.25rem; font-weight: 900; letter-spacing: -0.03em;">{{ workshop.topic }}</h1>
+        <div class="telemetry-row">
+            <div class="telemetry-item">
+                <span class="telemetry-label">Session Timeline</span>
+                <span class="telemetry-value">{{ workshop.start_date.strftime('%d %b') }} — {{ workshop.end_date.strftime('%d %b %Y') }}</span>
             </div>
-            <h1 style="font-size:1.85rem; font-weight:900; color:var(--text); line-height:1.2; margin-bottom:1.5rem;">{{
-                workshop.title }}</h1>
-
-            <div style="display:flex; flex-wrap:wrap; gap:1.5rem; margin-top:1rem;">
-                <div style="display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; color:var(--text-muted);">
-                    <i class="ph ph-calendar-blank" style="font-size:1.2rem; color:var(--teal);"></i>
-                    {{ workshop.start_date.strftime('%d %B %Y') }}
-                </div>
-                <div style="display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; color:var(--text-muted);">
-                    <i class="ph ph-clock" style="font-size:1.2rem; color:var(--teal);"></i>
-                    {{ workshop.start_time }} – {{ workshop.end_time }}
-                </div>
-                <div style="display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; color:var(--text-muted);">
-                    <i class="ph ph-map-pin" style="font-size:1.2rem; color:var(--teal);"></i>
-                    {{ workshop.mode | title }} – {{ workshop.venue or 'Virtual' }}
-                </div>
+            <div class="telemetry-item">
+                <span class="telemetry-label">Active Participants</span>
+                <span class="telemetry-value">{{ registrations | length }}</span>
+            </div>
+            <div class="telemetry-item">
+                <span class="telemetry-label">Lab Availability</span>
+                <span class="telemetry-value" style="color: #10b981;">OPTIMAL</span>
             </div>
         </div>
-
-        <div style="text-align:right;">
-            <div
-                style="background:var(--teal-light); border: 1px solid var(--teal-border); border-radius:12px; padding:1.25rem; min-width:180px;">
-                <div style="font-size:1.75rem; font-weight:800; color:var(--text); line-height:1;">{{
-                    workshop.seats_booked }}</div>
-                <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; margin-top:0.4rem;">Enrolled
-                    Participants</div>
-                <div
-                    style="font-size:0.65rem; color:var(--teal-dark); font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-top:0.6rem;">
-                    Status: Live</div>
-            </div>
-        </div>
+    </div>
+    <div style="position: relative; z-index: 1; display: flex; gap: 0.75rem;">
+        <button class="cmd-pill" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
+            <i class="ph-bold ph-video-conference"></i> START BROADCAST
+        </button>
+        <button class="cmd-pill" style="background: var(--accent); border: none; color: white;">
+            <i class="ph-bold ph-gear"></i> ORCHESTRATION
+        </button>
     </div>
 </div>
 
-<div class="lp-grid-2col" style="grid-template-columns: 1fr 340px;">
-    <!-- Left: Participant List -->
-    <div>
-        <div class="lp-heading">
-            <i class="ph-bold ph-users"></i> Participant <span class="accent">Roster</span>
-        </div>
+<div class="intelligence-grid">
+    <!-- Main Roster -->
+    <div class="main-roster">
+        <div class="roster-card">
+            <div class="roster-header">
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; font-weight: 700;">Participant Intelligence</h3>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="action-btn"><i class="ph ph-export"></i> Export Roster</button>
+                    <button class="action-btn" style="background: var(--accent); color: white; border: none;"><i class="ph ph-check-square"></i> Bulk Attendance</button>
+                </div>
+            </div>
 
-        <div class="lp-panel" style="padding: 0; overflow: hidden;">
-            <table style="width:100%; border-collapse: collapse; font-size:0.88rem;">
-                <thead>
-                    <tr style="background:var(--zinc-50); border-bottom:1px solid var(--zinc-200); text-align:left;">
-                        <th
-                            style="padding:1rem 1.25rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; font-size:0.68rem; letter-spacing:0.06em;">
-                            Learner</th>
-                        <th
-                            style="padding:1rem 1.25rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; font-size:0.68rem; letter-spacing:0.06em;">
-                            Organization</th>
-                        <th
-                            style="padding:1rem 1.25rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; font-size:0.68rem; letter-spacing:0.06em;">
-                            Status</th>
-                        <th
-                            style="padding:1rem 1.25rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; font-size:0.68rem; letter-spacing:0.06em;">
-                            Actions</th>
-                    </tr>
-                </thead>
-                <tbody style="background: white;">
+            <div class="precision-table" style="border: none; border-radius: 0; margin-bottom: 0;">
+                <div class="pt-header" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 1rem; background: #f8fafc;">
+                    <div>PARTICIPANT / IDENTITY</div>
+                    <div>LAB STATUS</div>
+                    <div>ENGAGEMENT</div>
+                    <div style="text-align: right;">MANAGEMENT</div>
+                </div>
+
+                {% if registrations %}
                     {% for reg in registrations %}
-                    <tr style="border-bottom: 1px solid var(--zinc-100);">
-                        <td style="padding:1.1rem 1.25rem;">
-                            <div style="font-weight:700; color:var(--text);">{{ reg.name }}</div>
-                            <div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">{{ reg.email }}
+                    <div class="participant-row">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 36px; height: 36px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; color: var(--accent);">
+                                {{ reg.name[0] | upper }}
                             </div>
-                        </td>
-                        <td style="padding:1.1rem 1.25rem; color:var(--text-muted); font-size:0.8rem;">
-                            {{ reg.company or '–' }}
-                        </td>
-                        <td style="padding:1.1rem 1.25rem;">
-                            <span class="lp-pill lp-pill-{{ reg.status_badge }}">{{ reg.status | upper }}</span>
-                        </td>
-                        <td style="padding:1.1rem 1.25rem;">
-                            <form action="{{ url_for('trainer_portal.update_attendance', workshop_id=workshop.id) }}"
-                                method="POST" style="display:flex; gap:0.4rem;">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div>
+                                <div style="font-weight: 700; font-size: 0.9rem;">{{ reg.name }}</div>
+                                <div style="font-size: 0.7rem; color: var(--text-tertiary);">{{ reg.email }}</div>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="telemetry-pill" style="background: #f1f5f9; color: #64748b; font-family: var(--font-sans); border: 1px solid #e2e8f0;">STANDBY</span>
+                        </div>
+                        <div>
+                            <span class="engagement-badge engagement-high">HIGH</span>
+                        </div>
+                        <div style="text-align: right; display: flex; justify-content: flex-end; gap: 0.5rem;">
+                            <form action="{{ url_for('trainer_portal.update_attendance', workshop_id=workshop.id) }}" method="POST" style="display: inline;">
                                 <input type="hidden" name="registration_id" value="{{ reg.id }}">
-                                <select name="status" onchange="this.form.submit()"
-                                    style="font-size:0.75rem; padding:0.35rem 0.5rem; border:1px solid var(--zinc-200); border-radius:6px; cursor:pointer;">
-                                    <option value="confirmed" {{ 'selected' if reg.status=='confirmed' }}>Confirmed
-                                    </option>
-                                    <option value="attended" {{ 'selected' if reg.status=='attended' }}>Attended
-                                    </option>
-                                    <option value="cancelled" {{ 'selected' if reg.status=='cancelled' }}>
-                                        Absent/Cancelled</option>
+                                <select name="status" onchange="this.form.submit()" class="action-btn" style="background: white; padding-right: 2rem;">
+                                    <option value="confirmed" {{ 'selected' if reg.status == 'confirmed' }}>Confirmed</option>
+                                    <option value="attended" {{ 'selected' if reg.status == 'attended' }}>Attended</option>
+                                    <option value="cancelled" {{ 'selected' if reg.status == 'cancelled' }}>Cancelled</option>
                                 </select>
                             </form>
-                        </td>
-                    </tr>
+                            <button class="action-btn" title="Direct Support"><i class="ph ph-chat-circle"></i></button>
+                        </div>
+                    </div>
                     {% endfor %}
-                </tbody>
-            </table>
-            {% if not registrations %}
-            <div class="lp-empty" style="border:none;">
-                <i class="ph ph-users-three"></i> No participants have registered yet.
+                {% else %}
+                    <div style="padding: 4rem; text-align: center;">
+                        <i class="ph ph-users-three" style="font-size: 3rem; color: #e2e8f0;"></i>
+                        <p style="margin-top: 1rem; color: var(--text-tertiary);">No participants registered for this deployment.</p>
+                    </div>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
     </div>
 
-    <!-- Right: Sidebar -->
-    <div>
-        <!-- Materials -->
-        <div class="lp-panel">
-            <div class="lp-panel-label">Session Materials</div>
-            {% if documents %}
-            <div style="display:flex; flex-direction:column; gap:0.75rem;">
-                {% for doc in documents %}
-                <a href="{{ doc.file_url }}" target="_blank" class="lp-btn-outline"
-                    style="text-align:left; display:flex; align-items:center; gap:0.6rem; padding:0.7rem;">
-                    <i class="ph ph-file-pdf"
-                        style="font-size:1.1rem; color: {% if 'pdf' in doc.filename.lower() %}var(--danger){% else %}var(--teal){% endif %};"></i>
-                    <div style="min-width:0; flex:1;">
-                        <div
-                            style="font-weight:700; font-size:0.78rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                            {{ doc.filename }}</div>
-                        <div style="font-size:0.65rem;">{{ doc.document_type }}</div>
+    <!-- Sidebar Telemetry -->
+    <div class="sidebar-intel">
+        <!-- Asset Vault -->
+        <div class="roster-card" style="margin-bottom: 1.5rem;">
+            <div class="roster-header" style="padding: 1rem 1.25rem;">
+                <span class="telemetry-label">ASSET VAULT</span>
+                <button class="action-btn" style="padding: 0.2rem 0.5rem;"><i class="ph ph-plus"></i></button>
+            </div>
+            <div style="padding: 1.25rem;">
+                {% if documents %}
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        {% for doc in documents %}
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <div style="width: 32px; height: 32px; background: #fef2f2; color: #ef4444; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-file-pdf"></i>
+                            </div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-size: 0.75rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ doc.filename }}</div>
+                                <div style="font-size: 0.6rem; color: var(--text-tertiary);">{{ doc.file_type }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
                     </div>
-                </a>
-                {% endfor %}
+                {% else %}
+                    <p style="font-size: 0.75rem; color: var(--text-tertiary); text-align: center;">No assets deployed.</p>
+                {% endif %}
             </div>
-            {% else %}
-            <div class="lp-empty" style="padding:1.5rem; font-size:0.75rem;">
-                <i class="ph ph-file-x" style="font-size:1.5rem;"></i> No handouts uploaded by admin.
-            </div>
-            {% endif %}
         </div>
 
-        <!-- Session Link -->
-        <div class="lp-panel" style="background:var(--zinc-900);">
-            <div class="lp-panel-label" style="color:var(--zinc-400);">Virtual Meeting</div>
-            <p style="font-size:0.8rem; color:var(--white); margin-bottom:1.5rem; line-height:1.5;">
-                Start the Teams session to deliver your presentation and record the training.
-            </p>
-            {% if workshop.meeting_link %}
-            <a href="{{ workshop.meeting_link }}" target="_blank" class="lp-btn-primary"
-                style="background:var(--teal); color:var(--white);">
-                Join MS Teams Session
-            </a>
-            {% else %}
-            <div
-                style="color:var(--zinc-400); font-size:0.75rem; text-align:center; padding:0.5rem; border:1px dashed var(--zinc-700); border-radius:8px;">
-                No meeting link provided.
+        <!-- Session Metadata -->
+        <div class="roster-card">
+            <div style="padding: 1.25rem;">
+                <span class="telemetry-label" style="display: block; margin-bottom: 1rem;">Session Metadata</span>
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div>
+                        <div style="font-size: 0.6rem; font-weight: 800; color: var(--text-tertiary);">CLIENT UNIT</div>
+                        <div style="font-size: 0.85rem; font-weight: 700;">{{ workshop.client_name or 'N/A' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.6rem; font-weight: 800; color: var(--text-tertiary);">DELIVERY MODE</div>
+                        <div style="font-size: 0.85rem; font-weight: 700;">Instructor-Led Training</div>
+                    </div>
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f1f5f9;">
+                        <button class="action-btn" style="width: 100%; justify-content: center; display: flex; align-items: center; gap: 0.5rem; color: var(--danger); border-color: #fee2e2;">
+                            <i class="ph ph-warning-circle"></i> REPORT INCIDENT
+                        </button>
+                    </div>
+                </div>
             </div>
-            {% endif %}
         </div>
     </div>
 </div>

@@ -12,6 +12,7 @@ class StaffUser(UserMixin):
         self.first_name = user_data.get('first_name', '')
         self.last_name = user_data.get('last_name', '')
         self.role = user_data.get('role', 'staff')
+        self.organization_id = user_data.get('organization_id', 1)
         
     @property
     def full_name(self):

@@ -131,8 +131,8 @@
             </div>
             <div class="info-row">
                 <span class="info-label">Date</span>
-                <span class="info-value">{{ workshop.start_date.strftime('%d %B %Y') }}{% if workshop.end_date !=
-                    workshop.start_date %} – {{ workshop.end_date.strftime('%d %b') }}{% endif %}</span>
+                <span class="info-value">{{ workshop.start_date | format_date }}{% if workshop.end_date !=
+                    workshop.start_date %} – {{ workshop.end_date | format_date }}{% endif %}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">Mode</span>

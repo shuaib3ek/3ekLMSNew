@@ -36,7 +36,7 @@
             </tr>
             <tr>
                 <td style="padding: 8px 0; font-weight: 600; color: #64748b;">Date:</td>
-                <td style="padding: 8px 0; color: #1e293b;">{{ registration.payment_date.strftime('%d %B %Y') if
+                <td style="padding: 8px 0; color: #1e293b;">{{ registration.payment_date | format_date if
                     registration.payment_date else 'Today' }}</td>
             </tr>
         </table>

@@ -21,9 +21,12 @@ from flask_login import login_required, current_user
 from . import workshops_bp
 from .models import (
     Workshop, WorkshopTrainer, WorkshopSession,
-    WorkshopRegistration, WorkshopEmailLog, WorkshopDocument, Learner
+    WorkshopRegistration, WorkshopEmailLog, WorkshopDocument, Learner,
+    SystemTask, WorkshopInviteContact
 )
 from app.core.extensions import db, csrf
+from app.core.tenancy import scoped_query
+from flask import g
 from app.crm_client import get_trainer, list_trainers, get_contact, list_contacts
 from app.services.ai_workshop_service import generate_workshop_content, extract_text_from_file
 
@@ -58,7 +61,7 @@ def _admin_required():
 @login_required
 def list_workshops():
     status_filter = request.args.get('status', 'all')
-    query = Workshop.query.order_by(Workshop.start_date.asc())
+    query = scoped_query(Workshop).order_by(Workshop.start_date.asc())
     if status_filter != 'all':
         query = query.filter_by(status=status_filter)
     workshops = query.all()
@@ -133,10 +136,12 @@ def new_workshop():
             brochure_url=request.form.get('brochure_url', ''),
             status='draft',
             crm_owner_id=current_user.id,
+            organization_id=g.organization_id,
         )
         db.session.add(workshop)
         db.session.flush()
-        _sync_sessions(workshop, request.form)
+        from .services import WorkshopService
+        WorkshopService.sync_sessions(workshop, request.form)
         db.session.commit()
         flash(f'Workshop "{workshop.title}" created successfully.', 'success')
         return redirect(url_for('workshops.detail_workshop', workshop_id=workshop.id))
@@ -149,7 +154,7 @@ def new_workshop():
 @workshops_bp.route('/<int:workshop_id>')
 @login_required
 def detail_workshop(workshop_id):
-    workshop = Workshop.query.get_or_404(workshop_id)
+    workshop = scoped_query(Workshop).filter_by(id=workshop_id).first_or_404()
 
     # Email Preview Logic
     if request.args.get('preview_email'):
@@ -245,9 +250,14 @@ def edit_workshop(workshop_id):
         workshop.is_public = bool(request.form.get('is_public'))
         workshop.featured = bool(request.form.get('featured'))
 
-        WorkshopSession.query.filter_by(workshop_id=workshop.id).delete()
-        db.session.flush()
-        _sync_sessions(workshop, request.form)
+        # Keep status in sync with visibility
+        if workshop.is_public and workshop.status == 'draft':
+            workshop.status = 'published'
+        elif not workshop.is_public and workshop.status == 'published':
+            workshop.status = 'draft'
+
+        from .services import WorkshopService
+        WorkshopService.sync_sessions(workshop, request.form)
         db.session.commit()
         flash('Workshop updated successfully.', 'success')
         return redirect(url_for('workshops.detail_workshop', workshop_id=workshop.id))
@@ -273,37 +283,13 @@ def generate_meeting(workshop_id):
             'message': 'Meeting already generated.'
         })
 
-    from app.services.ms_graph_service import MSGraphService
-    graph = MSGraphService()
+    from app.core.tasks import generate_workshop_meeting_task
+    generate_workshop_meeting_task.delay(workshop_id)
     
-    # Calculate start and end datetimes
-    try:
-        # Expected formats: '09:00 AM IST' or '17:00'
-        def parse_time_str(ts):
-            parts = ts.split(' ')
-            if len(parts) >= 2 and parts[1].upper() in ['AM', 'PM']:
-                return datetime.strptime(f"{parts[0]} {parts[1]}", '%I:%M %p').time()
-            return datetime.strptime(parts[0], '%H:%M').time()
-
-        start_dt = datetime.combine(workshop.start_date, parse_time_str(workshop.start_time))
-        end_dt = datetime.combine(workshop.end_date, parse_time_str(workshop.end_time))
-    except Exception as e:
-        return jsonify({'error': f'Failed to parse workshop times: {e}'}), 400
-
-    meeting = graph.create_online_meeting(workshop.title, start_dt, end_dt)
-    
-    if meeting and 'joinWebUrl' in meeting:
-        workshop.meeting_link = meeting['joinWebUrl']
-        db.session.commit()
-        return jsonify({
-            'success': True,
-            'join_url': meeting['joinWebUrl']
-        })
-    else:
-        return jsonify({
-            'error': 'Failed to generate meeting link via MS Graph.',
-            'hint': 'Check MS Graph logs or ensure MS_SENDER_EMAIL has a valid license.'
-        }), 500
+    return jsonify({
+        'success': True,
+        'message': 'Meeting generation started in background. Please refresh in a moment.'
+    }), 202
 
 
 @workshops_bp.route('/<int:workshop_id>/status', methods=['GET', 'POST'])
@@ -594,22 +580,6 @@ def confirm_registration(token):
 
 # ─── Session & Session Helper ─────────────────────────────────────────────────
 
-def _sync_sessions(workshop, form):
-    """Auto-create one WorkshopSession per day in the date range."""
-    start = workshop.start_date
-    end = workshop.end_date
-    delta = (end - start).days
-    for i in range(delta + 1):
-        session_date = start + timedelta(days=i)
-        session = WorkshopSession(
-            workshop_id=workshop.id,
-            session_date=session_date,
-            start_time=workshop.start_time,
-            end_time=workshop.end_time,
-            topic=form.get(f'session_topic_{i}', f'Day {i + 1}'),
-            session_number=i + 1,
-        )
-        db.session.add(session)
 
 
 @workshops_bp.route('/<int:workshop_id>/bulk-enroll', methods=['POST'])
@@ -688,34 +658,32 @@ def bulk_enroll_roster(workshop_id):
 # ─── Email Helpers ────────────────────────────────────────────────────────────
 
 def _send_confirmation_email(workshop, registration):
-    try:
-        from app.services.ms_graph_service import MSGraphService
-        graph = MSGraphService()
-        subject = f'Registration Received: {workshop.title}'
-        html_body = render_template(
-            'workshops/email_registration_received.html',
-            workshop=workshop, registration=registration, now=datetime.utcnow()
-        )
-        # Use LMS-level service account token (no CRM user token dependency)
-        ms_token = current_app.config.get('MS_SERVICE_ACCESS_TOKEN')
-        if ms_token:
-            graph.send_email(ms_token, registration.email, subject, html_body, is_html=True)
-    except Exception as e:
-        current_app.logger.error(f'[LMS] Confirmation email failed: {e}')
+    """Queues a background task to send the registration confirmation email."""
+    from app.core.tasks import send_transactional_email_task
+    send_transactional_email_task.delay(
+        recipient_email=registration.email,
+        subject=f'Registration Received: {workshop.title}',
+        template_name='workshops/email_registration_received.html',
+        workshop_id=workshop.id,  # Pass IDs so task can refetch fresh data
+        registration_id=registration.id,
+        # Re-construct necessary context for the template
+        workshop=workshop, 
+        registration=registration
+    )
 
 
 def _send_payment_receipt_email(workshop, registration):
-    try:
-        from app.services.ms_graph_service import MSGraphService
-        graph = MSGraphService()
-        subject = f'Payment Receipt: {workshop.title}'
-        html_body = render_template(
-            'workshops/email_payment_received.html',
-            workshop=workshop, registration=registration, now=datetime.utcnow()
-        )
-        graph.send_email(registration.email, subject, html_body)
-    except Exception as e:
-        current_app.logger.error(f'[LMS] Payment receipt email failed: {e}')
+    """Queues a background task to send the payment receipt email."""
+    from app.core.tasks import send_transactional_email_task
+    send_transactional_email_task.delay(
+        recipient_email=registration.email,
+        subject=f'Payment Receipt: {workshop.title}',
+        template_name='workshops/email_payment_received.html',
+        workshop_id=workshop.id,
+        registration_id=registration.id,
+        workshop=workshop,
+        registration=registration
+    )
 
 
 # ─── Document Management ──────────────────────────────────────────────────────
@@ -769,6 +737,14 @@ def delete_document(workshop_id, document_id):
     return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
 
 
+@workshops_bp.route('/docs/<int:workshop_id>/<string:filename>')
+@login_required
+def download_document(workshop_id, filename):
+    from flask import send_from_directory
+    workshop_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'workshops', str(workshop_id))
+    return send_from_directory(workshop_dir, filename)
+
+
 # ─── Lifecycle & Communications ───────────────────────────────────────────────
 
 @workshops_bp.route('/<int:workshop_id>/delete', methods=['POST'])
@@ -786,18 +762,59 @@ def delete_workshop(workshop_id):
 @workshops_bp.route('/api/contacts', methods=['GET'])
 @login_required
 def contacts_api():
-    """Fast contacts list from shadow DB — no CRM network call. Session-authenticated."""
+    """Filtered contacts search from shadow DB with pagination and status tracking."""
     _admin_required()
-    from app.core.shadow_models import ShadowContact
-    contacts = ShadowContact.query.filter(
-        ShadowContact.email != None,
-        ShadowContact.email != ''
-    ).order_by(ShadowContact.name).all()
+    from app.core.shadow_models import ShadowContact, ShadowClient
+    from app.workshops.models import WorkshopInviteContact
+    from sqlalchemy import or_
+
+    q = request.args.get('q', '').strip()
+    page = request.args.get('page', 1, type=int)
+    limit = request.args.get('limit', 25, type=int)
+    workshop_id = request.args.get('workshop_id', type=int)
+
+    # Join with ShadowClient for company names
+    query = db.session.query(ShadowContact, ShadowClient.name.label('company_name'))\
+        .outerjoin(ShadowClient, ShadowContact.crm_client_id == ShadowClient.crm_client_id)\
+        .filter(ShadowContact.email != None, ShadowContact.email != '')
+
+    if q:
+        query = query.filter(or_(
+            ShadowContact.name.ilike(f'%{q}%'),
+            ShadowContact.email.ilike(f'%{q}%'),
+            ShadowClient.name.ilike(f'%{q}%')
+        ))
+
+    total_count = query.count()
+    results = query.order_by(ShadowContact.name).offset((page - 1) * limit).limit(limit).all()
+
+    # status tracking
+    status_map = {}
+    if workshop_id and results:
+        c_ids = [r[0].crm_contact_id for r in results]
+        invites = WorkshopInviteContact.query.filter(
+            WorkshopInviteContact.workshop_id == workshop_id,
+            WorkshopInviteContact.crm_contact_id.in_(c_ids),
+            WorkshopInviteContact.email_type == 'invitation'
+        ).all()
+        status_map = {str(i.crm_contact_id): i.status for i in invites}
+
+    data = []
+    for contact, company_name in results:
+        data.append({
+            'id': contact.crm_contact_id,
+            'name': contact.name,
+            'email': contact.email,
+            'company': company_name or '',
+            'status': status_map.get(str(contact.crm_contact_id))
+        })
+
     return jsonify({
-        'data': [
-            {'id': c.crm_contact_id, 'name': c.name, 'email': c.email}
-            for c in contacts
-        ]
+        'data': data,
+        'total_count': total_count,
+        'page': page,
+        'limit': limit,
+        'total_pages': (total_count + limit - 1) // limit
     })
 
 
@@ -819,16 +836,25 @@ def send_invite(workshop_id):
         pass  # Table may not exist yet if migration hasn't run
 
     if request.method == 'POST':
-        # On POST: use full live contacts list for actual sending
-        contacts = list_contacts()
         filter_type = request.form.get('filter_type', 'contacts')
         email_type = request.form.get('email_type', 'individual')
         preview_only = request.form.get('preview_only') == 'true'
-
         recipients = []
 
-        # Unified mode: contact_ids[] = whatever remained selected (all minus deselected)
-        if filter_type in ('contacts', 'all_active'):
+        all_selected = request.form.get('all_contacts_selected') == 'true'
+
+        if all_selected:
+            # resolve all — NO list_contacts() needed here, use local DB for resolve speed
+            from app.core.shadow_models import ShadowContact
+            all_contacts = ShadowContact.query.filter(
+                ShadowContact.email != None,
+                ShadowContact.email != ''
+            ).all()
+            for c in all_contacts:
+                recipients.append({'id': c.crm_contact_id, 'name': c.name, 'email': c.email})
+        elif filter_type in ('contacts', 'all_active'):
+            # Only call CRM if we are doing individual selection or legacy fallback
+            contacts = list_contacts()
             selected_ids = set(request.form.getlist('contact_ids'))
             if not selected_ids and filter_type == 'all_active':
                 # Legacy fallback: all active
@@ -838,9 +864,8 @@ def send_invite(workshop_id):
                         recipients.append({'id': c['id'], 'name': c['name'], 'first_name': name_parts[0], 'email': c['email']})
             else:
                 for c in contacts:
-                    if str(c['id']) in selected_ids and c.get('email'):
-                        name_parts = c['name'].strip().split(' ', 1)
-                        recipients.append({'id': c['id'], 'name': c['name'], 'first_name': name_parts[0], 'email': c['email']})
+                    if str(c.get('id')) in selected_ids:
+                        recipients.append(c)
         elif filter_type == 'custom':
             custom_list = request.form.get('custom_emails', '').split('\n')
             for line in custom_list:
@@ -860,83 +885,145 @@ def send_invite(workshop_id):
                 'sample': recipients[:3]
             })
 
-        # Process sending
-        count = 0
-        errors = 0
-        from app.services.ms_graph_service import MSGraphService
-        graph = MSGraphService()
+        # ── Queue background tasks: 10 per batch, 2 min apart ──────────────
+        BATCH_SIZE = 10
+        GAP_MINUTES = 2
 
-        # Create a single log entry for this blast
+        batches = [recipients[i:i + BATCH_SIZE] for i in range(0, len(recipients), BATCH_SIZE)]
+
+        # Log the blast intent
         log = WorkshopEmailLog(
             workshop_id=workshop.id,
             email_type='invitation',
             subject=f"Invitation: {workshop.title}",
             filter_description=filter_type,
+            recipient_count=len(recipients),
             sent_at=datetime.utcnow(),
-            crm_sent_by_id=current_user.id if hasattr(current_user, 'id') else None
+            crm_sent_by_id=current_user.id if hasattr(current_user, 'id') else None,
+            notes=f'Queued {len(batches)} batches of ≤{BATCH_SIZE}. Gap: {GAP_MINUTES} min.'
         )
         db.session.add(log)
 
-        for r in recipients:
-            send_status = 'failed'
-            try:
-                subject = f"Invitation: {workshop.title}"
-                html_body = render_template(
-                    'workshops/email_invitation_client.html',
-                    workshop=workshop,
-                    recipient=r,
-                    email_type=email_type,
-                    now=datetime.utcnow()
-                )
-                sent = graph.send_email(
-                    r['email'], subject, html_body,
-                    sender_email=current_user.email
-                )
-                if sent:
-                    count += 1
-                    send_status = 'sent'
-                else:
-                    errors += 1
-                    current_app.logger.warning(f"[LMS] Email not sent to {r['email']} — check MS Graph config.")
-            except Exception as e:
-                errors += 1
-                current_app.logger.error(f"[LMS] Exception sending invite to {r['email']}: {e}")
+        sender_email = current_user.email
 
-            # Upsert per-contact tracking row
-            if r.get('id'):  # Only track CRM contacts (not custom emails)
-                existing = WorkshopInviteContact.query.filter_by(
-                    workshop_id=workshop.id,
-                    crm_contact_id=r['id'],
-                    email_type='invitation'
-                ).first()
-                if existing:
-                    existing.status = send_status
-                    existing.sent_at = datetime.utcnow()
-                else:
-                    db.session.add(WorkshopInviteContact(
-                        workshop_id=workshop.id,
-                        crm_contact_id=r['id'],
-                        name=r['name'],
-                        email=r['email'],
-                        status=send_status,
-                        email_type='invitation'
-                    ))
+        # Optimized tracking row creation: bulk query all existing trackers for this workshop
+        existing_trackers = {
+            t.crm_contact_id: t for t in WorkshopInviteContact.query.filter_by(
+                workshop_id=workshop.id, email_type='invitation'
+            ).all() if t.crm_contact_id
+        }
 
-        # Update log with final counts
-        log.recipient_count = count
-        if errors:
-            log.notes = f"Failed to send to {errors} recipients. Check logs."
-            
+        for idx, batch in enumerate(batches):
+            run_at = datetime.utcnow() + timedelta(minutes=idx * GAP_MINUTES)
+            task = SystemTask(
+                task_type='send_invitation_batch',
+                payload=json.dumps({
+                    'workshop_id': workshop.id,
+                    'recipients': batch,
+                    'email_type': email_type,
+                    'sender_email': sender_email
+                }),
+                status='queued',
+                next_run_at=run_at,
+                max_retries=3
+            )
+            db.session.add(task)
+
+            # Update or pre-create tracking rows
+            for r in batch:
+                if r.get('id'):
+                    cid = r['id']
+                    if cid in existing_trackers:
+                        existing_trackers[cid].status = 'queued'
+                        existing_trackers[cid].sent_at = run_at
+                    else:
+                        new_wic = WorkshopInviteContact(
+                            workshop_id=workshop.id,
+                            crm_contact_id=cid,
+                            name=r['name'],
+                            email=r['email'],
+                            status='queued',
+                            email_type='invitation',
+                            sent_at=run_at
+                        )
+                        db.session.add(new_wic)
+
         db.session.commit()
-        
-        if errors:
-            flash(f'Sent {count} invitations. {errors} failed — check the server logs and MS Graph config.', 'warning')
-        else:
-            flash(f'Successfully sent {count} invitations.', 'success')
-            
-        return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
 
-    return render_template('workshops/send_invite.html', workshop=workshop, already_sent_ids=already_sent_ids)
+        eta_minutes = len(batches) * GAP_MINUTES
+        flash(
+            f'Queued {len(recipients)} invitations across {len(batches)} batches. '
+            f'Sending starts immediately and completes in ~{eta_minutes} minutes. '
+            f'Track progress below.',
+            'info'
+        )
+        return redirect(url_for('workshops.send_invite', workshop_id=workshop_id))
+
+    # Compute live progress for the progress banner
+    from app.workshops.models import WorkshopInviteContact as WIC
+    total_tracked = WIC.query.filter_by(workshop_id=workshop_id, email_type='invitation').count()
+    sent_count   = WIC.query.filter_by(workshop_id=workshop_id, email_type='invitation', status='sent').count()
+    failed_count = WIC.query.filter_by(workshop_id=workshop_id, email_type='invitation', status='failed').count()
+    queued_count = WIC.query.filter_by(workshop_id=workshop_id, email_type='invitation', status='queued').count()
+
+    # Is a campaign currently active? (Check both queued and running)
+    campaign_active = WIC.query.filter(
+        WIC.workshop_id == workshop_id,
+        WIC.email_type == 'invitation',
+        WIC.status.in_(['queued', 'running'])
+    ).count() > 0
+
+    # Total available contacts in shadow DB for "Select All" count
+    from app.core.shadow_models import ShadowContact
+    all_contacts_count = ShadowContact.query.filter(
+        ShadowContact.email != None,
+        ShadowContact.email != ''
+    ).count()
+
+    return render_template(
+        'workshops/send_invite.html',
+        workshop=workshop,
+        already_sent_ids=list(already_sent_ids),
+        campaign_active=campaign_active,
+        total_tracked=total_tracked,
+        sent_count=sent_count,
+        failed_count=failed_count,
+        queued_count=queued_count,
+        all_contacts_count=all_contacts_count,
+    )
+
+
+@workshops_bp.route('/<int:workshop_id>/invite-status')
+@login_required
+def invite_status(workshop_id):
+    """JSON progress endpoint — used by the invite page polling loop."""
+    _admin_required()
+    from app.workshops.models import WorkshopInviteContact as WIC
+
+    total   = WIC.query.filter_by(workshop_id=workshop_id, email_type='invitation').count()
+    sent    = WIC.query.filter_by(workshop_id=workshop_id, email_type='invitation', status='sent').count()
+    failed  = WIC.query.filter_by(workshop_id=workshop_id, email_type='invitation', status='failed').count()
+    queued  = WIC.query.filter_by(workshop_id=workshop_id, email_type='invitation', status='queued').count()
+    running = WIC.query.filter_by(workshop_id=workshop_id, email_type='invitation', status='running').count()
+    
+    # Next batch timing
+    from app.workshops.models import SystemTask
+    next_task = SystemTask.query.filter(
+        SystemTask.task_type == 'send_invitation_batch',
+        SystemTask.status == 'queued'
+    ).filter(
+        SystemTask.payload.like(f'%workshop_id": {workshop_id}%')
+    ).order_by(SystemTask.next_run_at).first()
+
+    return jsonify({
+        'total': total,
+        'sent': sent,
+        'failed': failed,
+        'queued': queued,
+        'running': running,
+        'campaign_active': (queued + running) > 0,
+        'next_batch_at': next_task.next_run_at.isoformat() if next_task else None
+    })
 
 
 @workshops_bp.route('/<int:workshop_id>/send-joining-details', methods=['POST'])
@@ -1031,8 +1118,12 @@ def send_joining_details(workshop_id):
                 extra_notes=extra_notes,
                 now=datetime.utcnow()
             )
-            # Send with attachments
-            sent = graph.send_email(p.email, subject, html_body, attachments=attachments)
+            # Send with attachments and from the logged-in user
+            sent = graph.send_email(
+                p.email, subject, html_body, 
+                attachments=attachments, 
+                sender_email=current_user.email
+            )
             if sent:
                 count += 1
             else:
@@ -1060,8 +1151,41 @@ def send_joining_details(workshop_id):
 def invite_lms(workshop_id, reg_id):
     _admin_required()
     reg = WorkshopRegistration.query.get_or_404(reg_id)
-    # Placeholder for LMS access logic
-    flash(f'LMS access granted to {reg.name}.', 'success')
+    
+    # Check if a learner with this email already exists
+    learner = Learner.query.filter_by(email=reg.email).first()
+    if not learner:
+        # Determine organization context
+        org_id = reg.workshop.organization_id if hasattr(reg.workshop, 'organization_id') and reg.workshop.organization_id else 1
+        
+        learner = Learner(
+            name=reg.name,
+            email=reg.email,
+            phone=reg.phone,
+            organization_id=org_id,
+            company=reg.company
+        )
+        db.session.add(learner)
+        db.session.commit()
+        
+        # In a real system, send invitation email here
+        try:
+            from app.services.ms_graph_service import MSGraphService
+            graph = MSGraphService()
+            subject = f"LMS Access Granted: {reg.workshop.title}"
+            body = f"<p>Hello {reg.name},</p><p>You have been granted access to the 3EK Learning Management System (LMS) for <strong>{reg.workshop.title}</strong>.</p><p>Use this email address to log in to the portal via the Secure OTP Flow.</p>"
+            graph.send_email(reg.email, subject, body)
+        except Exception as e:
+            current_app.logger.error(f"[LMS Access] Email notification failed: {e}")
+            
+        flash(f'LMS account created and access granted to {reg.name}.', 'success')
+    else:
+        # Associate B2B context if missing
+        if hasattr(reg, 'company') and not learner.company:
+            learner.company = reg.company
+            db.session.commit()
+        flash(f'{reg.name} already has an LMS account.', 'info')
+        
     return redirect(url_for('workshops.detail_workshop', workshop_id=workshop_id))
 
 

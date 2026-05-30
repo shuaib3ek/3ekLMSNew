@@ -71,7 +71,7 @@
                                         <p style="margin: 0 0 10px; font-weight: 600; font-size: 15px; color: #0f172a;">
                                             Workshop Details</p>
                                         <p style="margin: 0 0 5px; font-size: 14px;"><strong>Date:</strong> {{
-                                            workshop.start_date.strftime('%d %b %Y') }}</p>
+                                            workshop.start_date | format_date }}</p>
                                         {% if workshop.start_time %}
                                         <p style="margin: 0 0 5px; font-size: 14px;"><strong>Time:</strong> {{
                                             workshop.start_time }}</p>

@@ -1,0 +1,119 @@
+services:
+  lms-db:
+    image: postgres:16-alpine
+    container_name: lms-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${LMS_DB_USER:-lms_user}
+      POSTGRES_PASSWORD: ${LMS_DB_PASSWORD:-lms_pass}
+      POSTGRES_DB: ${LMS_DB_NAME:-lms_db}
+    ports:
+      - "5434:5432"
+    volumes:
+      - lms_db_data:/var/lib/postgresql/data
+    networks:
+      - 3ek-mesh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lms_user -d lms_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  lms-redis:
+    image: redis:7-alpine
+    container_name: lms-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - 3ek-mesh
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  lms-app:
+    build: .
+    image: 3ek-lms:latest
+    container_name: 3ek-lms
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - LMS_DATABASE_URL=postgresql://${LMS_DB_USER:-lms_user}:${LMS_DB_PASSWORD:-lms_pass}@lms-db:5432/${LMS_DB_NAME:-lms_db}
+      - CRM_API_URL=${CRM_API_URL:-http://3ek-app:8000}
+      - REDIS_URL=redis://lms-redis:6379/0
+    ports:
+      - "8014:3001"
+    volumes:
+      - .:/app
+      - ./instance:/app/instance
+      - ./storage:/app/storage
+    depends_on:
+      lms-db:
+        condition: service_healthy
+      lms-redis:
+        condition: service_healthy
+    networks:
+      - 3ek-mesh
+
+  lms-worker:
+    image: 3ek-lms:latest
+    container_name: 3ek-lms-worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - LMS_DATABASE_URL=postgresql://${LMS_DB_USER:-lms_user}:${LMS_DB_PASSWORD:-lms_pass}@lms-db:5432/${LMS_DB_NAME:-lms_db}
+      - REDIS_URL=redis://lms-redis:6379/0
+    command: celery -A run:celery worker --loglevel=info --concurrency=6
+    depends_on:
+      lms-db:
+        condition: service_healthy
+      lms-redis:
+        condition: service_healthy
+    networks:
+      - 3ek-mesh
+
+  lms-beat:
+    image: 3ek-lms:latest
+    container_name: 3ek-lms-beat
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - LMS_DATABASE_URL=postgresql://${LMS_DB_USER:-lms_user}:${LMS_DB_PASSWORD:-lms_pass}@lms-db:5432/${LMS_DB_NAME:-lms_db}
+      - REDIS_URL=redis://lms-redis:6379/0
+    command: celery -A run:celery beat --loglevel=info
+    depends_on:
+      lms-db:
+        condition: service_healthy
+      lms-redis:
+        condition: service_healthy
+    networks:
+      - 3ek-mesh
+
+  lms-flower:
+    image: 3ek-lms:latest
+    container_name: 3ek-lms-flower
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://lms-redis:6379/0
+    command: celery -A run:celery flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      lms-redis:
+        condition: service_healthy
+    networks:
+      - 3ek-mesh
+
+networks:
+  3ek-mesh:
+    external: true
+
+volumes:
+  lms_db_data:

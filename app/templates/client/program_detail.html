@@ -1,170 +1,350 @@
 {% extends "client/base.html" %}
-{% block title %}{{ program.topic }} — Program Detail — 3EK{% endblock %}
+{% block title %}{{ program.topic }} — Program Intelligence — 3EK{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --intel-bg: #0f172a;
+        --intel-border: #e2e8f0;
+        --intel-text-primary: #0f172a;
+        --intel-text-secondary: #334155;
+        --intel-accent: #0ea5e9;
+    }
+
+    .intelligence-container {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 1.5rem;
+        align-items: start;
+    }
+    
+    .intel-telemetry {
+        color: var(--intel-text-secondary) !important;
+        font-family: var(--font-sans) !important;
+        font-weight: 700 !important;
+    }
+
+    .cmd-pill {
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #f8fafc !important;
+        color: #334155 !important;
+        border: 1px solid #e2e8f0 !important;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .cmd-pill:hover {
+        background: #f1f5f9 !important;
+        color: #0f172a !important;
+    }
+
+    .cmd-pill.active {
+        background: var(--accent) !important;
+        color: white !important;
+        border-color: var(--accent) !important;
+        box-shadow: 0 4px 12px var(--pulse-glow) !important;
+    }
+    
+    /* Command bar custom tab visibility overrides */
+    .intelligence-dashboard .command-bar .cmd-pill {
+        color: #334155 !important;
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+
+    .intelligence-dashboard .command-bar .cmd-pill:hover {
+        color: #0f172a !important;
+        background: #f1f5f9 !important;
+    }
+
+    .intelligence-dashboard .command-bar .cmd-pill.active {
+        color: #ffffff !important;
+        background: var(--accent) !important;
+        border-color: var(--accent) !important;
+        box-shadow: 0 4px 12px var(--accent-glow) !important;
+    }
+    
+    .instructor-card {
+        background: #0f172a;
+        border-radius: 12px;
+        padding: 1.5rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .instructor-glow {
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 120px;
+        height: 120px;
+        background: rgba(14, 165, 233, 0.2);
+        filter: blur(50px);
+        pointer-events: none;
+    }
+
+    .telemetry-pill {
+        font-family: monospace;
+        font-size: 0.65rem;
+        padding: 0.2rem 0.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        color: #e2e8f0 !important;
+        display: inline-block;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1024px) {
+        .intelligence-container { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div style="margin-bottom:1.5rem;">
-    <a href="{{ url_for('client_portal.programs') }}"
-        style="color:var(--text-muted); font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem;">
-        <i class="ph ph-arrow-left"></i> Back to Engagements
-    </a>
-</div>
-
-<!-- Program Header -->
-<div class="lp-panel"
-    style="padding:2rem; margin-bottom:1.5rem; background:linear-gradient(135deg, var(--surface), rgba(99,102,241,0.06)); border:1px solid rgba(99,102,241,0.15);">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
-        <div style="flex:1;">
-            {% if program.training_type %}
-            <div
-                style="font-size:0.75rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-muted); margin-bottom:0.5rem;">
-                <i class="ph ph-monitor"></i> {{ program.training_type }}
+<div class="intelligence-dashboard">
+    <!-- Page Header -->
+    <div class="page-header" style="margin-bottom: 1.5rem;">
+        <div class="breadcrumb" style="margin-bottom: 0.5rem;">
+            <a href="{{ url_for('client_portal.programs') }}" style="color: var(--text-tertiary); text-decoration: none;">ENGAGEMENTS</a> 
+            <i class="ph ph-caret-right" style="font-size: 0.7rem; margin: 0 0.25rem;"></i> 
+            <span style="color: var(--text-primary); font-weight: 600;">{{ program.topic }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+                <h1 class="page-title" style="font-family: 'Outfit', sans-serif; font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em;">
+                    {{ program.topic }}
+                </h1>
+                <div class="intel-telemetry" style="margin-top: 0.25rem;">
+                    // INTELLIGENCE UNIT: #{{ program.id }} · CLIENT: {{ program.client_name }}
+                </div>
             </div>
-            {% endif %}
-            <h1 style="font-size:1.7rem; font-weight:800; color:var(--text); margin:0 0 0.5rem;">{{ program.topic }}
-            </h1>
-            {% if program.description %}
-            <p style="color:var(--text-muted); font-size:0.9rem; margin:0; max-width:600px;">{{ program.description }}
-            </p>
-            {% endif %}
-        </div>
-        <div>
-            <span
-                class="lp-pill lp-pill-{{ 'success' if program.status == 'IN PROGRESS' else ('info' if program.status == 'SCHEDULED' else 'secondary') }}"
-                style="font-size:0.85rem; padding:0.4rem 1rem;">
-                {{ program.status }}
-            </span>
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="cmd-pill" style="background: white; border: 1px solid var(--intel-border);">
+                    <i class="ph-bold ph-printer"></i>
+                </button>
+                <button class="cmd-pill" style="background: var(--intel-bg); color: white; border: none;">
+                    <i class="ph-bold ph-export"></i> EXPORT REPORT
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Program Stats Row -->
-    <div
-        style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:1.25rem; margin-top:1.75rem; padding-top:1.5rem; border-top:1px solid var(--border);">
-        {% if program.trainer_name %}
-        <div>
-            <div
-                style="font-size:0.72rem; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); margin-bottom:0.25rem;">
-                Trainer</div>
-            <div style="font-weight:700; color:var(--text);">{{ program.trainer_name }}</div>
+    <!-- HIGH DENSITY METRIC BAR -->
+    <div class="intel-metric-bar">
+        <div class="intel-metric-item">
+            <span class="intel-telemetry">ENROLLED LEARNERS</span>
+            <span class="intel-stat-val">{{ participants | length }}</span>
         </div>
-        {% endif %}
-        {% if program.start_date %}
-        <div>
-            <div
-                style="font-size:0.72rem; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); margin-bottom:0.25rem;">
-                Start Date</div>
-            <div style="font-weight:700; color:var(--text);">{{ program.start_date }}</div>
+        <div class="intel-metric-item">
+            <span class="intel-telemetry">LAB COMPLETION</span>
+            <span class="intel-stat-val">0%</span>
+            <div style="height: 2px; background: rgba(255,255,255,0.1); width: 100%; margin-top: 4px;">
+                <div style="width: 0%; height: 100%; background: #0ea5e9;"></div>
+            </div>
         </div>
-        {% endif %}
-        {% if program.end_date %}
-        <div>
-            <div
-                style="font-size:0.72rem; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); margin-bottom:0.25rem;">
-                End Date</div>
-            <div style="font-weight:700; color:var(--text);">{{ program.end_date }}</div>
+        <div class="intel-metric-item">
+            <span class="intel-telemetry">ATTENDANCE VELOCITY</span>
+            <span class="intel-stat-val">N/A</span>
         </div>
-        {% endif %}
-        {% if program.duration %}
-        <div>
-            <div
-                style="font-size:0.72rem; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); margin-bottom:0.25rem;">
-                Duration</div>
-            <div style="font-weight:700; color:var(--text);">{{ program.duration }}</div>
+        <div class="intel-metric-item">
+            <span class="intel-telemetry">DAYS REMAINING</span>
+            {% set end_date_raw = program.end_date %}
+            {% set end_date = end_date_raw | to_date %}
+            {% if end_date and today %}
+                {% set remaining = (end_date - today).days %}
+                <span class="intel-stat-val">{{ remaining if remaining > 0 else 0 }}</span>
+            {% else %}
+                <span class="intel-stat-val">—</span>
+            {% endif %}
         </div>
-        {% endif %}
-        {% if program.time_slot %}
-        <div>
-            <div
-                style="font-size:0.72rem; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); margin-bottom:0.25rem;">
-                Schedule</div>
-            <div style="font-weight:700; color:var(--text); font-size:0.9rem;">{{ program.time_slot }}</div>
-        </div>
-        {% endif %}
-
     </div>
-</div>
 
-<div class="lp-grid-2col" style="gap:1.5rem;">
-    <!-- Invoices -->
-    <div>
-        <div class="lp-heading" style="margin-bottom:1rem;">
-            <i class="ph-bold ph-receipt"></i> Invoice <span class="accent">Tracker</span>
-        </div>
-        {% if program.invoices %}
-        <div style="display:flex; flex-direction:column; gap:0.75rem;">
-            {% for inv in program.invoices %}
-            <div class="lp-panel"
-                style="padding:1.25rem; border-left:3px solid {{ 'var(--success, #10b981)' if inv.status == 'paid' else ('var(--warning, #f59e0b)' if inv.status == 'overdue' else 'var(--border)') }};">
-                <div
-                    style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.5rem;">
-                    <div>
-                        <div style="font-weight:700; color:var(--text);">{{ inv.invoice_number or 'Invoice' }}</div>
-                        <div style="font-size:0.8rem; color:var(--text-muted);">{{ inv.date or '—' }}</div>
-                    </div>
-                    <span
-                        class="lp-pill lp-pill-{{ 'success' if inv.status == 'paid' else ('danger' if inv.status == 'overdue' else 'warning') }}"
-                        style="font-size:0.72rem;">
-                        {{ (inv.status or 'pending') | title }}
-                    </span>
+    <div class="intelligence-container">
+        <!-- MAIN CONTENT AREA -->
+        <div class="main-intel">
+            <!-- Command Bar Navigation -->
+            <div class="command-bar" style="background: white; border: 1px solid var(--intel-border); color: var(--intel-text-primary); padding: 0.4rem 1rem;">
+                <div class="cmd-group">
+                    <button class="cmd-pill active" data-target="tab-roster">ACTIVE ROSTER</button>
+                    <button class="cmd-pill" data-target="tab-labs">LAB TELEMETRY</button>
+                    <button class="cmd-pill" data-target="tab-financials">FINANCIALS</button>
                 </div>
-                <div style="display:flex; gap:2rem; margin-top:0.75rem; font-size:0.85rem;">
-                    <div>
-                        <div style="font-size:0.72rem; color:var(--text-muted);">Amount</div>
-                        <div style="font-weight:700;">₹{{ "%.0f"|format(inv.amount) }}</div>
-                    </div>
-                    {% if inv.balance > 0 %}
-                    <div>
-                        <div style="font-size:0.72rem; color:var(--text-muted);">Balance Due</div>
-                        <div style="font-weight:700; color:var(--warning, #f59e0b);">₹{{ "%.0f"|format(inv.balance) }}
+            </div>
+
+            <div id="tab-roster" class="tab-content active">
+                <div class="intel-card" style="padding: 0;">
+                    <div class="precision-table">
+                        <div class="pt-header pt-cols-4" style="background: #f8fafc;">
+                            <div>LEARNER</div>
+                            <div>SKILLS MASTERY</div>
+                            <div>LAST SEEN</div>
+                            <div style="text-align: right;">ENGAGEMENT</div>
                         </div>
+                        {% if participants %}
+                            {% for p in participants %}
+                            <a href="{{ url_for('client_portal.learner_report', engagement_id=program.id, participant_id=p.id) }}" style="text-decoration: none; color: inherit;">
+                                <div class="pt-row pt-cols-4">
+                                    <div>
+                                        <div class="pt-title" style="font-weight: 700;">{{ p.name }}</div>
+                                        <div class="pt-subtitle">{{ p.email }}</div>
+                                    </div>
+                                    <div>
+                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;">
+                                            <span class="intel-telemetry">0%</span>
+                                        </div>
+                                        <div style="height: 4px; background: #f1f5f9; border-radius: 2px;">
+                                            <div style="width: 0%; height: 100%; background: #0ea5e9; border-radius: 2px;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="pt-text intel-telemetry" style="color: var(--intel-text-secondary);">—</div>
+                                    <div style="text-align: right;">
+                                        <span class="pt-status" style="background: rgba(14, 165, 233, 0.1); color: #0ea5e9; font-weight: 700;">{{ p.status | upper }}</span>
+                                    </div>
+                                </div>
+                            </a>
+                            {% endfor %}
+                        {% else %}
+                            <div style="padding: 4rem; text-align: center;">
+                                <i class="ph-bold ph-users-three" style="font-size: 2.5rem; color: #e2e8f0; margin-bottom: 1rem;"></i>
+                                <div style="color: var(--text-tertiary); font-weight: 600;">Awaiting learner enrollment...</div>
+                            </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
                 </div>
-                {% if inv.pdf_url %}
-                <a href="{{ inv.pdf_url }}" target="_blank"
-                    style="display:inline-flex; align-items:center; gap:0.35rem; margin-top:0.75rem; font-size:0.8rem; color:var(--teal); text-decoration:none;">
-                    <i class="ph ph-file-pdf"></i> View Invoice PDF
-                </a>
+            </div>
+
+            <div id="tab-labs" class="tab-content">
+                <div class="intel-card">
+                    <div style="padding: 3rem; text-align: center;">
+                        <i class="ph-bold ph-terminal-window" style="font-size: 3rem; color: #f1f5f9; margin-bottom: 1.5rem;"></i>
+                        <h3 style="font-family: 'Outfit', sans-serif; font-weight: 700; margin-bottom: 0.5rem;">Lab Telemetry Initializing</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem; max-width: 320px; margin: 0 auto;">
+                            Environment logs are being synchronized. Detailed cloud activity will appear once sessions commence.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-financials" class="tab-content">
+                <div class="intel-card">
+                    <div class="precision-table">
+                        <div class="pt-header pt-cols-2">
+                            <div>INVOICE TRACKING</div>
+                            <div style="text-align: right;">AMOUNT</div>
+                        </div>
+                        {% if program.invoices %}
+                            {% for inv in program.invoices %}
+                            <div class="pt-row pt-cols-2">
+                                <div>
+                                    <div class="pt-title" style="font-weight: 700;">{{ inv.invoice_number }}</div>
+                                    <div class="intel-telemetry">{{ inv.status | upper }} · {{ inv.date | format_date }}</div>
+                                </div>
+                                <div style="text-align: right; font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.1rem;">
+                                    ₹{{ "%.2f"|format(inv.amount) }}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div style="padding: 2rem; text-align: center; color: var(--text-tertiary);">No financial records found.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SIDEBAR INFO -->
+        <div class="sidebar-intel">
+            <!-- Instructor Card -->
+            <div class="instructor-card">
+                <div class="instructor-glow"></div>
+                <div class="intel-telemetry" style="color: #94a3b8; margin-bottom: 1rem;">// LEAD INSTRUCTOR</div>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    <div style="width: 48px; height: 48px; background: #1e293b; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <i class="ph-bold ph-user" style="font-size: 1.5rem; color: #0ea5e9;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 800; font-family: 'Outfit', sans-serif; font-size: 1.1rem;">{{ program.trainer_name or 'TBA' }}</div>
+                        <div class="telemetry-pill">SYSTEM ARCHITECT</div>
+                    </div>
+                </div>
+                <p style="font-size: 0.75rem; color: #94a3b8; line-height: 1.5; margin-bottom: 1.5rem;">
+                    Lead technical instructor responsible for curriculum delivery and lab orchestration for this engagement.
+                </p>
+                <button class="cmd-pill" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 0.5rem;">
+                    MESSAGE INSTRUCTOR
+                </button>
+            </div>
+
+            <!-- Program Overview -->
+            <div class="intel-card" style="margin-bottom: 1.5rem;">
+                <div class="intel-telemetry" style="margin-bottom: 1rem;">// ENGAGEMENT DETAILS</div>
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div>
+                        <div class="intel-telemetry" style="font-size: 0.6rem;">DURATION</div>
+                        <div style="font-size: 0.85rem; font-weight: 700;">{{ program.start_date | format_date }} - {{ program.end_date | format_date }}</div>
+                    </div>
+                    <div>
+                        <div class="intel-telemetry" style="font-size: 0.6rem;">TRAINING TYPE</div>
+                        <div style="font-size: 0.85rem; font-weight: 700;">{{ program.training_type or 'Corporate On-site' }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentation -->
+            <div class="intel-card">
+                <div class="intel-telemetry" style="margin-bottom: 1rem;">// DOCUMENTATION</div>
+                {% if program.documents %}
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        {% for doc in program.documents %}
+                        <div style="display: flex; align-items: center; gap: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+                            <i class="ph-bold ph-file-pdf" style="font-size: 1.25rem; color: #ef4444;"></i>
+                            <div style="min-width: 0;">
+                                <div style="font-size: 0.75rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ doc.filename }}</div>
+                                <div class="intel-telemetry" style="font-size: 0.6rem;">{{ doc.file_type }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="intel-telemetry" style="font-size: 0.7rem; color: var(--text-tertiary);">No shared assets yet.</div>
                 {% endif %}
             </div>
-            {% endfor %}
         </div>
-        {% else %}
-        <div class="lp-panel" style="padding:2rem; text-align:center;">
-            <i class="ph ph-receipt" style="font-size:2rem; opacity:0.3;"></i>
-            <p style="color:var(--text-muted); font-size:0.9rem; margin:0.5rem 0 0;">No invoices generated yet.</p>
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Documents -->
-    <div>
-        <div class="lp-heading" style="margin-bottom:1rem;">
-            <i class="ph-bold ph-folder-open"></i> Program <span class="accent">Documents</span>
-        </div>
-        {% if program.documents %}
-        <div style="display:flex; flex-direction:column; gap:0.6rem;">
-            {% for doc in program.documents %}
-            {% set icon_map = {'Course Outline': 'ph-book-open', 'Attendance Sheet': 'ph-clipboard-text', 'Client PO':
-            'ph-file-doc', 'Feedback Report': 'ph-star', 'Other': 'ph-file'} %}
-            <div class="lp-panel" style="padding:1rem 1.25rem; display:flex; align-items:center; gap:0.75rem;">
-                <i class="ph {{ icon_map.get(doc.file_type, 'ph-file') }}"
-                    style="font-size:1.5rem; color:var(--teal); flex-shrink:0;"></i>
-                <div style="flex:1; min-width:0;">
-                    <div
-                        style="font-weight:600; font-size:0.9rem; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                        {{ doc.filename }}</div>
-                    <div style="font-size:0.75rem; color:var(--text-muted);">{{ doc.file_type }} · {{
-                        doc.uploaded_at[:10] if doc.uploaded_at else '' }}</div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="lp-panel" style="padding:2rem; text-align:center;">
-            <i class="ph ph-folder-open" style="font-size:2rem; opacity:0.3;"></i>
-            <p style="color:var(--text-muted); font-size:0.9rem; margin:0.5rem 0 0;">No documents available yet.</p>
-        </div>
-        {% endif %}
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const btns = document.querySelectorAll('.cmd-pill[data-target]');
+    const contents = document.querySelectorAll('.tab-content');
+
+    btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            btns.forEach(b => b.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            const targetId = btn.getAttribute('data-target');
+            if (targetId) {
+                document.getElementById(targetId).classList.add('active');
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

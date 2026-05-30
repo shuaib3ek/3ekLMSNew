@@ -27,20 +27,33 @@
         {% if assessments %}
         <div class="list-group">
             {% for a in assessments %}
-            <div style="padding: 1rem; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <div style="width: 40px; height: 40px; border-radius: 8px; background: rgba(59, 130, 246, 0.1); color: #3b82f6; display: flex; align-items: center; justify-content: center;">
-                        <i class="ph ph-file-text" style="font-size: 1.5rem;"></i>
+            <div style="padding: 1rem; border: 1px solid var(--border-light); border-radius: 8px; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div style="width: 40px; height: 40px; border-radius: 8px; background: rgba(59, 130, 246, 0.1); color: #3b82f6; display: flex; align-items: center; justify-content: center;">
+                            <i class="ph ph-{% if a.assessment_type == 'quiz' %}puzzle-piece{% else %}file-text{% endif %}" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div>
+                            <h4 style="margin: 0 0 0.2rem; font-size: 1.05rem;">{{ a.title }}</h4>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">
+                                {{ a.assessment_type | capitalize }} ·
+                                Pass: {{ a.pass_score }}% ·
+                                {% if a.assessment_type == 'quiz' %}{{ a.questions | length }} questions · {% endif %}
+                                Max {{ a.max_attempts }} attempt{{ 's' if a.max_attempts != 1 }}
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <h4 style="margin: 0 0 0.25rem; font-size: 1.05rem;">{{ a.title }}</h4>
-                        <div style="font-size: 0.8rem; color: var(--text-secondary);">Type: {{ a.type | capitalize }}</div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        {% if a.assessment_type == 'quiz' %}
+                        <a href="{{ url_for('assessments.quiz_builder', assessment_id=a.id) }}" class="btn btn-sm btn-outline">
+                            <i class="ph ph-puzzle-piece"></i> Build Quiz
+                        </a>
+                        {% elif a.file_url %}
+                        <a href="{{ a.file_url }}" target="_blank" class="btn btn-sm btn-outline">
+                            <i class="ph ph-eye"></i> View
+                        </a>
+                        {% endif %}
                     </div>
-                </div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <a href="{{ a.file_url }}" target="_blank" class="btn btn-sm btn-outline">
-                        <i class="ph ph-eye"></i> View
-                    </a>
                 </div>
             </div>
             {% endfor %}
@@ -69,7 +82,7 @@
                 <select name="assessment_id" class="form-control" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-dark); border-radius: 6px;">
                     <option value="" disabled selected>-- Select an Assessment --</option>
                     {% for a in assessments %}
-                    <option value="{{ a.id }}">{{ a.title }} ({{ a.type | capitalize }})</option>
+                    <option value="{{ a.id }}">{{ a.title }} ({{ a.assessment_type | capitalize }})</option>
                     {% endfor %}
                 </select>
             </div>
@@ -114,38 +127,103 @@
     </div>
 </div>
 
-<!-- Modal: Upload Assessment -->
+<!-- Modal: Create Assessment -->
 <div id="uploadAssessmentModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 550px;">
+    <div class="modal-content" style="max-width: 560px;">
         <div class="modal-header">
-            <h2 class="modal-title"><i class="ph-bold ph-upload-simple" style="color: var(--accent);"></i> Upload Assessment</h2>
+            <h2 class="modal-title"><i class="ph-bold ph-plus-circle" style="color: var(--accent);"></i> <span id="modalTitle">New Assessment</span></h2>
             <button type="button" class="btn btn-sm btn-outline" onclick="closeModal('uploadAssessmentModal')" style="border: none; font-size: 1.5rem;">&times;</button>
         </div>
-        <form method="POST" action="{{ url_for('assessments.upload_assessment', crm_engagement_id=program.id) }}" enctype="multipart/form-data">
+
+        <!-- Step 1: Type Selector Cards -->
+        <div id="typeStep">
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.25rem;">What type of assessment do you want to create?</p>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.5rem;">
+                <div class="type-card" onclick="selectType('quiz')"
+                     style="border: 2px solid var(--border-light); border-radius: 10px; padding: 1.25rem; text-align: center; cursor: pointer; transition: all 0.15s;">
+                    <i class="ph ph-puzzle-piece" style="font-size: 2rem; color: #8b5cf6; margin-bottom: 0.5rem; display: block;"></i>
+                    <div style="font-weight: 600; font-size: 0.9rem;">Built-in Quiz</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">Auto-scored MCQs</div>
+                </div>
+                <div class="type-card" onclick="selectType('document')"
+                     style="border: 2px solid var(--border-light); border-radius: 10px; padding: 1.25rem; text-align: center; cursor: pointer; transition: all 0.15s;">
+                    <i class="ph ph-file-pdf" style="font-size: 2rem; color: #ef4444; margin-bottom: 0.5rem; display: block;"></i>
+                    <div style="font-weight: 600; font-size: 0.9rem;">Document</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">PDF / Word file</div>
+                </div>
+                <div class="type-card" onclick="selectType('link')"
+                     style="border: 2px solid var(--border-light); border-radius: 10px; padding: 1.25rem; text-align: center; cursor: pointer; transition: all 0.15s;">
+                    <i class="ph ph-link" style="font-size: 2rem; color: #0ea5e9; margin-bottom: 0.5rem; display: block;"></i>
+                    <div style="font-weight: 600; font-size: 0.9rem;">External Link</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">Google Form, etc.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Detail Form (shown after type selected) -->
+        <form id="assessmentForm" method="POST" action="{{ url_for('assessments.upload_assessment', crm_engagement_id=program.id) }}"
+              enctype="multipart/form-data" style="display: none;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div class="form-group">
-                <label>Assessment Title</label>
-                <input type="text" name="title" class="form-control" required placeholder="e.g. Pre-training Assessment">
+            <input type="hidden" name="type" id="selectedType">
+
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label style="font-weight: 500; font-size: 0.9rem;">Title</label>
+                <input type="text" name="title" class="form-control" required placeholder="e.g. Post-Training Knowledge Check"
+                       style="margin-top: 0.4rem;">
             </div>
-            <div class="form-group grid" style="grid-template-columns: 1fr; gap: 1rem;">
-                <label>Assessment Type</label>
-                <select name="type" class="form-control" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-dark); border-radius: 6px;">
-                    <option value="document">Document (PDF/Word)</option>
-                    <option value="link">External Link</option>
-                    <option value="quiz">Built-in Quiz</option>
-                </select>
+
+            <!-- Quiz-specific fields -->
+            <div id="quizFields" style="display: none;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="font-size: 0.8rem; font-weight: 500;">Pass Score (%)</label>
+                        <input type="number" name="pass_score" value="70" min="1" max="100" class="form-control"
+                               style="margin-top: 0.35rem; padding: 0.5rem;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.8rem; font-weight: 500;">Time Limit (min)</label>
+                        <input type="number" name="time_limit_minutes" placeholder="None" min="1" class="form-control"
+                               style="margin-top: 0.35rem; padding: 0.5rem;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.8rem; font-weight: 500;">Max Attempts</label>
+                        <input type="number" name="max_attempts" value="1" min="1" max="10" class="form-control"
+                               style="margin-top: 0.35rem; padding: 0.5rem;">
+                    </div>
+                </div>
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 0.75rem; font-size: 0.82rem; color: #166534; margin-bottom: 1rem;">
+                    <i class="ph ph-info"></i> After creating, click <strong>"Build Quiz"</strong> on the assessment card to add your questions.
+                </div>
             </div>
-            <div class="form-group">
-                <label>Upload File</label>
-                <input type="file" name="file" class="form-control" accept=".pdf,.doc,.docx" required style="padding: 1rem; border: 1px dashed var(--border-dark);">
+
+            <!-- Document upload -->
+            <div id="documentFields" style="display: none; margin-bottom: 1rem;">
+                <label style="font-weight: 500; font-size: 0.9rem;">Upload File</label>
+                <input type="file" name="file" id="fileInput" class="form-control" accept=".pdf,.doc,.docx"
+                       style="margin-top: 0.4rem; padding: 0.75rem; border: 1px dashed var(--border-dark);">
             </div>
-            <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
-                <button type="button" class="btn btn-outline" onclick="closeModal('uploadAssessmentModal')">Cancel</button>
-                <button type="submit" class="btn btn-primary"><i class="ph ph-upload"></i> Upload</button>
+
+            <!-- External link -->
+            <div id="linkFields" style="display: none; margin-bottom: 1rem;">
+                <label style="font-weight: 500; font-size: 0.9rem;">External URL</label>
+                <input type="url" name="external_url" id="externalUrl" class="form-control"
+                       placeholder="https://forms.google.com/..."
+                       style="margin-top: 0.4rem;">
+            </div>
+
+            <div style="display: flex; justify-content: space-between; gap: 1rem; margin-top: 1rem;">
+                <button type="button" class="btn btn-outline" onclick="resetModal()">← Change Type</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <i class="ph ph-check"></i> Create Assessment
+                </button>
             </div>
         </form>
     </div>
 </div>
+
+<style>
+.type-card:hover { border-color: var(--primary) !important; background: rgba(59,130,246,0.04); transform: translateY(-2px); }
+</style>
 
 <script>
 function openModal(id) {
@@ -156,6 +234,46 @@ function openModal(id) {
 function closeModal(id) {
     const modal = document.getElementById(id);
     modal.style.display = 'none';
+    resetModal();
+}
+
+function resetModal() {
+    document.getElementById('typeStep').style.display = 'block';
+    document.getElementById('assessmentForm').style.display = 'none';
+    document.getElementById('quizFields').style.display = 'none';
+    document.getElementById('documentFields').style.display = 'none';
+    document.getElementById('linkFields').style.display = 'none';
+    document.getElementById('fileInput').required = false;
+    document.getElementById('externalUrl').required = false;
+    document.getElementById('modalTitle').textContent = 'New Assessment';
+}
+
+function selectType(type) {
+    document.getElementById('selectedType').value = type;
+    document.getElementById('typeStep').style.display = 'none';
+    document.getElementById('assessmentForm').style.display = 'block';
+
+    document.getElementById('quizFields').style.display = 'none';
+    document.getElementById('documentFields').style.display = 'none';
+    document.getElementById('linkFields').style.display = 'none';
+    document.getElementById('fileInput').required = false;
+    document.getElementById('externalUrl').required = false;
+
+    if (type === 'quiz') {
+        document.getElementById('quizFields').style.display = 'block';
+        document.getElementById('modalTitle').textContent = 'New Built-in Quiz';
+        document.getElementById('submitBtn').innerHTML = '<i class="ph ph-puzzle-piece"></i> Create Quiz';
+    } else if (type === 'document') {
+        document.getElementById('documentFields').style.display = 'block';
+        document.getElementById('fileInput').required = true;
+        document.getElementById('modalTitle').textContent = 'Upload Document';
+        document.getElementById('submitBtn').innerHTML = '<i class="ph ph-upload"></i> Upload Document';
+    } else if (type === 'link') {
+        document.getElementById('linkFields').style.display = 'block';
+        document.getElementById('externalUrl').required = true;
+        document.getElementById('modalTitle').textContent = 'Add External Link';
+        document.getElementById('submitBtn').innerHTML = '<i class="ph ph-link"></i> Save Link';
+    }
 }
 
 window.onclick = function(event) {

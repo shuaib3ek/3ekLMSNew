@@ -23,6 +23,10 @@ def create_app(config_class=Config):
     # CSRF protection
     csrf.init_app(app)
 
+    # Rate Limiter
+    from .core.extensions import limiter
+    limiter.init_app(app)
+
     # Login Manager
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
@@ -62,12 +66,13 @@ def create_app(config_class=Config):
     from flask_migrate import Migrate
     Migrate(app, db)
 
-    # Background Scheduler (Teams recording poll & webhook renewal)
+    # Background Task Engine (Celery)
     try:
-        from .core.scheduler import init_scheduler
-        init_scheduler(app)
+        from .core.celery_app import make_celery
+        celery = make_celery(app)
+        app.logger.info("LMS Celery Initialised.")
     except Exception as e:
-        print(f'LMS Scheduler init failed (ignore during migrations): {e}')
+        app.logger.error(f'LMS Celery init failed: {e}')
 
     # ── Template Filters ────────────────────────────────────────────────────
     import json
@@ -80,6 +85,34 @@ def create_app(config_class=Config):
             return json.loads(value)
         except Exception:
             return []
+
+    @app.template_filter('format_date')
+    def format_date_filter(value):
+        if not value:
+            return '—'
+        from datetime import datetime, date
+        if isinstance(value, (datetime, date)):
+            return value.strftime('%d-%m-%Y')
+        try:
+            # Try parsing common CRM string format: YYYY-MM-DD
+            dt = datetime.strptime(str(value), '%Y-%m-%d')
+            return dt.strftime('%d-%m-%Y')
+        except (ValueError, TypeError):
+            return value
+
+    @app.template_filter('to_date')
+    def to_date_filter(value):
+        if not value:
+            return None
+        from datetime import datetime, date
+        if isinstance(value, date):
+            return value
+        if isinstance(value, datetime):
+            return value.date()
+        try:
+            return datetime.strptime(str(value), '%Y-%m-%d').date()
+        except (ValueError, TypeError):
+            return None
 
     @app.context_processor
     def inject_globals():
@@ -148,6 +181,10 @@ def create_app(config_class=Config):
     from .assessments import assessments_bp
     app.register_blueprint(assessments_bp, url_prefix='/assessments')
 
+    # Organizations (Tenancy)
+    from .organizations import organizations_bp
+    app.register_blueprint(organizations_bp, url_prefix='/organizations')
+
     # Labs Module (New)
     from .labs import labs_bp
     app.register_blueprint(labs_bp, url_prefix='/labs')
@@ -192,5 +229,11 @@ def create_app(config_class=Config):
         if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest' or 'X-CSRFToken' in request.headers:
             return jsonify({'error': f'CSRF token mismatch: {e.description}. Try refreshing the page.'}), 400
         return render_template('errors/400.html', message=f"CSRF Error: {e.description}. Please refresh and try again."), 400
+
+    # Tenancy Context
+    from .core.tenancy import init_tenant
+    @app.before_request
+    def before_request():
+        init_tenant()
 
     return app

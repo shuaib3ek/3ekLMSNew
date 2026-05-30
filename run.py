@@ -2,6 +2,7 @@ import os
 from app import create_app
 
 app = create_app()
+celery = app.extensions.get('celery')
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 3001))

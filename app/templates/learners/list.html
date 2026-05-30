@@ -1,77 +1,181 @@
 {% extends "layouts/base.html" %}
 
 {% block content %}
-<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
-    <div>
-        <h1 class="page-title"><i class="ph ph-users"></i> Global Learner Roster</h1>
-        <div class="breadcrumb" style="margin-top: 0.5rem;">
-            <span>All Active Participants</span>
+<div class="container">
+    {% set title = "Global Learner Roster" %}
+    {% set count = pagination.total %}
+    {% set telemetry = "// ACADEMY_UNIT // LEARNER_DIRECTORY" %}
+    {% include "components/page_header.html" %}
+
+    <div class="command-bar" style="justify-content: space-between;">
+        <div class="cmd-group no-border">
+            <div class="cmd-pill active">
+                <i class="ph-bold ph-user-list"></i> ALL LEARNERS
+            </div>
+        </div>
+
+        <form id="filterForm" action="{{ url_for('learners.list_learners') }}" method="GET" style="display: flex; gap: 1.25rem; align-items: center; flex-wrap: wrap; flex: 1; justify-content: flex-end; margin: 0;">
+            <!-- Organization Filter -->
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="color: #64748b; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">ORG:</span>
+                <div style="width: 200px;">
+                    <select name="org" id="orgFilter" onchange="document.getElementById('filterForm').submit()">
+                        <option value="all">All Organizations</option>
+                        {% for org in organizations %}
+                        <option value="{{ org.id }}" {% if selected_org == org.id|string %}selected{% endif %}>{{ org.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Training Name Filter -->
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="color: #64748b; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">TRAINING:</span>
+                <div style="width: 260px;">
+                    <select name="program" id="programFilter" onchange="document.getElementById('filterForm').submit()">
+                        <option value="all">All Enabled Trainings</option>
+                        {% for p in training_programs %}
+                        <option value="{{ p.id }}" {% if selected_program == p.id|string %}selected{% endif %}>{{ p.topic }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Debounced Search Input -->
+            <div class="cmd-input-wrapper" style="min-width: 260px; max-width: 320px; margin: 0;">
+                <i class="ph ph-magnifying-glass cmd-input-icon"></i>
+                <input type="text" name="q" class="cmd-input" placeholder="Search by name, email, or company..." value="{{ search_query }}" oninput="debounceSearch(this)">
+            </div>
+            <input type="hidden" name="per_page" value="{{ per_page }}">
+        </form>
+    </div>
+
+    {% if not learners %}
+    <div style="text-align: center; padding: 4rem 2rem; color: var(--text-tertiary); background: var(--bg-surface); border-radius: 12px; border: 1px dashed var(--border-light); mt-4">
+        <i class="ph ph-users" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+        <p style="font-size: 1.1rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.25rem;">No learners found.</p>
+        <p style="font-size: 0.9rem;">No records match your search criteria or the database is currently empty.</p>
+    </div>
+    {% else %}
+    <div class="precision-grid-container mt-4">
+        <div class="precision-row header">
+            <div class="sortable-header"><i class="ph ph-user-circle mr-1 text-xs"></i> IDENTITY</div>
+            <div class="sortable-header"><i class="ph ph-building mr-1 text-xs"></i> CORPORATE / ROLE</div>
+            <div class="sortable-header"><i class="ph ph-calendar-check mr-1 text-xs"></i> ACTIVE PIPELINE</div>
+            <div style="text-align: right;"><i class="ph ph-gear mr-1 text-xs"></i> ACTIONS</div>
+        </div>
+        <div style="overflow-y: auto; max-height: calc(100vh - 340px);">
+            {% for l in learners %}
+            <a href="{{ url_for('learners.learner_profile', learner_id=l.id) }}" class="precision-row">
+                <!-- Identity -->
+                <div class="p-cell">
+                    <div class="p-flex-row">
+                        <div class="p-avatar" style="background: var(--accent, #3b82f6);">{{ l.name[:1]|upper if l.name else 'L' }}</div>
+                        <div style="display: flex; flex-direction: column; overflow: hidden; min-width: 0; width: 100%;">
+                            <span class="p-primary">{{ l.name }}</span>
+                            <span class="p-sub" style="font-family: 'JetBrains Mono', monospace;">{{ l.email }}</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Corporate / Role -->
+                <div class="p-cell">
+                    <span class="p-mono"><i class="ph ph-buildings mr-1"></i> {{ l.company or 'Individual' }}</span>
+                    <span class="p-sub">{{ l.job_title or '—' }}</span>
+                </div>
+                <!-- Active Pipeline -->
+                <div class="p-cell" style="width: 100%;">
+                    <div style="display: flex; flex-direction: column; gap: 0.25rem; width: 100%; min-width: 0;">
+                        {% if l.registrations %}
+                            {% set reg = l.registrations[0] %}
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-light); padding: 0.25rem 0.5rem; border-radius: 6px;">
+                                <span class="p-mono" style="max-width: 150px;">{{ reg.workshop.title }}</span>
+                                <span class="p-badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 0.65rem;">{{ reg.status|upper }}</span>
+                            </div>
+                            {% if l.registrations|length > 1 %}
+                                <span class="p-sub" style="font-weight: 600;">+ {{ l.registrations|length - 1 }} more active</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="p-sub" style="font-style: italic;">No active enrollments</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- Actions -->
+                <div style="text-align: right;">
+                    <span class="btn btn-sm btn-outline" style="pointer-events: none; padding: 0.25rem 0.75rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.25rem;">View Profile <i class="ph ph-arrow-right"></i></span>
+                </div>
+            </a>
+            {% endfor %}
         </div>
     </div>
-    <div class="btn btn-outline" style="display: flex; gap: 0.5rem; align-items: center;">
-        <i class="ph ph-funnel"></i> Filter
+
+    <!-- Precision Pagination Footer -->
+    <div class="precision-pagination mt-4" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: 12px; font-size: 0.85rem;">
+        <div style="color: var(--text-secondary);">
+            Showing <b>{{ (pagination.page - 1) * pagination.per_page + 1 }}</b> to <b>{{ [(pagination.page * pagination.per_page), pagination.total]|min }}</b> of <b>{{ pagination.total }}</b> learners
+        </div>
+        
+        <div style="display: flex; gap: 0.25rem; align-items: center;">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('learners.list_learners', page=pagination.prev_num, per_page=per_page, q=search_query, org=selected_org, program=selected_program) }}" class="btn btn-sm btn-outline" style="padding: 0.25rem 0.5rem;"><i class="ph ph-caret-left"></i> Prev</a>
+            {% else %}
+            <span class="btn btn-sm btn-outline" style="padding: 0.25rem 0.5rem; opacity: 0.4; cursor: not-allowed;"><i class="ph ph-caret-left"></i> Prev</span>
+            {% endif %}
+            
+            <div style="display: flex; gap: 0.25rem; margin: 0 0.5rem;">
+                {% for p in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+                    {% if p %}
+                        {% if p == pagination.page %}
+                            <span class="btn btn-sm btn-primary" style="padding: 0.25rem 0.65rem; font-weight: 700;">{{ p }}</span>
+                        {% else %}
+                            <a href="{{ url_for('learners.list_learners', page=p, per_page=per_page, q=search_query, org=selected_org, program=selected_program) }}" class="btn btn-sm btn-outline" style="padding: 0.25rem 0.65rem;">{{ p }}</a>
+                        {% endif %}
+                    {% else %}
+                        <span style="color: var(--text-tertiary); align-self: center;">…</span>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            
+            {% if pagination.has_next %}
+            <a href="{{ url_for('learners.list_learners', page=pagination.next_num, per_page=per_page, q=search_query, org=selected_org, program=selected_program) }}" class="btn btn-sm btn-outline" style="padding: 0.25rem 0.5rem;">Next <i class="ph ph-caret-right"></i></a>
+            {% else %}
+            <span class="btn btn-sm btn-outline" style="padding: 0.25rem 0.5rem; opacity: 0.4; cursor: not-allowed;">Next <i class="ph ph-caret-right"></i></span>
+            {% endif %}
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary);">
+            <span>Rows per page:</span>
+            <select onchange="window.location.href='{{ url_for('learners.list_learners', q=search_query, org=selected_org, program=selected_program) }}&per_page=' + this.value" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-primary); padding: 0.25rem 0.5rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; outline: none;">
+                <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+            </select>
+        </div>
     </div>
+    {% endif %}
 </div>
 
-<div class="card" style="padding: 0; overflow: hidden;">
-    <div class="table-container" style="overflow-x: auto;">
-        <table class="table" style="width: 100%; border-collapse: collapse; text-align: left;">
-            <thead>
-                <tr style="background: var(--bg-app); border-bottom: 1px solid var(--border-light);">
-                    <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Identity</th>
-                    <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Corporate / Role</th>
-                    <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">Active Pipeline</th>
-                    <th style="padding: 1rem 1.5rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; text-align: right;">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% if learners %}
-                    {% for learner in learners %}
-                    <tr style="border-bottom: 1px solid var(--border-light); transition: background 0.15s;">
-                        <td style="padding: 1.25rem 1.5rem;">
-                            <div style="font-weight: 600; color: var(--text-primary); font-size: 1rem;">{{ learner.name }}</div>
-                            <div style="font-size: 0.85rem; color: var(--text-tertiary); margin-top: 0.25rem;">{{ learner.email }}</div>
-                        </td>
-                        <td style="padding: 1.25rem 1.5rem;">
-                            <div style="font-weight: 500; color: var(--text-secondary); font-size: 0.9rem;">{{ learner.company or 'Individual' }}</div>
-                            <div style="font-size: 0.85rem; color: var(--text-tertiary); margin-top: 0.25rem;">{{ learner.job_title or '--' }}</div>
-                        </td>
-                        <td style="padding: 1.25rem 1.5rem;">
-                            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                                {% for reg in learner.registrations[:2] %}
-                                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; border: 1px solid var(--border-light); padding: 6px 10px; font-size: 0.85rem; border-radius: 6px; background: var(--bg-surface);">
-                                        <span style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;" title="{{ reg.workshop.title }}">{{ reg.workshop.title }}</span>
-                                        <span class="status-{% if reg.status == 'confirmed' %}success{% elif reg.status == 'pending' %}warning{% else %}cold{% endif %}" style="font-size: 0.7rem; text-transform: uppercase; font-weight: 600; padding: 2px 6px; border-radius: 4px; border: 1px solid currentColor;">
-                                            {{ reg.status }}
-                                        </span>
-                                    </div>
-                                {% endfor %}
-                                {% if learner.registrations|length > 2 %}
-                                    <div style="font-size: 0.8rem; color: var(--text-tertiary); font-weight: 500; margin-top: 0.25rem;">+ {{ learner.registrations|length - 2 }} more sessions</div>
-                                {% endif %}
-                                {% if not learner.registrations %}
-                                    <span style="font-size: 0.85rem; color: var(--text-tertiary);">No active workshops</span>
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td style="padding: 1.25rem 1.5rem; text-align: right;">
-                            <button class="btn btn-sm btn-outline">
-                                View Profile
-                            </button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="4" style="padding: 4rem; text-align: center; color: var(--text-tertiary);">
-                            <i class="ph ph-users" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
-                            <p style="font-size: 1.1rem; font-weight: 600; color: var(--text-secondary);">No learners found.</p>
-                            <p style="font-size: 0.9rem;">The system database is currently empty.</p>
-                        </td>
-                    </tr>
-                {% endif %}
-            </tbody>
-        </table>
-    </div>
-</div>
+<script>
+let searchTimeout;
+function debounceSearch(input) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        document.getElementById('filterForm').submit();
+    }, 400);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof TomSelect !== 'undefined') {
+        new TomSelect('#orgFilter', {
+            create: false,
+            sortField: { field: "text", direction: "asc" },
+            placeholder: "All Organizations"
+        });
+        new TomSelect('#programFilter', {
+            create: false,
+            sortField: { field: "text", direction: "asc" },
+            placeholder: "All Enabled Trainings"
+        });
+    }
+});
+</script>
 {% endblock %}

@@ -28,7 +28,7 @@
                 <div
                     style="font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
                     Dates</div>
-                <div style="font-size:0.9rem; font-weight:700;">{{ workshop.start_date.strftime('%d %b %Y') }}</div>
+                <div style="font-size:0.9rem; font-weight:700;">{{ workshop.start_date | format_date }}</div>
             </div>
         </div>
         {% if workshop.start_time %}
@@ -95,7 +95,7 @@
                                 <div style="font-size:0.95rem; font-weight:700; color:var(--text);">{{
                                     item.session.topic or 'Workshop Session' }}</div>
                                 <div style="font-size:0.75rem; color:var(--text-muted);">
-                                    {{ item.session.session_date.strftime('%d %b %Y') }}
+                                    {{ item.session.session_date | format_date }}
                                     {% if item.session.start_time %} · {{ item.session.start_time }}{% endif %}
                                 </div>
                             </div>

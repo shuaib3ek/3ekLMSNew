@@ -101,7 +101,7 @@
                         Member Since
                     </label>
                     <div style="padding:0.75rem; color:var(--text-muted); font-size:0.95rem; font-weight:600;">
-                        {{ learner.created_at.strftime('%B %Y') }}
+                        {{ learner.created_at | format_date }}
                     </div>
                 </div>
             </div>

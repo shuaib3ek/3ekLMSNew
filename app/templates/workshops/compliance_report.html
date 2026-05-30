@@ -16,7 +16,7 @@
             Engagement</h1>
         <p style="margin: 0.5rem 0 0; color: var(--text-secondary); font-size: 1.1rem;">
             Session: <span style="color: var(--primary-color); font-weight: 600;">{{ session.topic or 'Session ' ~
-                session.session_number }}</span> • {{ session.session_date.strftime('%B %d, %Y') }}
+                session.session_number }}</span> • {{ session.session_date | format_date }}
         </p>
     </div>
 
@@ -171,7 +171,7 @@
                         <td style="padding: 1.25rem 1.5rem; text-align: right;">
                             {% if row.progress %}
                             <div style="font-size: 0.85rem; color: var(--text-primary);">{{
-                                row.progress.last_watched_at.strftime('%b %d, %H:%M') }}</div>
+                                row.progress.last_watched_at | format_date }}</div>
                             {% else %}
                             <span style="color: var(--text-tertiary);">Never</span>
                             {% endif %}

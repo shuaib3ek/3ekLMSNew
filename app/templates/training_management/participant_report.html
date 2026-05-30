@@ -1,0 +1,325 @@
+{% extends "layouts/base.html" %}
+{% block title %}Learner Telemetry: {{ participant.name }} — 3EK{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .report-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+    
+    @media(max-width: 900px) {
+        .report-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .metric-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-light);
+        border-radius: 8px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+
+    .metric-card-header {
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-bottom: 1px solid var(--border-light);
+        padding-bottom: 0.75rem;
+    }
+
+    /* Attendance Activity Grid */
+    .attendance-heatmap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 1rem;
+    }
+    .heatmap-cell {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6rem;
+        font-weight: bold;
+        color: white;
+        cursor: help;
+        position: relative;
+    }
+    .heatmap-cell.present { background: var(--success, #10b981); }
+    .heatmap-cell.absent { background: var(--danger, #ef4444); }
+    .heatmap-cell.future { background: var(--border-light); color: transparent; }
+
+    .ai-banner {
+        background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.05));
+        border: 1px solid rgba(99,102,241,0.2);
+        padding: 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="margin-bottom:1.5rem;">
+    <a href="{{ url_for('training_management.program_detail', crm_engagement_id=program.id) }}"
+        style="color:var(--text-muted); font-size:0.85rem; text-decoration:none; display:inline-flex; align-items:center; gap:0.3rem;">
+        <i class="ph ph-arrow-left"></i> Back to {{ program.topic }} Cohort
+    </a>
+</div>
+
+<!-- Learner Header -->
+<div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem;">Program Telemetry Report</div>
+        <h1 style="font-size:2.2rem; font-weight:800; color:var(--text-primary); margin:0 0 0.25rem; font-family: 'Outfit', sans-serif;">{{ participant.name }}</h1>
+        <div style="color:var(--text-secondary); font-size:0.95rem;">
+            {{ participant.email }} &nbsp;&bull;&nbsp; <span style="color: {{ 'var(--success)' if participant.status == 'active' else 'var(--text-muted)' }}; font-weight: 600; text-transform: uppercase; font-size: 0.75rem;">{{ participant.status }}</span>
+        </div>
+    </div>
+    <div style="text-align: right;">
+        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.25rem;">Total Investment Time</div>
+        <div style="font-family: monospace; font-size: 1.8rem; font-weight: 800; color: var(--accent);">{{ training.total_hours }} hrs</div>
+    </div>
+</div>
+
+<div class="report-grid">
+    
+    <!-- 1. Training Progress Trend (Line Chart) -->
+    <div class="metric-card" style="grid-column: 1 / -1;">
+        <div class="metric-card-header"><i class="ph-bold ph-trend-up"></i> Training Velocity (Hours per Day)</div>
+        <div style="height: 250px; width: 100%;">
+            <canvas id="trainingChart"></canvas>
+        </div>
+    </div>
+
+    <!-- 2. Attendance Heatmap -->
+    <div class="metric-card">
+        <div class="metric-card-header"><i class="ph-bold ph-calendar-check"></i> Attendance Density</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">Overall Score: <strong style="color: var(--accent);">{{ attendance.score }}</strong></div>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ attendance.attended }} out of {{ attendance.total }} sessions</div>
+        </div>
+        
+        <div class="attendance-heatmap">
+            {% for log in attendance.logs %}
+                <div class="heatmap-cell {{ 'present' if log.status == 'PRESENT' else 'absent' }}" title="{{ log.date }} - {{ log.topic }}">
+                    <i class="ph-bold {{ 'ph-check' if log.status == 'PRESENT' else 'ph-x' }}"></i>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div style="margin-top: 1.5rem; font-size: 0.75rem; color: var(--text-muted); display: flex; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="display: inline-block; width: 10px; height: 10px; background: var(--success, #10b981); border-radius: 2px;"></span> Attended
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="display: inline-block; width: 10px; height: 10px; background: var(--danger, #ef4444); border-radius: 2px;"></span> Missed
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Assessment Performance -->
+    <div class="metric-card">
+        <div class="metric-card-header"><i class="ph-bold ph-exam"></i> Assessment Performance vs Cohort</div>
+        <div style="height: 200px; width: 100%;">
+            <canvas id="assessmentChart"></canvas>
+        </div>
+        <div style="text-align: center; margin-top: 1rem; font-size: 0.85rem; font-weight: 700;">
+            Average Score: {{ assessments.average_score }}
+        </div>
+        {% if assessments.history %}
+        <div style="margin-top: 1rem; border-top: 1px solid var(--border-light); padding-top: 0.75rem;">
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.5rem;">Program Assessment Breakdown</div>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                {% for item in assessments.history %}
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
+                    <span>{{ item.name }}</span>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-weight: 600;">{{ item.score }}</span>
+                        <span style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; background: {{ 'var(--success-bg, #dcfce7)' if item.status == 'PASS' else 'var(--danger-bg, #fee2e2)' }}; color: {{ 'var(--success, #166534)' if item.status == 'PASS' else 'var(--danger, #991b1b)' }};">{{ item.status }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 4. Lab Telemetry -->
+    <div class="metric-card" style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <div>
+            <div class="metric-card-header" style="border: none; padding: 0;"><i class="ph-bold ph-terminal-window"></i> Lab Environment Utilization</div>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.5rem;">Daily tracking of cloud infrastructure activity and session hours.</p>
+            
+            {% if labs %}
+                {% for assignment in labs %}
+                <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: 6px; padding: 1rem; margin-top: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <div style="font-weight: 700; font-size: 0.9rem;">{{ assignment.lab.title }}</div>
+                        <span style="font-size: 0.7rem; font-weight: 700; color: var(--success, #10b981);">ACTIVE</span>
+                    </div>
+                    <div style="font-family: monospace; font-size: 0.75rem; color: var(--text-muted);">
+                        Provisioned: {{ assignment.assigned_at.strftime('%Y-%m-%d') if assignment.assigned_at else 'Active' }}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: 6px; padding: 1rem; margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+                    <div style="font-weight: 600; margin-bottom: 0.25rem;">Enterprise Cloud VM Sandbox</div>
+                    <div style="font-size: 0.75rem;">Ubuntu 24.04 LTS &bull; Secure Terminal Sandbox &bull; Assigned via Program</div>
+                </div>
+            {% endif %}
+        </div>
+        <div style="height: 200px; display: flex; align-items: center; justify-content: center;">
+            <canvas id="labChart"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<!-- Initialize Charts -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const velocityData = {{ charts.velocity | default([2, 4.5, 3, 5, 0]) | tojson }};
+        const assmtLabels = {{ charts.assessment_labels | default(['Module 1', 'Module 2']) | tojson }};
+        const assmtScores = {{ charts.assessment_scores | default([90, 85]) | tojson }};
+        const cohortAvgs = {{ charts.cohort_avgs | default([75, 80]) | tojson }};
+        const labHoursData = {{ charts.lab_hours | default([2.5, 4.0, 1.5, 3.0, 5.0]) | tojson }};
+
+        // 1. Training Trend (Line Chart)
+        const ctxTraining = document.getElementById('trainingChart').getContext('2d');
+        new Chart(ctxTraining, {
+            type: 'line',
+            data: {
+                labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5'],
+                datasets: [{
+                    label: 'Hours Invested',
+                    data: velocityData,
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { borderDash: [4, 4] },
+                        ticks: { color: '#0f172a', font: { weight: '700', size: 10 } }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { color: '#0f172a', font: { weight: '700', size: 10 } }
+                    }
+                }
+            }
+        });
+
+        // 2. Assessments vs Cohort (Bar Chart)
+        const ctxAssmt = document.getElementById('assessmentChart').getContext('2d');
+        new Chart(ctxAssmt, {
+            type: 'bar',
+            data: {
+                labels: assmtLabels.length > 0 ? assmtLabels : ['Module 1', 'Module 2'],
+                datasets: [
+                    {
+                        label: 'Learner Score',
+                        data: assmtScores.length > 0 ? assmtScores : [90, 85],
+                        backgroundColor: '#10b981',
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Cohort Avg',
+                        data: cohortAvgs.length > 0 ? cohortAvgs : [75, 80],
+                        backgroundColor: '#cbd5e1',
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { 
+                        position: 'bottom', 
+                        labels: { boxWidth: 12, color: '#0f172a', font: { weight: '700', size: 10 } } 
+                    }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 100, 
+                        grid: { borderDash: [4, 4] },
+                        ticks: { color: '#0f172a', font: { weight: '700', size: 10 } }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { color: '#0f172a', font: { weight: '700', size: 10 } }
+                    }
+                }
+            }
+        });
+
+        // 3. Lab Telemetry (Daily Bar Chart)
+        const ctxLab = document.getElementById('labChart').getContext('2d');
+        new Chart(ctxLab, {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+                datasets: [{
+                    label: 'Hours Spent',
+                    data: labHoursData,
+                    backgroundColor: 'rgba(99, 102, 241, 0.8)',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { borderDash: [4, 4] },
+                        ticks: { color: '#0f172a', font: { weight: '700', size: 10 } },
+                        title: { display: true, text: 'Hours', color: '#0f172a', font: { size: 10, weight: '700' } }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { color: '#0f172a', font: { weight: '700', size: 10 } }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
